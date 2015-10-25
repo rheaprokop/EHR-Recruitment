@@ -1,0 +1,362 @@
+﻿<%@ Page MaintainScrollPositionOnPostback="true" Language="C#" MasterPageFile="~/Views/Shared/Site.Master"
+    AutoEventWireup="true" CodeBehind="ManageUser.aspx.cs" Inherits="EHR.Views.Admin.ManageUser"
+    Title="Untitled Page" %>
+
+<%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="cc1" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
+    <style type="text/css">
+        .style1
+        {
+            width: 181px;
+        }
+    </style>
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="TopContent" runat="server">
+</asp:Content>
+<asp:Content ID="Content3" ContentPlaceHolderID="LeftContent" runat="server">
+</asp:Content>
+<asp:Content ID="Content4" ContentPlaceHolderID="mainContent" runat="server">
+    <%--<table class="zebra" style="width:50%">
+<tr><asp:RadioButtonList ID="RadioButtonList1" runat="server" BackColor="#DEDEDE" 
+        RepeatDirection="Horizontal" Width="50%">
+    <asp:ListItem Selected="True" Value="Users"></asp:ListItem>
+    <asp:ListItem Value="Add User"></asp:ListItem>
+ </asp:RadioButtonList></tr>
+ </table>--%>
+    <asp:Panel ID="MainPanel" runat="server">
+        <asp:Panel ID="SearchPanel" Width="100%" runat="server">
+            <asp:Label ID="Label1" runat="server" Text="Search:"></asp:Label>
+            <asp:TextBox ID="txtSearch" runat="server" CssClass="input" Style="font-size: 14px;"
+                OnTextChanged="txtSearch_TextChanged"></asp:TextBox><br />
+            <asp:GridView ID="grdUser" runat="server" OnRowCommand="grdUser_RowCommand" OnPageIndexChanging="grdUser_PageIndexChanging"
+                AutoGenerateColumns="False" DataKeyNames="userid" AllowPaging="True" BackColor="White"
+                BorderColor="#999999" BorderStyle="Solid" BorderWidth="1px" CellPadding="3" GridLines="Vertical"
+                EmptyDataText="User Not Exist!" ForeColor="Black" HorizontalAlign="Left" ShowFooter="True"
+                Width="1000px">
+                <Columns>
+                    <asp:ButtonField ButtonType="Button" CommandName="EditClicked" Text="Edit" HeaderText="Edit" />
+                    <asp:ButtonField DataTextField="userid" CommandName="UserIdClicked" HeaderText="User ID"
+                        ItemStyle-Font-Underline="True">
+                        <ItemStyle Font-Underline="True" />
+                    </asp:ButtonField>
+                    <asp:BoundField DataField="name" HeaderText="Name" />
+                    <asp:BoundField DataField="deptid" HeaderText="Dept ID" />
+                    <asp:BoundField DataField="expiredate" HeaderText="Expire Date" />
+                    <asp:BoundField DataField="expireflag" HeaderText="Expire Flag" />
+                    <asp:BoundField DataField="lockflag" HeaderText="Lock" />
+                    <asp:TemplateField HeaderText="Add New">
+                        <FooterTemplate>
+                            <asp:Button ID="btnNew" CommandName="btnNewClicked" Text="New" runat="server" Width="70" />
+                        </FooterTemplate>
+                    </asp:TemplateField>
+                </Columns>
+                <FooterStyle BackColor="White" BorderWidth="1px" BorderStyle="Solid" />
+                <PagerStyle BackColor="#999999" ForeColor="Black" HorizontalAlign="Center" />
+                <SelectedRowStyle BackColor="#000099" Font-Bold="True" ForeColor="White" />
+                <HeaderStyle BackColor="Black" Font-Bold="True" ForeColor="White" />
+                <AlternatingRowStyle BackColor="#CCCCCC" />
+            </asp:GridView>
+        </asp:Panel>
+        <asp:Panel ID="PanelGroupAp" runat="server" Visible="false">
+            <table width="1000px">
+                <tr>
+                    <td>
+                        <asp:Label ID="Label2" runat="server" Text="User ID:"></asp:Label>
+                        <asp:Label ID="lblUserID" runat="server" Font-Bold="True"></asp:Label>
+                        <asp:Label ID="Hidden_lblDeptID" runat="server" Visible="False"></asp:Label>
+                    </td>
+                    <td>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <asp:Label ID="Label3" runat="server" Text="Employee Name:"></asp:Label>
+                        <asp:Label ID="lblEmp_Name" runat="server" Font-Bold="True"></asp:Label>
+                    </td>
+                    <td>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 50%">
+                        <asp:Panel ID="UserGroupPanel" BorderStyle="Solid" BorderWidth="1px" runat="server"
+                            Font-Bold="True" Style="padding-right: 5px; padding-left: 5px; padding-bottom: 5px;
+                            height: 150px">
+                            <asp:Label ID="Label15" runat="server" Text="User Group"></asp:Label>
+                            <br />
+                            <asp:ListBox ID="GroupListBox" runat="server" Width="200px" AutoPostBack="True" OnSelectedIndexChanged="GroupListBox_SelectedIndexChanged">
+                            </asp:ListBox>
+                            <br />
+                            <asp:Button ID="AddGroupButton" runat="server" Text="Add Group" OnClick="AddGroupButton_Click"
+                                Enabled="False" Style="height: 26px" UseSubmitBehavior="False" />
+                            <asp:Button ID="RemoveGroupButton" runat="server" Text="Remove" Enabled="False" OnClick="RemoveGroupButton_Click" />
+                            <cc1:ConfirmButtonExtender ID="RemoveGroupButton_ConfirmButtonExtender" runat="server"
+                                TargetControlID="RemoveGroupButton" ConfirmText="Are you sure you want to remove this group from the list?">
+                            </cc1:ConfirmButtonExtender>
+                        </asp:Panel>
+                        <asp:Panel ID="AddGroupPanel" BorderStyle="Solid" BorderWidth="1px" runat="server"
+                            Visible="False" Font-Bold="True" Style="padding-right: 5px; padding-left: 5px;
+                            padding-bottom: 5px; height: 150px">
+                            <asp:Label ID="Label16" runat="server" Text="Add Group"></asp:Label>
+                            <br />
+                            <br />
+                            <asp:DropDownList ID="drpGroup" runat="server" Height="20px" Width="200px" />
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator_drpGroup" runat="server" ErrorMessage="Please select group!"
+                                ControlToValidate="drpGroup" Font-Bold="False" Display="None"></asp:RequiredFieldValidator>
+                            <asp:ImageButton ID="imgBtnAdd" runat="server" Height="16px" ImageUrl="~/Content/images/add-icon.png"
+                                ToolTip="add new group" Width="16px" CausesValidation="False" 
+                                onclick="imgBtnAdd_Click" />
+                            <cc1:ValidatorCalloutExtender ID="ValidatorCalloutExtender6" runat="server" TargetControlID="RequiredFieldValidator_drpGroup">
+                            </cc1:ValidatorCalloutExtender>
+                            <br />
+                            <asp:Button ID="SaveGroupButton" runat="server" Text="Save Group" OnClick="SaveGroupButton_Click" />
+                            <asp:Button ID="CancelGroupButton" runat="server" Text="Cancel" OnClick="CancelGroupButton_Click"
+                                CausesValidation="False" />
+                        </asp:Panel>
+                        <asp:Panel ID="AddNewGroupPanel" BorderStyle="Solid" BorderWidth="1px" runat="server"
+                            Visible="False" Font-Bold="True" Style="padding-right: 5px; padding-left: 5px;
+                            padding-bottom: 5px; height: 150px">
+                            <asp:Label ID="Label19" runat="server" Text="Add New Group"></asp:Label>
+                            <br />
+                            <br />
+                            <asp:TextBox ID="txtNewGroup" runat="server" Width="200px"></asp:TextBox>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator5" runat="server" ErrorMessage="Please enter group!"
+                                ControlToValidate="txtNewGroup" Font-Bold="False" Display="None"></asp:RequiredFieldValidator>
+                            <cc1:ValidatorCalloutExtender ID="ValidatorCalloutExtender9" runat="server" TargetControlID="RequiredFieldValidator5">
+                            </cc1:ValidatorCalloutExtender>
+                            <br />
+                            <asp:Button ID="SaveNewGroupButton" runat="server" Text="Save New Group" 
+                                onclick="SaveNewGroupButton_Click" />
+                            <asp:Button ID="CancelNewGroupButton" runat="server" Text="Cancel" 
+                                CausesValidation="false" onclick="CancelNewGroupButton_Click" />
+                        </asp:Panel>
+                    </td>
+                    <td align="right" style="width: 50%">
+                        <asp:Panel ID="ApPanel" runat="server" BorderStyle="Solid" BorderWidth="1px" Font-Bold="True"
+                            Style="padding-right: 5px; padding-left: 5px; padding-bottom: 5px; height: 150px">
+                            <asp:Label ID="Label17" runat="server" Text="Applications"></asp:Label>
+                            <br />
+                            <asp:ListBox ID="ApListBox" runat="server" Width="200px" OnSelectedIndexChanged="ApListBox_SelectedIndexChanged"
+                                AutoPostBack="True"></asp:ListBox>
+                            <br />
+                            <asp:Button ID="AddApButton" runat="server" Text="Add Application" Enabled="False"
+                                OnClick="AddApButton_Click" UseSubmitBehavior="False" />
+                            <asp:Button ID="RemoveApButton" runat="server" Text="Remove" Enabled="False" OnClick="RemoveApButton_Click" />
+                            <cc1:ConfirmButtonExtender ID="RemoveApButton_ConfirmButtonExtender" runat="server"
+                                TargetControlID="RemoveApButton" ConfirmText="Are you sure you want to remove this application from the list?">
+                            </cc1:ConfirmButtonExtender>
+                        </asp:Panel>
+                        <asp:Panel ID="AddApPanel" runat="server" Visible="false" BorderStyle="Solid" BorderWidth="1px"
+                            Font-Bold="True" Style="padding-right: 5px; padding-left: 5px; padding-bottom: 5px;
+                            height: 150px">
+                            <asp:Label ID="Label18" runat="server" Text="Add Application"></asp:Label>
+                            <br />
+                            <br />
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator_drpAp" runat="server" ErrorMessage="Please select application!"
+                                ControlToValidate="drpAp" Font-Bold="False" Display="None"></asp:RequiredFieldValidator>
+                            <cc1:ValidatorCalloutExtender ID="ValidatorCalloutExtender7" runat="server" TargetControlID="RequiredFieldValidator_drpAp">
+                            </cc1:ValidatorCalloutExtender>
+                            <asp:DropDownList ID="drpAp" runat="server" Height="20px" Width="200px" />
+                            <br />
+                            <asp:Button ID="SaveApButton" runat="server" Text="Save Application" OnClick="SaveApButton_Click" />
+                            <asp:Button ID="CancelApButton" runat="server" Text="Cancel" CausesValidation="False"
+                                OnClick="CancelApButton_Click" />
+                        </asp:Panel>
+                    </td>
+                </tr>
+            </table>
+        </asp:Panel>
+    </asp:Panel>
+    <asp:Panel ID="AddUserPanel" runat="server" Visible="False">
+        <table class="zebra" style="width: 50%">
+            <tr>
+                <td class="style1">
+                    <asp:Label ID="lblEmpID" runat="server" Text="Employee ID"></asp:Label><br />
+                    <asp:TextBox ID="EmpIDTextbox" runat="server" Width="160px" OnTextChanged="EmpIDTextbox_TextChanged"></asp:TextBox>
+                </td>
+                <td>
+                    <asp:Label ID="lblEmpName" runat="server" Text="Employee Name:"></asp:Label><br />
+                    <asp:Label ID="lblName" runat="server" Text=""></asp:Label>
+                </td>
+            </tr>
+            <tr>
+                <td class="style1">
+                </td>
+                <td>
+                    <asp:Button ID="AddButton" runat="server" Text="Add" Width="100px" OnClick="AddButton_Click" />
+                </td>
+            </tr>
+        </table>
+    </asp:Panel>
+    <asp:Panel ID="PanelEdit" runat="server" Visible="False">
+        <table>
+            <tr>
+                <td>
+                    <asp:Label ID="Label4" runat="server" Text="Lock?"></asp:Label>
+                </td>
+                <td>
+                    <asp:RadioButtonList ID="rbLock" runat="server" RepeatDirection="Horizontal">
+                        <asp:ListItem Value="1">1.Yes</asp:ListItem>
+                        <asp:ListItem Value="0">0.No</asp:ListItem>
+                    </asp:RadioButtonList>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <asp:Label ID="Label6" runat="server" Text="User ID:"></asp:Label>
+                </td>
+                <td>
+                    <asp:TextBox ID="txtUserID" runat="server" BackColor="Gray" ForeColor="Yellow" ReadOnly="True"
+                        Height="20px" Width="199px"></asp:TextBox>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <asp:Label ID="Label7" runat="server" Text="Employee Name:"></asp:Label>
+                </td>
+                <td>
+                    <asp:TextBox ID="txtEmpName" runat="server" BackColor="Gray" ForeColor="Yellow" Height="20px"
+                        Width="200px"></asp:TextBox>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <asp:Label ID="Label8" runat="server" Text="Update Password:"></asp:Label>
+                </td>
+                <td>
+                    <asp:CheckBox ID="ChkUpdatePassword" runat="server" AutoPostBack="True" OnCheckedChanged="ChkUpdatePassword_CheckedChanged" />
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <asp:Label ID="Label9" runat="server" Text="Password:"></asp:Label>
+                </td>
+                <td>
+                    <asp:TextBox ID="txtPassword" runat="server" BackColor="Gray" TextMode="Password"
+                        Height="20px" Width="200px" Enabled="False"></asp:TextBox>
+                    <asp:RegularExpressionValidator ID="RegularExpressionValidator1" runat="server" ErrorMessage="Password policy check failed!"
+                        ValidationExpression="(?=^.{6,255}$)((?=.*\\d)(?=.*[A-Z])(?=.*[a-z])|(?=.*\\d)(?=.*[^A-Za-z0-9])(?=.*[a-z])|(?=.*[^A-Za-z0-9])(?=.*[A-Z])(?=.*[a-z])|(?=.*\\d)(?=.*[A-Z])(?=.*[^A-Za-z0-9]))^.*"
+                        ControlToValidate="txtPassword" Display="None"></asp:RegularExpressionValidator>
+                    <cc1:ValidatorCalloutExtender ID="ValidatorCalloutExtender1" runat="server" TargetControlID="RegularExpressionValidator1">
+                    </cc1:ValidatorCalloutExtender>
+                    <asp:RequiredFieldValidator ID="RequiredFieldValidator4" runat="server" ControlToValidate="txtPassword"
+                        ErrorMessage="Enter Password!" Display="None" Enabled="False"></asp:RequiredFieldValidator>
+                    <cc1:ValidatorCalloutExtender ID="ValidatorCalloutExtender8" runat="server" TargetControlID="RequiredFieldValidator4">
+                    </cc1:ValidatorCalloutExtender>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <asp:Label ID="Label10" runat="server" Text="Confirm Password:"></asp:Label>
+                </td>
+                <td>
+                    <asp:TextBox ID="txtConfirmPassword" runat="server" BackColor="Gray" Enabled="false"
+                        TextMode="Password" Height="19px" Width="200px"></asp:TextBox>
+                    <asp:CompareValidator ID="CompareValidator1" runat="server" ErrorMessage="Confirm Password doesn't match!"
+                        ControlToCompare="txtPassword" ControlToValidate="txtConfirmPassword" Display="None"></asp:CompareValidator>
+                    <cc1:ValidatorCalloutExtender ID="ValidatorCalloutExtender2" runat="server" TargetControlID="CompareValidator1">
+                    </cc1:ValidatorCalloutExtender>
+                    <asp:RequiredFieldValidator ID="RequiredFieldValidator3" runat="server" ControlToValidate="txtConfirmPassword"
+                        ErrorMessage="Enter Confirm Password!" Display="None" Enabled="False"></asp:RequiredFieldValidator>
+                    <cc1:ValidatorCalloutExtender ID="ValidatorCalloutExtender3" runat="server" TargetControlID="RequiredFieldValidator3">
+                    </cc1:ValidatorCalloutExtender>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <asp:Label ID="Label11" runat="server" Text="Department:"></asp:Label>
+                </td>
+                <td>
+                    <asp:TextBox ID="txtDepartment" runat="server" BackColor="Gray" ReadOnly="True" ForeColor="Yellow"
+                        Height="20px" Width="200px"></asp:TextBox>
+                    <asp:CheckBox ID="ChkUpdateDept" runat="server" Visible="False" AutoPostBack="True"
+                        OnCheckedChanged="ChkUpdateDept_CheckedChanged" />
+                </td>
+            </tr>
+            <tr>
+                <td>
+                </td>
+                <td>
+                    <asp:Button ID="btnSaveEdit" runat="server" Text="SAVE EDIT" OnClick="btnSaveEdit_Click" />
+                    <asp:Button ID="btnCancel" runat="server" Text="CANCEL" OnClick="btnCancel_Click"
+                        CausesValidation="False" />
+                    <cc1:ConfirmButtonExtender ID="btnCancel_ConfirmButtonExtender" runat="server" ConfirmText="Are you sure you want to cancel?"
+                        TargetControlID="btnCancel">
+                    </cc1:ConfirmButtonExtender>
+                </td>
+            </tr>
+        </table>
+    </asp:Panel>
+    <asp:Panel ID="PanelAddUser" runat="server" Visible="False">
+        <table>
+            <tr>
+                <td>
+                    <asp:Label ID="Label12" runat="server" Text="User ID:"></asp:Label>
+                </td>
+                <td>
+                    <asp:TextBox ID="txtUser" runat="server"></asp:TextBox>
+                    <asp:RequiredFieldValidator ID="RequiredFieldValidator1" runat="server" ControlToValidate="txtUser"
+                        ErrorMessage="User ID is empty!" Display="None"></asp:RequiredFieldValidator>
+                    <cc1:ValidatorCalloutExtender ID="ValidatorCalloutExtender4" runat="server" TargetControlID="RequiredFieldValidator1">
+                    </cc1:ValidatorCalloutExtender>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <asp:Label ID="Label13" runat="server" Text="Name:"></asp:Label>
+                </td>
+                <td>
+                    <asp:TextBox ID="txtName" runat="server"></asp:TextBox>
+                    <asp:RequiredFieldValidator ID="RequiredFieldValidator2" runat="server" ControlToValidate="txtName"
+                        ErrorMessage="Name is empty!" Display="None"></asp:RequiredFieldValidator>
+                    <cc1:ValidatorCalloutExtender ID="ValidatorCalloutExtender5" runat="server" TargetControlID="RequiredFieldValidator2">
+                    </cc1:ValidatorCalloutExtender>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <asp:Label ID="Label14" runat="server" Text="Department:"></asp:Label>
+                </td>
+                <td>
+                    <asp:DropDownList ID="DrpDepartment" runat="server" Height="24px" Width="155px">
+                    </asp:DropDownList>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                </td>
+                <td>
+                    <asp:Button ID="btnSaveNew" runat="server" Text="SAVE NEW" OnClick="btnSaveNew_Click" />
+                    <asp:Button ID="btnCancelNew" runat="server" Text="CANCEL" CausesValidation="False"
+                        OnClick="btnCancelNew_Click" />
+                    <cc1:ConfirmButtonExtender ID="ConfirmButtonExtender1" runat="server" ConfirmText="Are you sure you want to cancel?"
+                        TargetControlID="btnCancelNew">
+                    </cc1:ConfirmButtonExtender>
+                </td>
+            </tr>
+        </table>
+    </asp:Panel>
+    <asp:Panel ID="PanelNoPermission" runat="server" Visible="False">
+        <asp:Label ID="Label5" runat="server" Text="You don't have permission to access this page!"
+            Font-Bold="True" ForeColor="Red"></asp:Label>
+    </asp:Panel>
+
+    <script type="text/javascript">
+ 	    $(function() {
+ 	        // a workaround for a flaw in the demo system (http://dev.jqueryui.com/ticket/4375), ignore!
+
+ 	        $("#ctl00_mainContent_pnlDialog").dialog({
+ 	            height: 230,
+ 	            width: 430,
+ 	            modal: true
+ 	        });
+ 	    });
+    </script>
+
+    <asp:Panel runat="server" ID="pnlDialog" Style="display: none" CssClass="mws-jui-dialog"
+        Visible="false">
+        <asp:Label runat="server" ID="lblMsg"></asp:Label>
+    </asp:Panel>
+    <asp:Panel runat="server" ID="Panel1" Style="display: none">
+        <asp:Label runat="server" ID="lblMsg2"></asp:Label>
+    </asp:Panel>
+</asp:Content>

@@ -1,0 +1,52 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model;
+
+namespace EHR.Recruitment
+{
+    public partial class PSEncoder : System.Web.UI.Page
+    {
+        ObjectsOleDB myObjs = new ObjectsOleDB();
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            pnlErrorReq.Visible = false; 
+            if (!IsPostBack)
+            {
+                PopulateNewEmp();
+            }
+        }
+
+        private void PopulateNewEmp()
+        {
+            string sql = "select UNIQUE(CANDIDATES.EMPLID), CANDIDATES.CANDIDATEID,  " +
+                     "INITCAP(CANDIDATES.LASTNAME)|| ', '|| INITCAP(CANDIDATES.FIRSTNAME) FULLNAME, " +
+                     "CANDIDATES.OFFERDEPT as DEPARTMENT, PS.PS_JOB.JOB_CODE CODE, " +
+                     "PS.PS_JOB.JOB_BUSI_TITLE AS POSITION,  " +
+                     "TO_CHAR(CANDIDATES.OFFERONBOARDDATE,'MM/dd/yyyy') as BOARDTIME   " +
+                     "from CANDIDATES " +
+                     "JOIN PS.PS_JOB ON CANDIDATES.OFFERPOSITION = PS.PS_JOB.JOB_CODE " +
+                     "Where CANDIDATES.HIRINGSTATUS = 'On Board' ORDER BY CANDIDATES.EMPLID ASC "; 
+
+
+            DataTable myDT = myObjs.GetTable(sql);
+            if (myDT.Rows.Count == 0)
+            {
+                pnlErrorReq.Visible = true;
+                lblReqError.Text = "No New Employee To Trained.";
+            }
+            else
+            {
+                gridNewEmployees.DataSource = myDT;
+                gridNewEmployees.DataBind();
+
+                 
+            }
+        }
+    }
+}

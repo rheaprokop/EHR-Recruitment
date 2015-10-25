@@ -1,0 +1,44 @@
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Views/Shared/Site.Master" AutoEventWireup="true" CodeBehind="PSEncoder.aspx.cs" Inherits="EHR.Recruitment.PSEncoder" %>
+<asp:Content ID="head" ContentPlaceHolderID="head" runat="server">
+</asp:Content>
+<asp:Content ID="Top" ContentPlaceHolderID="TopContent" runat="server">
+ 
+</asp:Content>
+<asp:Content ID="Left" ContentPlaceHolderID="LeftContent" runat="server">
+
+</asp:Content>
+<asp:Content ID="Main" ContentPlaceHolderID="mainContent" runat="server">
+ <asp:Panel runat="server" ID="pnlErrorReq" style="border: solid 1px #c0221f; background: #ffbde5; width: 260px; padding: 10px; margin: 0 auto; margin-bottom: 10px;" >
+<asp:Label runat="server" ID="lblReqError" style="font-size: 11px;"></asp:Label><br />
+</asp:Panel>  
+ 
+ <table style="margin-top: 5px; "><tr><td style="float: right;">      <!--TABS STARTS HERE-->
+    	<script>
+    	    $(function() {
+    	        $("#tabs").tabs();
+    	    });
+	</script>
+    <div id="tabs" style="font-size: 70%; width: 1200px; height: 100%;">
+	    <ul>
+		    <li><a href="#tabs-1">Save To PeopleSoft</a></li> 
+	    </ul>
+	    <div id="tabs-1"><!-- Today --->
+		     
+	      <asp:GridView ID="gridNewEmployees" runat="server"   DataKeyNames="CandidateID" 
+     EnableViewState="False" CellPadding="0" CellSpacing="0" GridLines="None"   
+     CssClass="grid-zebra" style="width: 1150px;"  
+     PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last" PagerSettings-FirstPageImageUrl="first.png">
+            <Columns>
+   <asp:hyperlinkfield DataNavigateUrlFields="CANDIDATEID"
+   DataNavigateUrlFormatString="~/Main/Employee.aspx?action=view&candidate={0}" ControlStyle-BorderStyle="none"  
+   DataTextField="CANDIDATEID" HeaderText=""   DataTextFormatString= "<img src='../../Content/css/light/front/save.png' border=0  alt='View Record' style='boder:0' />" ></asp:hyperlinkfield>
+
+             </Columns>
+             
+             </asp:GridView>
+      
+	    </div>
+	    </div>
+	    
+ </td></tr></table>
+</asp:Content>

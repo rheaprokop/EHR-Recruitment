@@ -1,0 +1,203 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Collections;
+using EHR.Model;
+using System.Data.OleDb;
+using System.Data;
+using System.Text;
+using System.Text.RegularExpressions;
+
+namespace EHR.Views.Status
+{
+    public partial class RQ06 : System.Web.UI.Page
+    {
+        DBModel _db = new DBModel();
+        ApprovalModel _appv = new ApprovalModel();
+        AccountModel _accnt = new AccountModel();
+        
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            string reqID = Request.QueryString["id"];
+            ViewRequest(reqID);
+
+            if (!IsPostBack)
+            {
+                PopulateMultEmployees(reqID);
+            }
+        }
+
+        protected void Exit_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("/Views/Home/");
+        }
+
+        private void ViewRequest(string requestID)
+        {
+            string sql = "SELECT REQUESTID, TRANSID, APFLOWID, REQUESTORID, " +
+                        "REQUESTORDEPTID, TO_CHAR(REQDATE,'dd.MM.YYYY') AS REQDATE, EMPLID, CURRDEPT, " +
+                        "NEWDEPT, CURRPOSI, NEWPOSI, CURREMPLCAT, NEWEMPLCAT, CSHIFTTYPE, " +
+                        "CSHIFTTYPETIME, CSHIFTTYPEFROM, CSHIFTTYPETO, ISMONDAY, " +
+                        "ISTUESDAY, ISWEDNESDAY, ISTHURSDAY, ISFRIDAY, ISSATURDAY, ISSUNDAY, " +
+                        "CWORKSHIFTDETAILS, TSHIFTTYPE, APPSTATUS, REVIEWERSHIFTUPDATE FROM " +
+                        "STATUS_CHANGE WHERE ROWNUM = 1 AND REQUESTID = '" + requestID + "'";
+
+            OleDbDataReader rd = _db.GetDataReader(sql);
+            if (rd.Read())
+            {
+                txtRequestNo.Text = Convert.ToString(rd["REQUESTID"]);
+                lblRequestDate.Text = Convert.ToString(rd["REQDATE"]);
+                lblCurrentDeptID.Text = Convert.ToString(rd["CURRDEPT"]);
+                lblNewDeptID.Text = Convert.ToString(rd["NEWDEPT"]);
+                lblCurrentPosition.Text = Convert.ToString(rd["CURRPOSI"]);
+                lblNewPosition.Text = Convert.ToString(rd["NEWPOSI"]);
+                lblCurrentCategory.Text = Convert.ToString(rd["CURREMPLCAT"]);
+                lblNewCategory.Text = Convert.ToString(rd["NEWEMPLCAT"]);
+                lblWorkShiftTemporary.Text = Convert.ToString(rd["TSHIFTTYPE"]);
+                //txtReviewerWorkShift.Text = Convert.ToString(rd["REVIEWERSHIFTUPDATE"]);
+                if (lblWorkShiftTemporary.Text == "Select Type")
+                {
+                    lblWorkShiftTemporary.Text = "";
+                }
+                if (lblNewCategory.Text == "Contracted")
+                {
+
+                    pnlWorkShiftContracted.Visible = true;
+                    pnlWorkShiftTemporary.Visible = false;
+                }
+                else if (lblNewCategory.Text == "Temporary")
+                {
+                    pnlWorkShiftContracted.Visible = false;
+                    pnlWorkShiftTemporary.Visible = true;
+                }
+                else if (lblNewCategory.Text == "Unchanged")
+                {
+                    pnlWorkShiftContracted.Visible = false;
+                    pnlWorkShiftTemporary.Visible = false;
+                }
+
+                lblWorkShiftType.Text = Convert.ToString(rd["CSHIFTTYPE"]);
+                if (lblWorkShiftType.Text == "Select Type") lblWorkShiftType.Text = "UNCHANGED";
+                lblWorkShiftTypeTime.Text = Convert.ToString(rd["CSHIFTTYPETIME"]);
+                if (lblWorkShiftTypeTime.Text == "Select Type") lblWorkShiftTypeTime.Text = "UNCHANGED";
+                lblTime.Text = Convert.ToString(rd["CSHIFTTYPEFROM"]) + " - " + Convert.ToString(rd["CSHIFTTYPETO"]) + ",";
+
+                if (Convert.ToString(rd["ISMONDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Monday&nbsp;&nbsp;";
+                }
+
+                if (Convert.ToString(rd["ISTUESDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Tuesday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISWEDNESDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Wednesday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISTHURSDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Thursday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISFRIDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Friday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISSATURDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Saturday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISSUNDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Sunday&nbsp;&nbsp;";
+                }
+
+                lblCWorkShiftDetails.Text = Convert.ToString(rd["CWORKSHIFTDETAILS"]);
+                if (lblCWorkShiftDetails.Text == "") lblCWorkShiftDetails.Text = "UNCHANGED";
+
+                string transno = Convert.ToString(rd["TRANSID"]);
+                hiddenTransID.Value = transno;
+
+
+                PopulateApproverForMult(txtRequestNo.Text);
+                //string workshiftDetails = txtReviewerWorkShift.Text;
+            }
+
+
+            string salarySQL = "SELECT SALARYAMOUNT, INCREASE_DECRESASE FROM STATUS_SALARY WHERE REQUESTID = '" + txtRequestNo.Text + "'";
+            OleDbDataReader salary_rd = _db.GetDataReader(salarySQL);
+
+            if (salary_rd.Read())
+            {
+
+                lblSalary.Text = Convert.ToString(salary_rd["SALARYAMOUNT"]);
+                string incdrease = Convert.ToString(salary_rd["INCREASE_DECRESASE"]);
+                lblSalary.Text = lblSalary.Text + " CZK" + " " + incdrease;
+            }
+            else
+            {
+                lblSalary.Text = "UNCHANGED";
+            }
+
+            string bonusesSQL = "SELECT A.AMOUNT AMOUNT, A.INCREASE_DECREASE INCREASE_DECREASE, " +
+                  "A.ISMONTHLYAPPR MONTHAPPV , B.BONUSDESCR  BONUSDESC FROM STATUS_BONUSES A, " +
+                  "STATUS_BONUSTYPES B WHERE A.BONUSID = B.BONUSID AND A.REQUESTID =  '" + txtRequestNo.Text + "'";
+            DataTable _dt = _db.GetTable(bonusesSQL);
+            rptBonuses.DataSource = _dt;
+            rptBonuses.DataBind();
+
+            if (rptBonuses.Items.Count == 0)
+            {
+                lblNoBonus.Text = "UNCHANGED";
+            }
+
+        }
+
+        private void PopulateMultEmployees(string reqID)
+        {
+            string currentApprover;
+            string currentSqlApprover = "SELECT MIN(APPROVERVALUE) APPROVERVALUE FROM APPROVALTRANSACTION WHERE RESULT='W'";
+            OleDbDataReader _rd = _db.GetDataReader(currentSqlApprover);
+            if (_rd.Read())
+            {
+                currentApprover = Convert.ToString(_rd["APPROVERVALUE"]);
+            }
+            else
+            {
+                currentApprover = "";
+            }
+
+            string sql = "SELECT A.TRANSID TRANSID, A.EMPLID EMPLID, B.NAME_A NAME_A, A.CURRDEPT CURRDEPT, " +
+                        "A.REMARKS REMARKS, A.REQUESTID REQID " +
+                        "FROM STATUS_CHANGE A, PS.PS_SUB_WCZ_AT_VW_A B WHERE " +
+                        "A.EMPLID = B.EMPLID AND A.REQUESTID = '" + reqID + "' " +
+                        "ORDER BY TRANSID";
+
+            DataTable _dt = _db.GetTable(sql);
+            gridMultEmployees.DataSource = _dt;
+            gridMultEmployees.DataBind();
+        }
+
+        private void PopulateApproverForMult(string reqID)
+        {
+            string sql = "SELECT MIN(TRANSID) TRANSID FROM STATUS_CHANGE WHERE REQUESTID = '" + reqID + "'";
+            OleDbDataReader _rd = _db.GetDataReader(sql);
+            if (_rd.Read())
+            {
+                string transno = Convert.ToString(_rd["TRANSID"]);
+
+                string sqlAppv = "SELECT A.REQID REQID, A.APPROVERDESC APPROVERDESC, A.APPEMPLID EMPLID, " +
+                    "A.ACTUALAPPROVER, B.NAME_A NAME_A, A.DATESIGNED DATESIGNED " +
+                    "FROM APPROVALTRANSACTION A, PS.PS_SUB_WCZ_AT_VW_A B " +
+                    "WHERE A.APPEMPLID = B.EMPLID AND A.REQID = '" + transno + "'  ORDER BY APPSEQ ASC";
+                DataTable _dt = _db.GetTable(sqlAppv);
+                gridMultiApprover.DataSource = _dt;
+                gridMultiApprover.DataBind();
+            }
+        }
+
+    }
+}

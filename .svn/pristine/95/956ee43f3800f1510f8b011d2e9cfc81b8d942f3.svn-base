@@ -1,0 +1,138 @@
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Views/Shared/Site.Master" AutoEventWireup="true" CodeBehind="Main.aspx.cs" Inherits="EHR.Views.Recruitment.Main" %>
+<asp:Content ID="head" ContentPlaceHolderID="head" runat="server">
+</asp:Content>
+<asp:Content ID="Top" ContentPlaceHolderID="TopContent" runat="server">
+ 
+  
+</asp:Content>
+<asp:Content ID="Left" ContentPlaceHolderID="LeftContent" runat="server">
+
+</asp:Content>
+<asp:Content ID="main" ContentPlaceHolderID="mainContent" runat="server">
+ 
+
+<table style="width: 100%;" cellspacing="0" cellpadding="0" >
+<tr> 
+<td>
+<asp:Panel runat="server" ID="pnlFullAdmin">
+<table style="width: 350px"  style="float: left;">
+    <tr><th colspan="4" style="text-align: left;  font-weight: normal;" class="logotext">WHAT WOULD YOU LIKE TO DO?</th></tr>
+    <tr>
+    
+    <td><asp:ImageButton runat="server" ID="imgCreateReq" ImageUrl="~/Content/css/light/front/createrequest.png" PostBackUrl="~/Views/Recruitment/Request.aspx?form=create" /></td>
+    <td><asp:ImageButton runat="server" ID="imgViewReq" ImageUrl="~/Content/css/light/front/viewrequest.jpg" PostBackUrl="~/Views/Recruitment/AllRequests.aspx" /></td>
+    <td><asp:ImageButton runat="server" ID="imgFindReq" ImageUrl="~/Content/css/light/front/myrequests.png" PostBackUrl="~/Views/Recruitment/MyRequests.aspx" /> </td>
+ 
+     </tr>
+    <tr>
+    <td><asp:ImageButton runat="server" ID="imgCreatCand" ImageUrl="~/Content/css/light/front/createcandidate.png" PostBackUrl="~/Views/Recruitment/AddCandidate.aspx"/></td>
+    <td><asp:ImageButton runat="server" ID="imgFindCand" ImageUrl="~/Content/css/light/front/findcandidate.png"  PostBackUrl="~/Views/Recruitment/Candidate.aspx?action=find" /></td>
+    <td><asp:ImageButton runat="server" ID="imgStatusReq" ImageUrl="~/Content/css/light/front/requeststatus.png"   PostBackUrl="~/Views/Recruitment/Approval.aspx?action=request" /> </td>
+     </tr>
+    <tr>
+    <td><asp:ImageButton runat="server" ID="ImageButton7" ImageUrl="~/Content/css/light/front/onboard_box.png" PostBackUrl="~/Views/Recruitment/Training.aspx"/></td>
+    <td><asp:ImageButton runat="server" ID="ImageButton8" ImageUrl="~/Content/css/light/front/ps_encoder.png"  PostBackUrl="~/Views/Recruitment/PSEncoder.aspx" /></td>
+    <td><asp:ImageButton runat="server" ID="ImageButton9" ImageUrl="~/Content/css/light/front/assignpic.png" PostBackUrl="~/Views/Recruitment/Approval.aspx?action=view" /></td>
+     </tr>     
+    </table>
+    
+</asp:Panel>
+<asp:Panel runat="server" ID="pnlReviewer">
+<table style="width: 350px"  style="float: left; margin-top: 0px;">
+    <tr><th colspan="4" style="text-align: left;  font-weight: normal;" class="logotext">WHAT WOULD YOU LIKE TO DO?</th></tr>
+     <tr>
+    <td><asp:ImageButton runat="server" ID="ImageButton2" ImageUrl="~/App_Themes/front/createrequest.png" PostBackUrl="~/Views/Recruitment/Request.aspx?form=create" /></td>
+    <td><asp:ImageButton runat="server" ID="ImageButton5" ImageUrl="~/App_Themes/front/viewrequest.jpg" PostBackUrl="~/Views/Recruitment/AllRequests.aspx" /></td>
+    <td><asp:ImageButton runat="server" ID="ImageButton6" ImageUrl="~/App_Themes/front/myrequests.png" PostBackUrl="~/Views/Recruitment/MyRequests.aspx" /> </td>
+   </tr> 
+    <tr>
+    <td><asp:ImageButton runat="server" ID="ImageButton4" ImageUrl="~/App_Themes/front/assignpic.png" PostBackUrl="~/Views/Recruitment/Approval.aspx?action=view" /></td>
+    <td>&nbsp;</td><td>&nbsp;</td>
+    </tr>
+    </table> 
+</asp:Panel>
+<asp:Panel runat="server" ID="pnlRequestor">
+<table style="width: 300px"  style="float: left; margin-top: 0px;">
+    <tr><th colspan="2" style="text-align: left;  font-weight: normal;" class="logotext">WHAT WOULD YOU LIKE TO DO?</th></tr>
+    <tr>
+    <td><asp:ImageButton runat="server" ID="ImageButton1" ImageUrl="~/App_Themes/front/createrequest.png" PostBackUrl="~/Views/Recruitment/Request.aspx?form=create" /></td>
+     <td><asp:ImageButton runat="server" ID="ImageButton3" ImageUrl="~/App_Themes/front/myrequests.png" PostBackUrl="~/Views/Recruitment/MyRequests.aspx" /> </td>
+    <td>&nbsp;</td>
+     </tr>
+    </table> 
+</asp:Panel>
+</td>
+<td>
+    <!--TABS STARTS HERE-->
+    	<script>
+	$(function() {
+		$( "#tabs" ).tabs();
+	});
+	</script>
+    <div id="tabs" style="font-size: 80%; width: 500px; height: 250px;">
+	    <ul>
+		     
+		    <li><a href="#tabs-1">My Activities</a></li>
+	    </ul>
+	    
+	    <div id="tabs-1">
+	        <asp:Repeater ID="rptActivities" runat="server" >
+	        <HeaderTemplate></HeaderTemplate>
+	        <ItemTemplate> 
+	        - <asp:Label runat="server" ID="lblActivities" Text='<%# Eval("ACTIVITYDESC") %>' style="font-size: small;"></asp:Label>
+	         <br /></ItemTemplate>
+	        <FooterTemplate></FooterTemplate>
+	        </asp:Repeater>
+		    
+	    </div> 
+     </div>
+
+</td>
+</tr> 
+</table>
+<table style="width: 95%; margin-top: 20px;" >
+   <tr><th colspan="4" style="text-align: left; font-weight: normal; height: 10px;" class="logotext">VIEWING RECENT REQUESTS</th></tr>
+  <tr><td>
+    <asp:GridView ID="gridRecentRequest" CellPadding="0" CellSpacing="0" GridLines="None" 
+      runat="server" CssClass="grid-zebra" style="width: 1100px;" OnRowDataBound="GridRecentRequest_RowDataBound"  
+     PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last" PagerSettings-FirstPageImageUrl="first.png">
+       <Columns>
+        
+    </Columns>
+             
+    <PagerSettings Mode="NextPreviousFirstLast" Position="TopAndBottom" 
+        NextPageImageUrl="~/Content/css/light/front/next.png" 
+        PreviousPageImageUrl="~/Content/css/light/front/previous.png"  FirstPageImageUrl="~/App_Themes/front/first.png"   />
+    
+</asp:GridView>  
+    <asp:GridView ID="gridRecentCandidates" CellPadding="0" CellSpacing="0" GridLines="None" 
+      runat="server" CssClass="grid-zebra" style="width: 1100px;"  PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last" PagerSettings-FirstPageImageUrl="first.png">
+       <Columns>   
+              <asp:hyperlinkfield DataNavigateUrlFields="CANDIDATEID"
+   DataNavigateUrlFormatString="~/Views/Recruitment/ViewCandidate.aspx?action=view&candidate={0}" ControlStyle-BorderStyle="none"  
+   DataTextField="CANDIDATEID" HeaderText="View"   DataTextFormatString= "<img src='../App_Themes/front/view.png' border=0  alt='View Record' style='boder:0' />" ></asp:hyperlinkfield>
+
+    </Columns>
+             
+    <PagerSettings Mode="NextPreviousFirstLast" Position="TopAndBottom" 
+        NextPageImageUrl="~/App_Themes/front/next.png" 
+        PreviousPageImageUrl="~/App_Themes/front/previous.png"  FirstPageImageUrl="~/App_Themes/front/first.png"   />
+    
+</asp:GridView>   
+<asp:GridView ID="gridPSEncoder" CellPadding="0" CellSpacing="0" GridLines="None" 
+     runat="server" CssClass="grid-zebra" style="width: 1100px;"  PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last" PagerSettings-FirstPageImageUrl="first.png">
+       <Columns>   
+              <asp:hyperlinkfield DataNavigateUrlFields="CANDIDATEID"
+   DataNavigateUrlFormatString="~/Views/Recruitment/Employee.aspx?action=view&candidate={0}" ControlStyle-BorderStyle="none"  
+   DataTextField="CANDIDATEID" HeaderText=""   DataTextFormatString= "<img src='../App_Themes/front/save.png' border=0  alt='View Record' style='boder:0' />" ></asp:hyperlinkfield>
+
+    </Columns>
+             
+    <PagerSettings Mode="NextPreviousFirstLast" Position="TopAndBottom" 
+        NextPageImageUrl="~/App_Themes/front/next.png" 
+        PreviousPageImageUrl="~/App_Themes/front/previous.png"  FirstPageImageUrl="~/App_Themes/front/first.png"   />
+    
+</asp:GridView>   
+</td></tr></table>
+ 
+</asp:Content>

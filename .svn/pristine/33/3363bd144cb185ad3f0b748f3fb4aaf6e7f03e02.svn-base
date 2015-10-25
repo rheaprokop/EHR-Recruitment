@@ -1,0 +1,167 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data;
+using System.Data.OleDb;
+
+using EHR.Model; 
+
+namespace EHR.Recruitment
+{
+    public partial class AddCandidate1 : System.Web.UI.Page
+    {
+        ObjectsMisc MyMisc = new ObjectsMisc();
+        ObjectsOleDB MyObjs = new ObjectsOleDB();
+        QueryOleDB MyQry = new QueryOleDB();
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+
+            if (!IsPostBack)
+            {
+                chkVehicle.Visible = false;
+                lblVehicleChk.Visible = false;
+            }
+        }
+         
+
+        protected void IsSave(object sender, EventArgs e)
+        {
+            SaveData();
+            Response.Redirect("~/Recruitment/Candidate.aspx?action=view&s=1");
+        }
+
+
+        private void SaveData()
+        {
+
+            string CandidateID = MyMisc.CreateCandidateID();
+            DateTime RecordedDateTime = DateTime.Now;
+            string filenameCZ;
+            string filenameEN;
+
+            if (fileCzechCV.HasFile)
+            {
+                string extCZ = System.IO.Path.GetExtension(this.fileCzechCV.PostedFile.FileName);
+                filenameCZ = CandidateID + "_cz" + extCZ;
+                fileCzechCV.SaveAs(@"C:\EHR\Recruitment\docs\resumes\" + filenameCZ);
+
+            }
+            else
+            {
+                filenameCZ = "";
+            }
+
+            if (fileEnglishCV.HasFile)
+            {
+                string extEN = System.IO.Path.GetExtension(this.fileEnglishCV.PostedFile.FileName);
+                filenameEN = CandidateID + "_en" + extEN;
+                fileEnglishCV.SaveAs(@"C:\EHR\Recruitment\docs\resumes\" + filenameEN);
+            }
+            else
+            {
+                filenameEN = "";
+            }
+
+            DateTime app_dt = DateTime.Now;
+            string app_date = String.Format("{0:MM/dd/yyyy}", app_dt);
+            string OracleQry = "Insert Into Candidates (CANDIDATEID, ISINTERVIEWED, FIRSTNAME, LASTNAME, TITLE, " +
+                                "STREET, CITY, COUNTRY, POSTCODE, CONTACT, EMAILADDRESS, BIRTHDATE, " +
+                                "CVCZ, CVEN, SEX, STATUS, GRADUATE, FIELD, LANGUAGE1, " +
+                                "SKILL1, LANGUAGE2, SKILL2, EXPERIENCE, EXPERTISE, CURRENTEMPL, CURRENTPOSI, " +
+                                "DRIVING, ISCAR, ISFORKLIFT, HIRINGSTATUS, APP_DT, HIGHESTEDUCLVL, BIRTHNUMBER, DELETED, REMARKS, ISDRIVEOTHERS)" +
+                                "VALUES (" +
+                                ":CandidateID, 'No',  :FirstName, :LastName, :Title, :Street, :City, " +
+                                ":Country, :PostCode, :Contact, :EmailAddress, to_date(:birthdate,'MM/dd/yyyy'), " +
+                                ":cvcz, :cven, " +
+                                ":sex, :status, :graduate, :field, :language1, " +
+                                ":skill1, :language2, :skill2, :experience, :expertise, :currentempl, :currentposi, " +
+                                ":driving, :iscar, :isforklift, 'In File',  to_date('" + app_date + "','MM/dd/yyyy'), :highest, :birthnumber, '0', :remarks, :isdriveothers)";
+            MyObjs.GetConn();
+            OleDbCommand mycmd = new OleDbCommand(OracleQry, MyObjs.MyConn);
+            mycmd.Parameters.AddWithValue("':CandidateID'", CandidateID);
+            mycmd.Parameters.AddWithValue("':FirstName'", txtFirstName.Text);
+            mycmd.Parameters.AddWithValue("':LastName'", txtLastName.Text);
+            mycmd.Parameters.AddWithValue("':Title'", ddlTitle.SelectedValue.ToString());
+            mycmd.Parameters.AddWithValue("':Street'", txtStreet.Text);
+            mycmd.Parameters.AddWithValue("':City'", ddlCity.SelectedValue.ToString());
+            mycmd.Parameters.AddWithValue("':Country'", ddlCountry.SelectedValue.ToString());
+            mycmd.Parameters.AddWithValue("':PostCode'", txtPostCode.Text);
+            mycmd.Parameters.AddWithValue("':Contact'", txtContact.Text);
+            mycmd.Parameters.AddWithValue("':EmailAddress'", txtEmailAddress.Text);
+            mycmd.Parameters.AddWithValue("':birthdate'", ddlMonth.SelectedValue + "/" + ddlDay.SelectedValue + "/" + txtYear.Text); // 12/25/2011
+
+            mycmd.Parameters.AddWithValue("':cvcz'", filenameCZ);
+            mycmd.Parameters.AddWithValue("':cven'", filenameEN);
+            mycmd.Parameters.AddWithValue("':sex'", ddlSex.SelectedValue.ToString());
+            mycmd.Parameters.AddWithValue("':status'", ddlStatus.SelectedValue.ToString());
+            mycmd.Parameters.AddWithValue("':graduate'", ddlGraduate.SelectedValue.ToString());
+            mycmd.Parameters.AddWithValue("':field'", txtField.Text);
+            mycmd.Parameters.AddWithValue("':language1'", ddlLanguage1.SelectedValue.ToString());
+            mycmd.Parameters.AddWithValue("':skill1'", ddlSkill1.SelectedValue.ToString());
+            mycmd.Parameters.AddWithValue("':language2'", ddlLanguage2.SelectedValue.ToString());
+            mycmd.Parameters.AddWithValue("':skill2'", ddlSkill2.SelectedValue.ToString());
+            mycmd.Parameters.AddWithValue("':experience'", ddlExperience.SelectedValue.ToString());
+            mycmd.Parameters.AddWithValue("':expertise'", txtExpertise.Text);
+            mycmd.Parameters.AddWithValue("':currentempl'", txtCurrentEmpl.Text);
+            mycmd.Parameters.AddWithValue("':currentposi'", txtCurrentPosi.Text);
+            mycmd.Parameters.AddWithValue("':driving'", ddlDrivingLicense.SelectedValue.ToString());
+            
+
+            chkVehicle.Items[0].Value = "";
+            chkVehicle.Items[1].Value = "";
+            chkVehicle.Items[2].Value = "";
+            if (chkVehicle.Items[0].Selected)
+            {
+                chkVehicle.Items[0].Value = "Car";
+            }
+
+            if (chkVehicle.Items[1].Selected)
+            {
+                chkVehicle.Items[1].Value = "ForkLift";
+            }
+            if (chkVehicle.Items[2].Selected)
+            {
+                chkVehicle.Items[2].Value = "Others";
+            }
+
+            mycmd.Parameters.AddWithValue("':iscar'", chkVehicle.Items[0].Value);
+            mycmd.Parameters.AddWithValue("':isforklift'", chkVehicle.Items[1].Value);
+
+
+            mycmd.Parameters.AddWithValue("':highest'", ddlHighestEducLevel.SelectedValue.ToString());
+            mycmd.Parameters.AddWithValue("':birthnumber'", txtBirthNumber.Text);
+            mycmd.Parameters.AddWithValue("':remarks'", txtRemarks.Text);
+            mycmd.Parameters.AddWithValue("':isdriveothers'", chkVehicle.Items[2].Value);
+            if (Page.IsValid)
+            {
+                mycmd.ExecuteNonQuery();
+                //insert activity
+                string txtActivity = "Inserted Candidate Profile: " + CandidateID;
+                string UserID = (string)(Session["UserID"]);
+                MyQry.InsertActivityDesc(txtActivity, UserID);
+                MyMisc.ShowMessage("Successfully Added Candidate: '" + CandidateID + "'", this.Page);
+            }
+        }
+
+        protected void DdlDrivingLicense_OnChange(object sender, EventArgs e)
+        {
+            string _filter = ddlDrivingLicense.SelectedValue;
+
+            if (_filter == "Yes")
+            {
+                lblVehicleChk.Visible = true;
+                chkVehicle.Visible = true;
+            }
+            else
+            {
+                lblVehicleChk.Visible = false;
+                chkVehicle.Visible = false;
+            }
+            
+        }
+        
+    }
+}

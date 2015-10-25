@@ -1,0 +1,873 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Collections;
+using System.Data;
+using System.Data.OleDb;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Text;
+using EHR.Model;
+
+namespace EHR.Recruitment
+{
+    public partial class ViewRequest : System.Web.UI.UserControl
+    {
+        ObjectsOleDB MyObjects = new ObjectsOleDB();
+        QueryOleDB MyQueries = new QueryOleDB();
+        ObjectsMisc MyMisc = new ObjectsMisc();
+        EmailBody MyEmail = new EmailBody(); 
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            string RequestID = Request.QueryString["id"];
+            IsSession();
+            GetRequests(RequestID);
+            IfnotReviewer(); 
+            HideApprovalButton();
+            GridShowPIC(RequestID); 
+
+            if (Page.IsPostBack == false)
+            {
+                LoadHRData(ddlRecruiter);
+                LoadHRData(ddlTrainer);
+                LoadHRData(ddlPSEncoder);
+                LoadDeptAssistant();
+                LoadApprovalStatus(RequestID);
+                lblRequestID.Text = RequestID;
+                SetADefault();
+            }
+        }
+
+        private void IfnotReviewer()
+        {
+            string flowID = Request.QueryString["flow"];
+            if (flowID != "1")
+            {
+                pnlAssignPIC.Visible = false;
+                txtApprovalRemarks.Rows = 7;
+            }
+            
+        }
+
+
+        private void IfRequestDone()
+        {
+            string id = Request.QueryString["id"];
+            string GetStats = "Select RESULT from REQUESTS where REQUESTID='" + id + "'";
+            MyObjects.GetConn();
+            OleDbCommand myStat = new OleDbCommand(GetStats, MyObjects.MyConn);
+            OleDbDataReader myRD = myStat.ExecuteReader();
+            if (myRD.Read())
+            {
+                string status = Convert.ToString(myRD["RESULT"]);
+
+                if (status == "Approved")
+                {
+                    btnApprove.Visible = false;
+                    btnReject.Visible = false;
+                    btnChange.Visible = false;
+
+                }
+            }
+        }
+
+
+
+        private void IfApprovedDone()
+        {
+            string id = Request.QueryString["id"];
+            string FlowID = Request.QueryString["flow"];
+            string GetApprovedStat = "Select APPROVALSTATUS from REQAPPROVALLOGS Where " +
+                    "REQUESTID = '" + id + "' AND FLOWID = '" + FlowID + "'";
+            OleDbCommand myStat = new OleDbCommand(GetApprovedStat, MyObjects.MyConn);
+            OleDbDataReader myRD = myStat.ExecuteReader();
+            if (myRD.Read())
+            {
+                string ApprovalStats = Convert.ToString(myRD["APPROVALSTATUS"]);
+                if (ApprovalStats == "1")  
+                {
+                    btnApprove.Visible = false;
+                    btnReject.Visible = false;
+                    btnChange.Visible = false;
+                    return;
+                }
+            } 
+
+           
+        }
+
+        private void HideApprovalButton()
+        {
+            string FlowID = Request.QueryString["flow"];
+            
+            switch (FlowID)
+            {
+                case "0":
+                    btnApprove.Visible = false;
+                    btnChange.Visible = false;
+                    btnReject.Visible = false;
+                    lblAssignPIC.Visible = false;
+                    lblDeptAssist.Visible = false;
+                    ddlDeptAssistant.Visible = false;
+                    break;
+                case "1":
+                    btnApprove.Visible = true;
+                    btnChange.Visible = true;
+                    btnReject.Visible = true;
+                    lblAssignPIC.Visible = true;
+                    lblDeptAssist.Visible = false;
+                    ddlDeptAssistant.Visible = false;
+                    break;
+                case "2":
+                    btnApprove.Visible = true;
+                    btnChange.Visible = true;
+                    btnReject.Visible = true;
+                    lblAssignPIC.Visible = true;
+                    lblDeptAssist.Visible = true;
+                    ddlDeptAssistant.Visible = true;
+                    break;
+                case "3":
+                    btnApprove.Visible = true;
+                    btnChange.Visible = false;
+                    btnReject.Visible = true;
+                    lblAssignPIC.Visible = false;
+                    lblDeptAssist.Visible = false;
+                    ddlDeptAssistant.Visible = false;
+                    break;
+                case "4":
+                    btnApprove.Visible = true;
+                    btnChange.Visible = false;
+                    btnReject.Visible = true;
+                    lblAssignPIC.Visible = false;
+                    lblDeptAssist.Visible = false;
+                    ddlDeptAssistant.Visible = false;
+                    break;
+                case "5":
+                    btnApprove.Visible = true;
+                    btnChange.Visible = false;
+                    btnReject.Visible = true;
+                    lblAssignPIC.Visible = false;
+                    lblDeptAssist.Visible = false;
+                    ddlDeptAssistant.Visible = false;
+                    break;
+                default:
+                    btnApprove.Visible = false;
+                    btnChange.Visible = false;
+                    btnReject.Visible = false;
+                    lblAssignPIC.Visible = false;
+                    lblDeptAssist.Visible = false;
+                    ddlDeptAssistant.Visible = false;
+                    break;
+            }
+
+
+            IfRequestDone();
+            IfApprovedDone();
+             
+        }
+
+        private void LoadDeptAssistant()
+        {
+            string requestID = Request.QueryString["id"];
+            string deptid;
+            string queryDeptID = "Select REQUESTORDEPTID From REQUESTS Where REQUESTID = '" + requestID + "'";
+            OleDbCommand myCmd = new OleDbCommand(queryDeptID, MyObjects.MyConn);
+            OleDbDataReader myRd = myCmd.ExecuteReader();
+            if (myRd.Read())
+            {
+                deptid = Convert.ToString(myRd["REQUESTORDEPTID"]);
+            }
+            else
+            {
+                deptid = "";
+            }
+
+           // string OracleQry = "Select EMPLID, NAME_A From PS.PS_SUB_WCZ_AT_VW_A WHERE DEPTID = 'MD0L20'";
+            string OracleQry = "Select EMPLID, NAME_A From PS.PS_SUB_WCZ_AT_VW_A WHERE DEPTID = '" + deptid + "'";
+            DataTable myDT = MyQueries.GetTable(OracleQry);
+
+            ddlDeptAssistant.DataSource = myDT;
+            ddlDeptAssistant.DataValueField = "EMPLID";
+            ddlDeptAssistant.DataTextField = "NAME_A";
+            ddlDeptAssistant.DataBind();
+
+            ddlDeptAssistant.Items.Insert(0, new ListItem("-- Select Dept Assistant --", "0"));
+        }
+
+        private void GetRequests(string RequestID)
+        {
+            string OracleQry = "Select REQUESTID, REQUESTDATETIME, REQUESTOR, REQUESTORDEPTID, ISAGENCY, "+
+                               "SITE, PLANT, DEPTCODE, REQUIREDPERSON, JOBTITLE, TO_CHAR(ONBOARDDATE,'dd.MM.YYYY') AS ONBOARDDATE, " + 
+                               "LENGTHDATE_ISA, TYPE_NONA, FROMTIME, TOTIME, IFINCREASE_NONA, IfReplacement_NonA, " + 
+                               "ISREPLAMENTTO_NONA, EmployeeCat, CONTRACTTYPE_NONA, JOBFAMILY, JOBDESCRIPTION_NONA, " +
+                               "JOBBUSITITLE, MAXIMUMSALARY, NOTEMANPOWER, WORKINGPLACE, WORKINGTIME, ISMON, " +
+                               "ISTUE, ISWED, ISTHU, ISFRI, ISSAT, ISSUN, WEEKENDS, NOTEWORKTIME, LANGUAGE1," +
+                               "Level1, Language2, Level2, EDUCATION_NONA, MAJOR_NONA, REQUIREDWORKEXP, " +
+                               "NOTEOTHER, NOTEWORKEXP_NONA " + 
+                               "From REQUESTS where RequestID = :id";
+
+            MyObjects.MyCommand.Parameters.AddWithValue("':id'", RequestID); 
+
+            OleDbDataReader myReader = MyObjects.MyReader(OracleQry);
+            if (myReader.Read())
+            {
+                //GET THE REQUESTOR INFO 
+                txtRequestID.Text = Convert.ToString(myReader["REQUESTID"]);
+                string reqDate = Convert.ToString(myReader["REQUESTDATETIME"]);
+
+                txtRequestedDate.Text = String.Format("{0:MM/dd/yy}", reqDate);
+
+                txtRequestorEmplID.Text = Convert.ToString(myReader["Requestor"]);
+                string EmplID = txtRequestorEmplID.Text;
+                txtRequestor.Text = MyQueries.GetFullName(EmplID);  
+                txtRequestorDeptID.Text = Convert.ToString(myReader["RequestorDeptID"]);
+                string IsAgency = Convert.ToString(myReader["IsAgency"]);
+                IsAgencyRequest(IsAgency); 
+                txtSite.Text = Convert.ToString(myReader["Site"]);
+                txtPlant.Text = Convert.ToString(myReader["Plant"]);
+                if (txtPlant.Text == "SU")
+                {
+                    txtPlant.Text = "Site Support";
+                }
+                txtDeptCode.Text = Convert.ToString(myReader["DeptCode"]);
+                txtNoOfPerson.Text = Convert.ToString(myReader["RequiredPerson"]) + " person(s) required.";
+                string BusinessTitle = Convert.ToString(myReader["JobTitle"]);
+                //string BusinessTitleJobCode;
+                //txtJobTitle.Text = MyQueries.GetJobBusiTitleFromCode(BusinessTitle, out BusinessTitleJobCode);
+                txtOnBoardDate.Text = Convert.ToString(myReader["ONBOARDDATE"]);
+                txtLengthDate.Text = Convert.ToString(myReader["LengthDate_IsA"]);
+                txtRequestType.Text = Convert.ToString(myReader["Type_NonA"]);
+                txtFromTime.Text = Convert.ToString(myReader["FromTime"]);
+                txtToTime.Text = Convert.ToString(myReader["ToTime"]);
+                string Increase = Convert.ToString(myReader["IfIncrease_NonA"]);
+                if (Increase != "")
+                {
+                    txtIncrease.Text = Increase;
+                    pnlReplacement.Visible = false;
+                }
+                else
+                {
+                    pnlReplacement.Visible = true;
+                    txtIncrease.Visible =false;
+                    lblIncrease.Visible = false; 
+
+                }
+                 
+                string Replacement = Convert.ToString(myReader["IfReplacement_NonA"]);
+
+                if (Replacement != "")
+                {
+                    pnlReplacement.Visible = true;
+                    txtReplacement.Text = Replacement;
+                    txtReplacementTo.Text = Convert.ToString(myReader["ISREPLAMENTTO_NONA"]);
+                }
+                else
+                {
+                    pnlReplacement.Visible = false;
+                    txtReplacement.Visible = false;
+                    txtReplacement.Visible = false;
+                    lblReplacement.Visible = false;
+                    txtReplacementTo.Visible = false;
+                    lblReplacementTo.Visible = false;
+                }
+                
+                txtEmployeeCategory.Text = Convert.ToString(myReader["EmployeeCat"]);
+                txtContractType.Text = Convert.ToString(myReader["CONTRACTTYPE_NONA"]);
+                string JobFamily = Convert.ToString(myReader["JOBFAMILY"]);
+                txtJobFamily.Text = MyQueries.GetJobFamilyCode(JobFamily);
+                txtJobDescription.Text = MyQueries.GetJob_Func_Desc(Convert.ToString(myReader["JOBDESCRIPTION_NONA"]));
+                string busi_title_code =   Convert.ToString(myReader["JOBBUSITITLE"]);
+                txtJobBusiTitle.Text = MyQueries.GetJob_Code(busi_title_code);
+                txtMaximumSalary.Text = Convert.ToString(myReader["MAXIMUMSALARY"]);
+                txtNoteManpower.Text = Convert.ToString(myReader["NOTEMANPOWER"]);
+                string WorkPlace = Convert.ToString(myReader["WORKINGPLACE"]);
+                GetWorkPlaceCode(WorkPlace);
+                txtWorkTime.Text = Convert.ToString(myReader["WORKINGTIME"]);
+
+                string IsMon = Convert.ToString(myReader["ISMON"]);
+                    if (IsMon != "0")
+                    {
+                        txtMonday.Text = "Monday; ";
+                    }
+                    else
+                    {
+                        txtMonday.Visible = false;
+                    }
+                string IsTue = Convert.ToString(myReader["ISTUE"]);
+                    if (IsTue != "0")
+                    {
+                        txtTuesday.Text = "Tuesday; ";
+                    }
+                    else
+                    {
+                        txtTuesday.Visible = false;
+                    }
+
+                string IsWed = Convert.ToString(myReader["ISWED"]);
+                    if (IsWed != "0")
+                    {
+                        txtWednesday.Text = "Wednesday; ";
+                    }
+                    else
+                    {
+                        txtWednesday.Visible = false;
+                    }
+
+                string IsThu = Convert.ToString(myReader["ISTHU"]);
+
+                    if (IsThu != "0")
+                    {
+                        txtThursday.Text = "Thursday; ";
+                    }
+                    else
+                    {
+                        txtThursday.Visible = false;
+                    }
+                string IsFri = Convert.ToString(myReader["ISFRI"]);
+                    if (IsFri != "0")
+                    {
+                        txtFriday.Text = "Friday; ";
+                    }
+                    else
+                    {
+                        txtFriday.Visible = false;
+                    }
+                string IsSat = Convert.ToString(myReader["ISSAT"]);
+                    if (IsSat != "0")
+                    {
+                        txtSaturday.Text = "Saturday; ";
+                    }
+                    else
+                    {
+                        txtSaturday.Visible = false;
+                    }
+                string IsSun = Convert.ToString(myReader["ISSUN"]);
+
+                    if (IsSun != "0")
+                    {
+                        txtSunday.Text = "Sunday; ";
+                    }
+                    else
+                    {
+                        txtSunday.Visible = false;
+                    }
+
+                    string IsWeekend = Convert.ToString(myReader["WEEKENDS"]);
+                    if (IsWeekend == "0")
+                    {
+                        txtWeekend.Text = "No";
+                    }   else if(IsWeekend == "1")
+                    {
+                        txtWeekend.Text = "Yes";
+                    }
+                    
+                    txtNoteWorkTime.Text = Convert.ToString(myReader["NOTEWORKTIME"]);
+                    txtLanguage1.Text = Convert.ToString(myReader["LANGUAGE1"]);
+                    txtLevel1.Text = Convert.ToString(myReader["Level1"]);
+                    txtLanguage2.Text = Convert.ToString(myReader["Language2"]);
+                    txtLevel2.Text = Convert.ToString(myReader["Level2"]);
+                    txtEducation.Text = Convert.ToString(myReader["EDUCATION_NONA"]);
+                    txtMajorIn.Text = Convert.ToString(myReader["MAJOR_NONA"]);
+                    txtRequiredWork.Text = Convert.ToString(myReader["REQUIREDWORKEXP"]);
+                    if (txtRequiredWork.Text != "")
+                    {
+                        txtRequiredWork.Text = txtRequiredWork.Text + " years experience";
+                    } 
+                    txtRemarks.Text = Convert.ToString(myReader["NOTEOTHER"]);
+                    txtNoteExperience.Text = Convert.ToString(myReader["NOTEWORKEXP_NONA"]);
+            }
+
+            MyObjects.MyConn.Close();
+         
+        }
+
+        private void GetWorkPlaceCode(string l)
+        {
+            switch (l)
+            {
+                case "1":
+                    txtWorkPlace.Text = "CTPark Brno Turanka 1328/102, 62700 Brno-Slatina";
+                    break;
+                case "2":
+                    txtWorkPlace.Text = "CTPark Modrice Evropska 868,66442 Modrice Brno-Venkov";
+                    break;
+                case "3":
+                    txtWorkPlace.Text = "Prumyslova 1506, 69123 Pohorelice, Brno-Venkov";
+                    break;
+                case "4":
+                    txtWorkPlace.Text = "Prumyslova 1507, 69123 Pohorelice, Brno-Venkov";
+                    break;
+                case "5":
+                    txtWorkPlace.Text = "K Letisti 1792/1 66451 Slapanice, Brno-Venkov";
+                    break;
+            }
+        }
+
+
+
+        private void IsAgencyRequest(string i)
+        {
+            if (i == "0")
+            {
+                txtIsAgency.Text = "No";
+                AllNonAgencyCtrl(true);
+                AllAgencyCtrol(false);
+            }
+            else if (i == "1")
+            {
+                txtIsAgency.Text = "Yes";
+                AllAgencyCtrol(true);
+                AllNonAgencyCtrl(false);
+                //hide non-agency controls & show agency controls  
+
+            }
+        }
+
+        private void AllNonAgencyCtrl(bool a)
+        {
+            lblIntendedBoardDate.Visible = a;
+            txtOnBoardDate.Visible = a;
+            pnlRequisitionType.Visible = a;
+            pnlEducationInfo.Visible = a;
+            lblNoteExperience.Visible = a;
+            txtNoteExperience.Visible = a;
+            lblIncrease.Visible = a;
+            txtIncrease.Visible = a;
+            txtReplacement.Visible = a;
+            txtReplacementTo.Visible = a;
+            lblReplacement.Visible = a;
+            
+
+        }
+
+
+        private void AllAgencyCtrol(bool a)
+        {
+            lblLengthEmplDate.Visible = a;
+            txtLengthDate.Visible = a;
+             
+            txtOtherRequirements.Visible = a;
+            lblOtherRequirements.Visible = a;
+             
+        }
+
+
+        protected void IsApprove(object sender, EventArgs e)
+        {
+              dialog.Visible = true;
+              string RequestID = Request.QueryString["id"];
+              string FlowID = Request.QueryString["flow"];
+
+              
+
+              //Update REQAPPROVALLOGS, REQUESTS TO 1
+              MyObjects.GetConn();
+              DateTime MyDate = DateTime.Now;
+              string s = String.Format("{0:yyyy/MM/dd}", MyDate); 
+              string OracleApprove = "Update REQAPPROVALLOGS set APPROVALSTATUS = '1', " +
+                                      "APPROVALDATE = to_date('" + s + "','yyyy/MM/dd'), REMARKS = ' " + txtApprovalRemarks.Text + 
+                                      "' where FLOWID = '" + FlowID + "' and REQUESTID='" + RequestID + "'";
+
+
+              OleDbCommand myCom = new OleDbCommand(OracleApprove, MyObjects.MyConn);
+              myCom.ExecuteNonQuery();
+
+              string OracleStatus = "Update REQUESTS set STATUS = '" + FlowID + "' " +
+                                    "WHERE REQUESTID='" + RequestID + "'";
+
+              OleDbCommand myCom1 = new OleDbCommand(OracleStatus, MyObjects.MyConn);
+              myCom1.ExecuteNonQuery();
+
+              if (Page.IsPostBack == true)
+              {
+                  //Assign A PIC
+                  string OracleQryPIC = "Update BASEDATA Set HRRECRUITER = :HRrecruiter, " +
+                                 "HRTRAINER = :HRtrainer, " +
+                                 "PSENCODER = :PSencoder"; 
+                  OleDbCommand mycmd = new OleDbCommand(OracleQryPIC, MyObjects.MyConn);
+                  mycmd.Parameters.AddWithValue("':HRrecruiter'", ddlRecruiter.SelectedValue.ToString());
+                  mycmd.Parameters.AddWithValue("':HRtrainer'", ddlTrainer.SelectedValue.ToString());
+                  mycmd.Parameters.AddWithValue("':PSencoder'", ddlPSEncoder.SelectedValue.ToString());
+                  mycmd.ExecuteNonQuery();
+
+                  string OracleQryUpdateReq = "Update REQUESTS Set HRRECRUITER = :HRrecruiter, " +
+                                 "HRTRAINER = :HRtrainer, PSENCODER = :PSencoder, " +
+                                 "DEPTASSISTANT = '" + ddlDeptAssistant.SelectedValue.ToString() + "' " +
+                                 "Where RequestID = '" + RequestID + "'";
+
+                  OleDbCommand mycmd1 = new OleDbCommand(OracleQryUpdateReq, MyObjects.MyConn);
+                  mycmd1.Parameters.AddWithValue("':HRrecruiter'", ddlRecruiter.SelectedValue.ToString());
+                  mycmd1.Parameters.AddWithValue("':HRtrainer'", ddlTrainer.SelectedValue.ToString());
+                  mycmd1.Parameters.AddWithValue("':PSencoder'", ddlPSEncoder.SelectedValue.ToString());
+                  mycmd1.ExecuteNonQuery();
+
+                  //Email the dept assistant if it's manager's turn to approve (optional for managers)
+                  if (ddlDeptAssistant.SelectedValue != "0" && FlowID == "2")
+                  {     
+                          string EmplID = ddlDeptAssistant.SelectedValue;
+                          string GetEmail = "Select EMAIL_ADDRESS_A From PS.PS_SUB_WCZ_AT_VW_A WHere EMPLID = '" + EmplID + "'";
+                          OleDbCommand myEmailCmd = new OleDbCommand(GetEmail, MyObjects.MyConn);
+                          OleDbDataReader myRDEmail = myEmailCmd.ExecuteReader();
+                          myRDEmail.Read();
+                          string EmailAdd = Convert.ToString(myRDEmail["EMAIL_ADDRESS_A"]);
+                          string subject = "You have been assigned as Dept Assistant: " + RequestID;
+                          MyMisc.SendEmail(EmailAdd, ddlDeptAssistant.SelectedValue, RequestID, MyEmail.EmailToDeptAssistant(RequestID), subject);
+                     
+                  }
+              } 
+            //update inbox
+             DateTime MyAppDate = DateTime.Now;
+             string ApprovalDate = String.Format("{0:dd/MM/yyyy hh:mm:ss}", MyAppDate); 
+              string UpdateInbox = "Update INBOXAPP set APPROVED = '1', " +
+                                "APPROVALDATE = to_date('" + ApprovalDate + "','dd/MM/yyyy hh:mi:ss'),  " +
+                                "ACTION = 'Approved' " + 
+                                "Where REQUESTID='" + RequestID + "' " +
+                                "and FLOWID = '" + FlowID + "'";
+              OleDbCommand mycmdInbox = new OleDbCommand(UpdateInbox, MyObjects.MyConn);
+              mycmdInbox.ExecuteNonQuery(); 
+
+            //update activity 
+            string UserID = (string)(Session["UserID"]);
+            string txtActivity = "You have approved request form: " + RequestID;
+            MyQueries.InsertActivityDesc(txtActivity, UserID);
+            MyMisc.GetNextApprovalStep(RequestID);
+            MyMisc.ShowMessage(txtActivity, this.Page);
+
+            IfApprovedDone();
+        }
+
+        protected void IsReject(object sender, EventArgs e)
+        {
+            
+            string RequestID = Request.QueryString["id"];
+            string FlowID = Request.QueryString["flow"];
+            DateTime MyDate = DateTime.Now;
+            string s = String.Format("{0:MM/dd/yyyy}", MyDate);
+
+            MyObjects.GetConn();
+            //UPDATE REQUESTAPPROVALLOGS TABLE
+            string OracleQryUpdateReq = "Update REQAPPROVALLOGS SET APPROVALSTATUS = '3', " +
+                                        "APPROVALDATE = to_date('" + s + "','MM/dd/yyyy') " +
+                                "WHERE REQUESTID='" + RequestID + "' AND FLOWID = '" + FlowID + "'";
+            OleDbCommand mycmdUpdateReq = new OleDbCommand(OracleQryUpdateReq, MyObjects.MyConn);
+            mycmdUpdateReq.ExecuteNonQuery();
+
+            MyObjects.GetConn();
+            string OracleToEmail = "Select REQUESTOR From REQUESTS Where REQUESTID='" + RequestID + "'";
+            OleDbCommand myCMDToEmail = new OleDbCommand(OracleToEmail, MyObjects.MyConn);
+            OleDbDataReader myToRD = myCMDToEmail.ExecuteReader();
+            myToRD.Read();
+            string pic = Convert.ToString(myToRD["REQUESTOR"]);
+            MyObjects.GetConn();
+            OleDbCommand MyCmdEmail = new OleDbCommand(MyQueries.GetEmplEmail(pic), MyObjects.MyConn);
+            OleDbDataReader MyReadEmail = MyCmdEmail.ExecuteReader();
+             
+            if (MyReadEmail.Read())
+            {
+                string EmailAdd = Convert.ToString(MyReadEmail["Email_Address_A"]);
+                string body = MyEmail.RejectRequestor(RequestID);
+                string subject = "Request Form: " + RequestID + "Application";
+                MyMisc.SendEmail(EmailAdd, pic, RequestID, body, subject);
+
+                 
+                //update inbox
+                DateTime MyRejDate = DateTime.Now;
+                string RejectedDate = String.Format("{0:dd/MM/yyyy hh:mm:ss}", MyRejDate);
+                string UpdateInbox = "Update INBOXAPP set APPROVED = '1', " +
+                                  "APPROVALDATE = to_date('" + RejectedDate + "','dd/MM/yyyy hh:mi:ss'),  " +
+                                  "ACTION = 'Rejected' " +
+                                  "Where REQUESTID='" + RequestID + "' " +
+                                  "and FLOWID = '" + FlowID + "'";
+                OleDbCommand mycmdInbox = new OleDbCommand(UpdateInbox, MyObjects.MyConn);
+                mycmdInbox.ExecuteNonQuery();
+                MyObjects.MyConn.Close();
+                Response.Redirect("~/Recruitment/Request.aspx?form=view&flow=0&id=" + RequestID + "&action=1");
+            }
+            
+                    
+        }
+        protected void IsCancel(object sender, EventArgs e)
+        {
+        }
+
+        private void LoadHRData(DropDownList ddl)
+        {
+            if (Page.IsPostBack == false)
+            {
+                string OracleQry = "Select EMPLID, NAME_A From PS.PS_SUB_WCZ_AT_VW_A WHERE DEPTID = 'MD0H00' Or EMPLID = 'C1111005'";
+
+                DataTable myDT = MyQueries.GetTable(OracleQry);
+                ddl.DataSource = myDT;
+                ddl.DataValueField = "EMPLID";
+                ddl.DataTextField = "NAME_A";
+                ddl.DataBind();
+
+                ddl.Items.Insert(0, new ListItem("-- Select One --", ""));
+            }
+           
+        }
+
+
+        private void SetADefault()
+        {
+            MyObjects.GetConn();
+            string OracleQry = "Select HRRECRUITER, HRTRAINER, PSENCODER From BASEDATA";
+            OleDbCommand MyCMD = new OleDbCommand(OracleQry, MyObjects.MyConn);
+            OleDbDataReader MyRD = MyCMD.ExecuteReader();
+
+            if (MyRD.Read())
+            {
+                ddlRecruiter.SelectedValue = Convert.ToString(MyRD["HRRECRUITER"]);
+                ddlTrainer.SelectedValue = Convert.ToString(MyRD["HRTRAINER"]);
+                ddlPSEncoder.SelectedValue = Convert.ToString(MyRD["PSENCODER"]);
+            }
+            MyObjects.MyConn.Close();
+
+        }
+
+        private void IsSession()
+        {
+            string UserID = (string)(Session["UserID"]);
+            if (UserID == "")
+            {
+                Response.Redirect("~/Account/Default.aspx?s=0");
+            }
+        }
+
+        protected void BtnNeedChanges_Click(object sender, EventArgs e)
+        {
+            string requestID = Request.QueryString["id"];
+            string flowID = Request.QueryString["flow"];
+            string RequestUpdateStats = "Update REQUESTS Set RESULT = 'Update For Changes' " +
+                                "Where REQUESTID='" + requestID + "'";
+            
+            MyObjects.GetConn();
+            OleDbCommand myCMD = new OleDbCommand(RequestUpdateStats, MyObjects.MyConn);
+            myCMD.ExecuteNonQuery();
+            string email = MyQueries.GetEmplEmailAddress(MyQueries.GetRequestor(requestID));
+            chkChanges.Items[0].Value = "0";
+            chkChanges.Items[1].Value = "0";
+            chkChanges.Items[2].Value = "0";
+            chkChanges.Items[3].Value = "0";
+
+            string department;
+            string plant;
+            string noofPersons;
+            string requestType; 
+
+            if (chkChanges.Items[0].Selected)
+            {
+                department = "- Department<br />";
+
+            }
+            else
+            {
+                department = " ";
+            }
+
+            if (chkChanges.Items[1].Selected)
+            {
+                plant = "- Plant<br />";
+
+            }
+            else
+            {
+                plant = " ";
+            }
+
+            if (chkChanges.Items[2].Selected)
+            {
+                noofPersons = "- No. Of Person(s)<br />";
+
+            }
+            else
+            {
+                noofPersons = " ";
+
+            }
+
+            if (chkChanges.Items[3].Selected)
+            {
+                requestType = "- Request Type<br />";
+
+            }
+            else
+            {
+                requestType = " ";
+
+            }
+
+            string remarks;
+            if (txtChangeRemarks.Text != "")
+            {
+                remarks = "Remarks: " + txtChangeRemarks.Text;
+            }
+            else
+            {
+                remarks = "";
+            }
+
+            string txt = "Dear " + MyQueries.GetFullName(MyQueries.GetRequestor(requestID)) + "<br />" +
+                 "You are required to change the following item(s) in your request: <br />" +
+                 department + plant + noofPersons + requestType + "<br />" +
+                 remarks;
+             
+            MyMisc.EmailForChanges(requestID, txt, email);
+            //update inbox
+            DateTime MyUpdateDate = DateTime.Now;
+            string UpdatedDate = String.Format("{0:dd/MM/yyyy hh:mm:ss}", MyUpdateDate);
+            string UpdateInbox = "Update INBOXAPP set APPROVED = '1', " +
+                              "APPROVALDATE = to_date('" + UpdatedDate + "','dd/MM/yyyy hh:mi:ss'),  " +
+                              "ACTION = 'Asked for Changes' " +
+                              "Where REQUESTID='" + requestID + "' " +
+                              "and FLOWID = '" + flowID + "'";
+            OleDbCommand mycmdInbox = new OleDbCommand(UpdateInbox, MyObjects.MyConn);
+            mycmdInbox.ExecuteNonQuery(); 
+            Response.Redirect("~/Recruitment/Request.aspx?form=view&flow=0&id=" + requestID + "&action=1");
+        }
+
+        protected void LoadApprovalStatus(string RequestID)
+        {
+            string OracleQry = "Select REQAPPROVALLOGS.REQUESTID, APPROVALFLOW.FLOW,  " +
+                   "PS.PS_SUB_WCZ_AT_VW_A.NAME_A as SIGNEE,  REQAPPROVALLOGS.APPROVALSTATUS " +
+                   "From REQAPPROVALLOGS INNER JOIN APPROVALFLOW On   " +
+                   "REQAPPROVALLOGS.FLOWID = APPROVALFLOW.FLOWID  And  " +
+                   "REQAPPROVALLOGS.REQUESTID = '" + RequestID + "' JOIN PS.PS_SUB_WCZ_AT_VW_A  " +
+                   "ON PS.PS_SUB_WCZ_AT_VW_A.EMPLID = REQAPPROVALLOGS.PIC " +
+                   " Order By REQAPPROVALLOGS.FLOWID ASC ";
+
+            DataTable myDT = MyQueries.GetTable(OracleQry);
+            gridShowStatus.DataSource = myDT;
+            gridShowStatus.DataBind();
+        }
+
+
+        
+        protected void GridShowStatus_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {/*
+                MyObjects.GetConn();
+                //get pic
+                string pic = e.Row.Cells[2].Text;
+                string PICNew;
+                string OracleQry = "Select ISAGENCY From REQUESTS Where REQUESTID='" + txtRequestID.Text + "'";
+                OleDbCommand myCmd = new OleDbCommand(OracleQry, MyObjects.MyConn);
+                OleDbDataReader myRd = myCmd.ExecuteReader();
+                string IsAgency;
+                if (myRd.Read())
+                {
+                    IsAgency = Convert.ToString(myRd["ISAGENCY"]);
+                }
+                else
+                {
+                    IsAgency = "";
+                }
+
+
+                if (IsAgency == "0")
+                {
+                    string getPIC = "Select FLOW from APPROVALFLOW Where FLOWID = '" + pic + "'";
+                    OleDbCommand myCmdPIC = new OleDbCommand(getPIC, MyObjects.MyConn);
+                    OleDbDataReader myRDPIC = myCmdPIC.ExecuteReader();
+                    if (myRDPIC.Read())
+                    {
+                        e.Row.Cells[2].Text = Convert.ToString(myRDPIC["FLOW"]);
+                    }
+                    else
+                    {
+                        e.Row.Cells[2].Text = "";
+                    }
+                }
+                if (IsAgency == "1")
+                {
+                    string getPIC = "Select FLOW from APPROVALFLOWFORAGENCY Where FLOWID = '" + pic + "'";
+                    OleDbCommand myCmdPIC = new OleDbCommand(getPIC, MyObjects.MyConn);
+                    OleDbDataReader myRDPIC = myCmdPIC.ExecuteReader();
+                    if (myRDPIC.Read())
+                    {
+                        e.Row.Cells[2].Text = Convert.ToString(myRDPIC["FLOW"]);
+                    }
+                    else
+                    {
+                        e.Row.Cells[2].Text = "";
+                    }
+                   
+                }
+            */
+                // get signee status
+                
+                string signed = e.Row.Cells[3].Text;
+
+                switch (signed)
+                {
+                    case "0":
+                        e.Row.Cells[3].Text = "Not Signed";
+                        break;
+                    case "1":
+                        e.Row.Cells[3].Text = "Signed";
+                        break;
+                    case "3":
+                        e.Row.Cells[3].Text = "Rejected";
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        private void GridShowPIC(string requestID)
+        {
+            string OracleQry = "Select REQUESTID, HRRECRUITER, HRTRAINER, PSENCODER, DEPTASSISTANT " + 
+                "from REQUESTS Where REQUESTID = '" + requestID + "'";
+            MyObjects.GetConn();
+            DataTable myDT = MyObjects.GetTable(OracleQry);
+            gridShowPIC.DataSource = myDT;
+            gridShowPIC.DataBind();
+        }
+
+        protected void GridShowPIC_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                string val = e.Row.Cells[0].Text;
+                if (e.Row.Cells[0].Text == "0" || e.Row.Cells[0].Text == "&nbsp;")
+                {
+                    e.Row.Cells[0].Text = "--NA--";
+                }
+                else
+                {
+                    e.Row.Cells[0].Text = MyQueries.GetFullName(e.Row.Cells[0].Text);
+                }
+
+                if (e.Row.Cells[1].Text == "0" || e.Row.Cells[1].Text == "&nbsp;")
+                {
+                    e.Row.Cells[1].Text = "--NA--";
+                }
+                else
+                {
+                    e.Row.Cells[1].Text = MyQueries.GetFullName(e.Row.Cells[1].Text);
+                }
+
+                if (e.Row.Cells[2].Text == "0" || e.Row.Cells[2].Text == "&nbsp;")
+                {
+                    e.Row.Cells[2].Text = "--NA--";
+                }
+                else
+                {
+                    e.Row.Cells[2].Text = MyQueries.GetFullName(e.Row.Cells[2].Text);
+                }
+
+                if (e.Row.Cells[3].Text == "0" || e.Row.Cells[3].Text == "&nbsp;")
+                {
+                    e.Row.Cells[3].Text = "--NA--";
+                }
+                else
+                {
+                    e.Row.Cells[3].Text = MyQueries.GetFullName(e.Row.Cells[3].Text);
+                }
+            }
+        }
+    }
+}

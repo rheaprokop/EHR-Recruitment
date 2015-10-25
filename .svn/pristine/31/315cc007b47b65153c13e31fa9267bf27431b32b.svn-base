@@ -1,0 +1,257 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model;
+using System.Text.RegularExpressions;
+using System.Collections;
+
+// private string GetUserSessID()
+// private void ViewRequest(string requestID)
+// private void PopulateSingleApprover(string transno)
+// protected void Exit_Click(object sender, EventArgs e)
+// protected void GridSingleApprover_RowDataBound(object sender, GridViewRowEventArgs e)
+// private bool ShowReviewerToApprover(string userid, string transno)
+
+namespace EHR.Views.Status
+{
+    public partial class RQ03 : System.Web.UI.Page
+    {
+        DBModel _db = new DBModel();
+        PSModel _ps = new PSModel();
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            string requestID = Request.QueryString["id"];
+            string RQ = Request.QueryString["RQ"];
+            if (RQ == "012")
+            {
+                lblRequestTitle.Text = "Your application has been processed and closed.";
+            }
+            ViewRequest(requestID);
+            pnlDialog.Visible = false;
+            if (!IsPostBack)
+                txtReviewerWorkShift.Enabled = true; 
+             
+        }
+
+        /// <summary>
+        /// Gets user ID from the session
+        /// </summary>
+        /// <returns>Returns user ID as a string</returns>
+        private string GetUserSessID()
+        {
+            string UserID = (string)(Session["UserID"]);
+            return UserID;
+
+        }
+
+        /// <summary>
+        /// Queries data from STATUS_CHANGE, STATUS_SALARY and STATUS_BONUSES and fills up the form
+        /// </summary>
+        /// <param name="requestID">Accepting one mandatory parameter Request ID</param>
+        private void ViewRequest(string requestID)
+        {
+            string sql = "SELECT REQUESTID, TRANSID, APFLOWID, REQUESTORID, " +
+                        "REQUESTORDEPTID, TO_CHAR(REQDATE,'dd.MM.YYYY') AS REQDATE, EMPLID, CURRDEPT, " +
+                        "NEWDEPT, CURRPOSI, NEWPOSI, CURREMPLCAT, NEWEMPLCAT, CSHIFTTYPE, " +
+                        "CSHIFTTYPETIME, CSHIFTTYPEFROM, CSHIFTTYPETO, ISMONDAY, " +
+                        "ISTUESDAY, ISWEDNESDAY, ISTHURSDAY, ISFRIDAY, ISSATURDAY, ISSUNDAY, " +
+                        "CWORKSHIFTDETAILS, TSHIFTTYPE, APPSTATUS, REVIEWERSHIFTUPDATE FROM " +
+                        "STATUS_CHANGE WHERE REQUESTID = '" + requestID + "'";
+
+            OleDbDataReader rd = _db.GetDataReader(sql);
+            if (rd.Read())
+            {
+                lblRequestID.Text = Convert.ToString(rd["REQUESTID"]);
+                lblRequestDate.Text = Convert.ToString(rd["REQDATE"]);
+                txtEmployeeId.Text = Convert.ToString(rd["EMPLID"]);
+                txtEmployeeName.Text = _ps.GetName(txtEmployeeId.Text);
+                lblCurrentDeptID.Text = Convert.ToString(rd["CURRDEPT"]);
+                lblNewDeptID.Text = Convert.ToString(rd["NEWDEPT"]);
+                lblCurrentPosition.Text = Convert.ToString(rd["CURRPOSI"]);
+                lblNewPosition.Text = Convert.ToString(rd["NEWPOSI"]);
+                lblCurrentCategory.Text = Convert.ToString(rd["CURREMPLCAT"]);
+                lblNewCategory.Text = Convert.ToString(rd["NEWEMPLCAT"]);
+                lblWorkShiftTemporary.Text = Convert.ToString(rd["TSHIFTTYPE"]);
+
+                if (lblWorkShiftTemporary.Text == "Select Type")
+                {
+                    lblWorkShiftTemporary.Text = "";
+                }
+                if (lblNewCategory.Text == "Contracted")
+                {
+
+                    pnlWorkShiftContracted.Visible = true;
+                    pnlWorkShiftTemporary.Visible = false;
+                }
+                else if (lblNewCategory.Text == "Temporary")
+                {
+                    pnlWorkShiftContracted.Visible = false;
+                    pnlWorkShiftTemporary.Visible = true;
+                }
+                else if (lblNewCategory.Text == "Unchanged")
+                {
+                    pnlWorkShiftContracted.Visible = false;
+                    pnlWorkShiftTemporary.Visible = false;
+                }
+
+                lblWorkShiftType.Text = Convert.ToString(rd["CSHIFTTYPE"]);
+                lblWorkShiftTypeTime.Text = Convert.ToString(rd["CSHIFTTYPETIME"]);
+                lblTime.Text = Convert.ToString(rd["CSHIFTTYPEFROM"]) + " - " + Convert.ToString(rd["CSHIFTTYPETO"]) + ",";
+
+                if (Convert.ToString(rd["ISMONDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Monday&nbsp;&nbsp;";
+                }
+
+                if (Convert.ToString(rd["ISTUESDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Tuesday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISWEDNESDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Wednesday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISTHURSDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Thursday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISFRIDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Friday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISSATURDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Saturday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISSUNDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Sunday&nbsp;&nbsp;";
+                }
+
+                lblCWorkShiftDetails.Text = Convert.ToString(rd["CWORKSHIFTDETAILS"]);
+                txtReviewerWorkShift.Text = Convert.ToString(rd["REVIEWERSHIFTUPDATE"]);
+                string transno = Convert.ToString(rd["TRANSID"]);
+                hiddenTransID.Value = transno;
+
+
+                // SIGNOFF LOGS 
+                PopulateSingleApprover(transno);
+            }
+
+
+            string salarySQL = "SELECT SALARYAMOUNT, INCREASE_DECRESASE FROM STATUS_SALARY WHERE REQUESTID = '" + lblRequestID.Text + "'";
+            OleDbDataReader salary_rd = _db.GetDataReader(salarySQL);
+
+            if (salary_rd.Read())
+            {
+
+                lblSalary.Text = Convert.ToString(salary_rd["SALARYAMOUNT"]);
+                string incdrease = Convert.ToString(salary_rd["INCREASE_DECRESASE"]);
+                lblSalary.Text = lblSalary.Text + " CZK" + " " + incdrease;
+            }
+            else
+            {
+                lblSalary.Text = "UNCHANGED";
+            }
+
+            string bonusesSQL = "SELECT A.AMOUNT AMOUNT, A.INCREASE_DECREASE INCREASE_DECREASE, " +
+                  "A.ISMONTHLYAPPR MONTHAPPV , B.BONUSDESCR  BONUSDESC FROM STATUS_BONUSES A, " +
+                  "STATUS_BONUSTYPES B WHERE A.BONUSID = B.BONUSID AND A.REQUESTID =  '" + lblRequestID.Text + "' ORDER BY B.BONUSID ASC";
+            DataTable _dt = _db.GetTable(bonusesSQL);
+            rptBonuses.DataSource = _dt;
+            rptBonuses.DataBind();
+
+            if (rptBonuses.Items.Count == 0)
+            {
+                lblNoBonus.Text = "UNCHANGED";
+            }
+
+
+        }
+
+        /// <summary>
+        /// Populates approver's GridView
+        /// </summary>
+        /// <param name="transno">Data query is based on Transaction ID</param>
+        private void PopulateSingleApprover(string transno)
+        {
+            string sql = "SELECT REQID, APPFLOWID, APPSEQ, APPROVERVALUE, APPROVERDESC, APPEMPLID, " +
+                " ACTUALAPPROVER, RESULT, REMARKS, DATESIGNED FROM APPROVALTRANSACTION " +
+                "WHERE REQID = '" + transno + "'  AND APPEMPLID IS NOT NULL ORDER BY APPSEQ ASC";
+            DataTable _dt = _db.GetTable(sql);
+            gridSingleApprover.DataSource = _dt;
+            gridSingleApprover.DataBind();
+        }
+
+        /// <summary>
+        /// Handles OnClick Event of button Exit to dashboard
+        /// Redirecting to /Views/Home/
+        /// </summary>
+        /// <param name="sender">Submit</param>
+        /// <param name="e"></param>
+        protected void Exit_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("/Views/Home/");
+        }
+
+        /// <summary>
+        /// Event OnRowDataBound fills up approver's data such as Name and Status 
+        /// </summary>
+        /// <param name="sender">gridSingleApprover</param>
+        /// <param name="e"></param>
+        protected void GridSingleApprover_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                //Employee ID Name
+                string emplid = e.Row.Cells[1].Text;
+                e.Row.Cells[1].Text = _ps.GetName(emplid);
+
+                //Employee ID Name
+                string ActualEmplid = e.Row.Cells[2].Text;
+                e.Row.Cells[2].Text = _ps.GetName(ActualEmplid);
+
+                //Employee ID Name
+
+                if (e.Row.Cells[3].Text == "A")
+                {
+                    e.Row.Cells[3].Text = "Approve";
+                }
+                else if (e.Row.Cells[3].Text == "R")
+                {
+                    e.Row.Cells[3].Text = "Reject";
+                }
+                else if (e.Row.Cells[3].Text == "W")
+                {
+                    e.Row.Cells[3].Text = "Waiting";
+                }
+                else
+                {
+                    e.Row.Cells[3].Text = "";
+                }
+            }
+        }
+
+        /* ??? Unused ??? */
+        private bool ShowReviewerToApprover(string userid, string transno)
+        {
+            string sql = "SELECT COUNT(APPEMPLID) FROM APPROVALTRANSACTION WHERE APPEMPLID = '" + userid +
+                "' AND REQID = '" + transno + "'";
+
+            int count = _db.GetExecuteScalar(sql);
+            if (count == 0)
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            } 
+        }
+    }
+}

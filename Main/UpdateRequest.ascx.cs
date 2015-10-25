@@ -1,0 +1,366 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model;
+
+namespace EHR.Recruitment
+{
+    public partial class UpdateRequest : System.Web.UI.UserControl
+    {
+        ObjectsOleDB MyObjects = new ObjectsOleDB();
+        QueryOleDB MyQueries = new QueryOleDB();
+        ObjectsMisc MyMisc = new ObjectsMisc();
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            
+            if (Page.IsPostBack == false)
+            {
+                string reqID = Request.QueryString["id"];
+                GetRequests(reqID);
+                LoadEmployeeData();
+            }
+        }
+
+        private void GetRequests(string RequestID)
+        {
+            string OracleQry = "Select REQUESTID, REQUESTDATETIME, REQUESTOR, REQUESTORDEPTID, ISAGENCY, "+
+                               "SITE, PLANT, DEPTCODE, REQUIREDPERSON, JOBTITLE, TO_CHAR(ONBOARDDATE,'dd.MM.YYYY') AS ONBOARDDATE, " + 
+                               "LENGTHDATE_ISA, TYPE_NONA, FROMTIME, TOTIME, IFINCREASE_NONA, IfReplacement_NonA, " + 
+                               "ISREPLAMENTTO_NONA, EmployeeCat, CONTRACTTYPE_NONA, " +
+                               "MAXIMUMSALARY, NOTEMANPOWER, WORKINGPLACE, WORKINGTIME, ISMON, " +
+                               "ISTUE, ISWED, ISTHU, ISFRI, ISSAT, ISSUN, WEEKENDS, NOTEWORKTIME, LANGUAGE1," +
+                               "Level1, Language2, Level2, EDUCATION_NONA, MAJOR_NONA, REQUIREDWORKEXP, " +
+                               "MAXIMUMAGE, NOTEOTHER, NOTEWORKEXP_NONA " +
+                                "From EREC_REQUESTS where RequestID = :id";
+            
+             
+            MyObjects.MyCommand.Parameters.AddWithValue("':id'", RequestID);
+
+            OleDbDataReader myReader = MyObjects.MyReader(OracleQry);
+            if (myReader.Read())
+            {
+                //GET THE REQUESTOR INFO 
+                txtRequestID.Text = Convert.ToString(myReader["REQUESTID"]);
+                string reqDate = Convert.ToString(myReader["REQUESTDATETIME"]);
+
+                txtRequestedDate.Text = String.Format("{0:MM/dd/yy}", reqDate);
+
+                txtRequestorEmplID.Text = Convert.ToString(myReader["Requestor"]);
+                string EmplID = txtRequestorEmplID.Text;
+                txtRequestor.Text = MyQueries.GetFullName(EmplID);
+                txtRequestorDeptID.Text = Convert.ToString(myReader["RequestorDeptID"]);
+                string IsAgency = Convert.ToString(myReader["IsAgency"]);
+                IsAgencyRequest(IsAgency);
+                txtSite.Text = Convert.ToString(myReader["Site"]);
+                ddlDepartment.SelectedValue = Convert.ToString(myReader["DeptCode"]);
+                txtNoOfPerson.Text = Convert.ToString(myReader["RequiredPerson"]);
+                string BusinessTitle = Convert.ToString(myReader["JobTitle"]); 
+             
+                txtOnBoardDate.Text = Convert.ToString(myReader["OnBoardDate"]);
+                txtLengthDate.Text = Convert.ToString(myReader["LengthDate_IsA"]);
+                 
+                txtFromTime.Text = Convert.ToString(myReader["FromTime"]);
+                txtToTime.Text = Convert.ToString(myReader["ToTime"]);
+                string Increase = Convert.ToString(myReader["IfIncrease_NonA"]);
+                if (Increase != "")
+                {
+                    ddlIfIncrease.SelectedValue = Increase;
+                    pnlReplacement.Visible = false;
+                }
+                else
+                {
+                    pnlReplacement.Visible = true;
+                     
+
+                }
+
+                string Replacement = Convert.ToString(myReader["IfReplacement_NonA"]);
+
+                if (Replacement != "")
+                {
+                    pnlReplacement.Visible = true;
+
+                    ddlReplacement.SelectedValue = Convert.ToString(myReader["ISREPLAMENTTO_NONA"]);
+                }
+                else
+                {
+                    pnlReplacement.Visible = false;
+                    ddlReplacement.Visible = false;
+                    ddlReplacement.Visible = false;
+                    lblReplacement.Visible = false;
+                    txtReplacementTo.Visible = false;
+                    lblReplacementTo.Visible = false;
+                }
+
+                txtEmployeeCategory.Text = Convert.ToString(myReader["EmployeeCat"]);
+                txtContractType.Text = Convert.ToString(myReader["CONTRACTTYPE_NONA"]);  
+                txtMaximumSalary.Text = Convert.ToString(myReader["MAXIMUMSALARY"]);
+                txtNoteManpower.Text = Convert.ToString(myReader["NOTEMANPOWER"]);
+                string WorkPlace = Convert.ToString(myReader["WORKINGPLACE"]); 
+                txtWorkTime.Text = Convert.ToString(myReader["WORKINGTIME"]);
+
+                string IsMon = Convert.ToString(myReader["ISMON"]);
+                if (IsMon != "0")
+                {
+                    txtMonday.Text = "Monday; ";
+                }
+                else
+                {
+                    txtMonday.Visible = false;
+                }
+                string IsTue = Convert.ToString(myReader["ISTUE"]);
+                if (IsTue != "0")
+                {
+                    txtTuesday.Text = "Tuesday; ";
+                }
+                else
+                {
+                    txtTuesday.Visible = false;
+                }
+
+                string IsWed = Convert.ToString(myReader["ISWED"]);
+                if (IsWed != "0")
+                {
+                    txtWednesday.Text = "Wednesday; ";
+                }
+                else
+                {
+                    txtWednesday.Visible = false;
+                }
+
+                string IsThu = Convert.ToString(myReader["ISTHU"]);
+
+                if (IsThu != "0")
+                {
+                    txtThursday.Text = "Thursday; ";
+                }
+                else
+                {
+                    txtThursday.Visible = false;
+                }
+                string IsFri = Convert.ToString(myReader["ISFRI"]);
+                if (IsFri != "0")
+                {
+                    txtFriday.Text = "Friday; ";
+                }
+                else
+                {
+                    txtFriday.Visible = false;
+                }
+                string IsSat = Convert.ToString(myReader["ISSAT"]);
+                if (IsSat != "0")
+                {
+                    txtSaturday.Text = "Saturday; ";
+                }
+                else
+                {
+                    txtSaturday.Visible = false;
+                }
+                string IsSun = Convert.ToString(myReader["ISSUN"]);
+
+                if (IsSun != "0")
+                {
+                    txtSunday.Text = "Sunday; ";
+                }
+                else
+                {
+                    txtSunday.Visible = false;
+                }
+
+                string IsWeekend = Convert.ToString(myReader["WEEKENDS"]);
+                if (IsWeekend == "0")
+                {
+                    txtWeekend.Text = "No";
+                }
+                else if (IsWeekend == "1")
+                {
+                    txtWeekend.Text = "Yes";
+                }
+
+                txtNoteWorkTime.Text = Convert.ToString(myReader["NOTEWORKTIME"]);
+                txtLanguage1.Text = Convert.ToString(myReader["LANGUAGE1"]);
+                txtLevel1.Text = Convert.ToString(myReader["Level1"]);
+                txtLanguage2.Text = Convert.ToString(myReader["Language2"]);
+                txtLevel2.Text = Convert.ToString(myReader["Level2"]);
+                txtEducation.Text = Convert.ToString(myReader["EDUCATION_NONA"]);
+                txtMajorIn.Text = Convert.ToString(myReader["MAJOR_NONA"]);
+                txtRequiredWork.Text = Convert.ToString(myReader["REQUIREDWORKEXP"]);
+                txtMaximumAge.Text = Convert.ToString(myReader["MAXIMUMAGE"]) + " years old";
+                txtRemarks.Text = Convert.ToString(myReader["NOTEOTHER"]);
+                txtNoteExperience.Text = Convert.ToString(myReader["NOTEWORKEXP_NONA"]);
+            }
+
+        }
+
+         
+
+
+
+        private void IsAgencyRequest(string i)
+        {
+            if (i == "0")
+            {
+                txtIsAgency.Text = "No";
+                AllNonAgencyCtrl(true);
+                AllAgencyCtrol(false);
+            }
+            else if (i == "1")
+            {
+                txtIsAgency.Text = "Yes";
+                AllAgencyCtrol(true);
+                AllNonAgencyCtrl(false);
+                //hide non-agency controls & show agency controls  
+
+            }
+        }
+
+        private void AllNonAgencyCtrl(bool a)
+        {
+            lblIntendedBoardDate.Visible = a;
+            txtOnBoardDate.Visible = a;
+            pnlRequisitionType.Visible = a;
+            pnlEducationInfo.Visible = a;
+            lblNoteExperience.Visible = a;
+            txtNoteExperience.Visible = a;
+            
+
+            ddlIfIncrease.Visible = a;
+            ddlReplacement.Visible = a;
+            txtReplacementTo.Visible = a;
+            lblReplacement.Visible = a;
+
+
+        }
+
+
+        private void AllAgencyCtrol(bool a)
+        {
+            lblLengthEmplDate.Visible = a;
+            txtLengthDate.Visible = a;
+
+            txtOtherRequirements.Visible = a;
+            lblOtherRequirements.Visible = a;
+
+        }
+
+        private void LoadEmployeeData()
+        {
+
+
+            string OracleQry = MyQueries.GetDeptID();
+            DataTable myDT = MyQueries.GetTable(OracleQry);
+            ddlDepartment.DataSource = myDT;
+            ddlDepartment.DataTextField = "DeptID";
+            ddlDepartment.DataValueField = "DeptID";
+            ddlDepartment.DataBind(); 
+        }
+
+        protected void ddlRequestType_SelectIndexChanged(object sender, EventArgs e)
+        {
+            string _filterValueRep = ddlRequestType.SelectedValue;
+            PnlMainForm.Visible = true;
+            switch (_filterValueRep)
+            {
+                case "Increase":
+
+                    ddlIfIncrease.Visible = true;
+                    lblIncrease.Visible = true;
+
+                    ddlReplacement.Visible = false;
+                    lblReplacement.Visible = false;
+                    txtReplacementTo.Visible = false;
+                    lblReplacementTo.Visible = false;
+
+                    ddlReplacement.SelectedValue = "";
+                    txtReplacementTo.Text = "";
+
+
+                    break;
+                case "Replacement":
+                    pnlReplacement.Visible = true;
+                    ddlReplacement.Visible = true;
+                    lblReplacement.Visible = true;
+                    txtReplacementTo.Visible = true;
+                    lblReplacementTo.Visible = true;
+
+                    ddlIfIncrease.Visible = false;
+                    lblIncrease.Visible = false;
+                    ddlIfIncrease.SelectedValue = "";
+                    break;
+                default:
+
+                    ddlIfIncrease.Visible = false;
+                    lblIncrease.Visible = false;
+                    ddlReplacement.Visible = false;
+                    lblReplacement.Visible = false;
+                    txtReplacementTo.Visible = false;
+                    lblReplacementTo.Visible = false;
+
+                    ddlIfIncrease.SelectedValue = "";
+                    ddlReplacement.SelectedValue = "";
+                    txtReplacementTo.Text = "";
+                    break;
+            }
+        }
+
+        protected void BtnUpdateChanges_Click(object sender, EventArgs e)
+        {
+            string id = Request.QueryString["id"];
+            MyObjects.GetConn();
+            string UpdateRequest = "Update REQUESTS set " +
+                                   "PLANT = '" + ddlPlant.SelectedValue.ToString() + "', " +
+                                   "DEPTCODE = '" + ddlDepartment.SelectedValue.ToString() + "', " +
+                                   "REQUIREDPERSON = '" + txtNoOfPerson.Text + "', " +
+                                   "TYPE_NONA = '" + ddlRequestType.SelectedValue.ToString() + "', " +
+                                   "IFINCREASE_NONA = '" + ddlIfIncrease.SelectedValue.ToString() + "', " +
+                                   "IFREPLACEMENT_NONA = '" + ddlReplacement.SelectedValue.ToString() + "', " +
+                                   "ISREPLAMENTTO_NONA = '" + txtReplacementTo.Text + "'  " +
+                                   "Where REQUESTID = '" + id + "'";
+
+            OleDbCommand myCmd = new OleDbCommand(UpdateRequest, MyObjects.MyConn);
+            myCmd.ExecuteNonQuery();
+
+            //delete approvalprocess 
+
+            string delReqAppLogs = "Delete from REQAPPROVALLOGS " +
+                "Where REQUESTID='" + id + "'";
+            OleDbCommand myCmdDel = new OleDbCommand(delReqAppLogs, MyObjects.MyConn);
+            myCmdDel.ExecuteNonQuery();
+
+
+            string IsAgency;
+            if (txtIsAgency.Text == "No")
+            {
+                IsAgency = "0";
+                MyMisc.ApprovalFlow(ddlDepartment.SelectedValue.ToString(), IsAgency, id);
+            }
+
+            if (txtIsAgency.Text == "Yes")
+            {
+                IsAgency = "1";
+                MyMisc.ApprovalFlow(ddlDepartment.SelectedValue.ToString(), IsAgency, id);
+            }
+
+
+            
+            MyMisc.GetNextApprovalStep(id); 
+            Response.Redirect("~/Recruitment/Request.aspx?form=view&flow=0&id="+ id);
+        }
+
+        private void IsSession()
+        {
+            string UserID = (string)(Session["UserID"]);
+            if (UserID == null)
+            {
+                string currentURL = HttpContext.Current.Request.Url.AbsoluteUri;
+                Session["uri"] = currentURL;
+                Response.Redirect("~/Account/Default.aspx?s=0");
+            }
+        }
+    }
+}

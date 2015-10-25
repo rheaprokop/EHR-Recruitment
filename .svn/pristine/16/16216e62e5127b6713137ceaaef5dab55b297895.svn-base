@@ -1,0 +1,196 @@
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Views/Shared/Site.Master" AutoEventWireup="true"
+    CodeBehind="Home.aspx.cs" Inherits="EHR.Views.Termination.Home" %>
+
+<asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="TopContent" runat="server">
+</asp:Content>
+<asp:Content ID="Content3" ContentPlaceHolderID="LeftContent" runat="server">
+</asp:Content>
+<asp:Content ID="Content4" ContentPlaceHolderID="mainContent" runat="server">
+    <%--<div class="header">
+  <div>
+   <asp:Label ID="lblCandidateTitle" Text="Status Change Form" runat="server" CssClass="logotext"></asp:Label>
+   </div>
+ <div style=" float: right; margin-top: -10px;" class="ui-buttonset">
+ <asp:HyperLink runat="server" NavigateUrl="#" Enabled="false"  ID="btnViewAll" Text="View All Request" CssClass="ui-widget ui-state-default ui-corner" style="font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left; padding-right: 20px; padding-left: 20px;" />
+ <asp:HyperLink  runat="server" NavigateUrl="#" Enabled="false" ID="btnAssign" Text="Create Request" CssClass="ui-widget ui-state-default ui-corner" style="font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left;  padding-right: 20px; padding-left: 20px;" />
+<asp:HyperLink  runat="server" NavigateUrl="#" ID="btnMyRequests" Text="My Requests" CssClass="ui-widget ui-state-default ui-corner" style="color: #111111; font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left;  padding-right: 20px; padding-left: 20px;" />
+<asp:HyperLink  runat="server" NavigateUrl="#"  Visible="false" ID="btnCloseApplication" Text="Process Requests" CssClass="ui-widget ui-state-default ui-corner" style="color: #111111; font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left;  padding-right: 20px; padding-left: 20px;" />
+<asp:HyperLink  runat="server" NavigateUrl="~/Views/Termination/BD01.aspx"  Visible="true" ID="btnManageData" Text="Manage Data" CssClass="ui-widget ui-state-default ui-corner" style="color: #111111; font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left;  padding-right: 20px; padding-left: 20px;" />
+<asp:HyperLink  runat="server" Target="_blank" NavigateUrl="http://mfgkm-wcz.wistron.com/IT/_layouts/PowerPoint.aspx?PowerPointView=ReadingView&PresentationId=/IT/AP/EHR/E-Status/EHR%20Status%20Change%20Training%20Material.ppt&Source=http%3A%2F%2Fmfgkm%2Dwcz%2Ewistron%2Ecom%2FIT%2FAP%2FForms%2FAllItems%2Easpx%3FRootFolder%3D%252FIT%252FAP%252FEHR%252FE%252DStatus%26FolderCTID%3D0x012000E05A5B7CAF61A94F84F8DEA75B64C524%26View%3D%7B344C2270%2DC858%2D4D1E%2DAB3A%2DD41AD7EF55BB%7D&DefaultItemOpen=1"  Visible="true" ID="HyperLink1" Text="Help" CssClass="ui-widget ui-state-default ui-corner" style="color: #111111; font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left;  padding-right: 20px; padding-left: 20px;" />
+ </div>
+</div> 
+<br /> --%>
+    <asp:Panel ID="pnlTerminate" runat="server">
+        <table style="width: 80%; margin-top: 20px;" class="zebra">
+            <thead>
+                <tr>
+                    <th colspan="2" align="left" style="padding: 10px;">
+                        ENTER EMPLOYEE ID TO TERMINATE
+                    </th>
+                </tr>
+            </thead>
+            <tfoot>
+                <tr>
+                    <th colspan="2">
+                    </th>
+                </tr>
+            </tfoot>
+            <tbody>
+                <tr>
+                    <td>
+                        Employee ID:
+                    </td>
+                    <td>
+                        <asp:DropDownList ID="drpEmpID" runat="server" Width="300px" />
+                        <asp:ListBox ID="lstEmpID" runat="server" Visible="false" SelectionMode="Multiple"
+                            Height="300px" Width="300px"></asp:ListBox>
+                        &nbsp;
+                        <asp:Button ID="btnTerminate" runat="server" Text="Terminate" CssClass="ui-button ui-button-text-only ui-widget ui-state-default "
+                            Style="font-family: BebasNeue; font-size: 15px; letter-spacing: 1px; display: inline;" />
+                        <asp:ImageButton ID="imgbtnmulti" runat="server" ImageUrl="~/Content/images/multiple.png"
+                            Height="20px" Width="20px" ToolTip="terminate multiple employees(for DL only)"
+                            Visible="False" />
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <asp:Panel ID="pnlGrdIDL" runat="server" Visible="False">
+            <table style="width: 80%; margin-top: 20px;" class="zebra">
+                <thead>
+                    <tr>
+                        <th align="left" style="padding: 10px;">
+                            TERMINATION REQUEST FORM - FOR IDL
+                        </th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <th>
+                        </th>
+                    </tr>
+                </tfoot>
+                <tbody>
+                    <tr>
+                        <td>
+                            <asp:GridView ID="grdIDL" runat="server" AutoGenerateColumns="False">
+                                <Columns>
+                                    <asp:ButtonField ButtonType="Button" HeaderText="Evaluate" Text="Evaluate" />
+                                    <asp:BoundField DataField="emplid" HeaderText="Employee ID" />
+                                    <asp:BoundField DataField="name_a" HeaderText="Employee Name" />
+                                    <asp:BoundField DataField="deptid" HeaderText="Dept" />
+                                    <asp:BoundField DataField="hire_dt" HeaderText="Hired Date" />
+                                    <asp:BoundField DataField="termination_dt" HeaderText="Termination Date" />
+                                </Columns>
+                            </asp:GridView>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            </asp:Panel>
+            <asp:Panel ID="pnlGrdDL" runat="server" Visible="False">
+            <table style="width: 80%; margin-top: 20px;" class="zebra">
+                <thead>
+                    <tr>
+                        <th align="left" style="padding: 10px;">
+                            TERMINATION REQUEST FORM - FOR DL
+                        </th>
+                        <th align="right" style="padding: 10px;">
+                            <asp:DropDownList ID="drpCatStat" Width="200" runat="server">
+                            </asp:DropDownList>
+                        </th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <th colspan="2">
+                        </th>
+                    </tr>
+                </tfoot>
+                <tbody>
+                    <tr>
+                        <td colspan="2">
+                            <asp:GridView ID="grdFIProbation" runat="server" AutoGenerateColumns="False" Visible="False">
+                                <Columns>
+                                    <asp:TemplateField>
+                                        <HeaderTemplate>
+                                        </HeaderTemplate>
+                                        <ItemTemplate>
+                                            <asp:CheckBox runat="server" ID="RowCheckBox" ToolTip="Select this employee " />
+                                        </ItemTemplate>
+                                        <ItemStyle Width="25px" />
+                                    </asp:TemplateField>
+                                    <asp:BoundField DataField="emplid" HeaderText="Employee ID" />
+                                    <asp:BoundField DataField="name_a" HeaderText="Employee Name" />
+                                    <asp:BoundField DataField="deptid" HeaderText="Dept" />
+                                    <asp:BoundField DataField="hire_dt" HeaderText="Hired Date" />
+                                    <asp:BoundField DataField="probation_dt" HeaderText="Probation Date" />
+                                </Columns>
+                            </asp:GridView>
+                            
+                            <asp:GridView ID="grdFIProlongation" runat="server" AutoGenerateColumns="false" Visible="False">
+                            <Columns>
+                                    <asp:TemplateField>
+                                        <HeaderTemplate>
+                                        </HeaderTemplate>
+                                        <ItemTemplate>
+                                            <asp:CheckBox runat="server" ID="RowCheckBox" ToolTip="Select this employee " />
+                                        </ItemTemplate>
+                                        <ItemStyle Width="25px" />
+                                    </asp:TemplateField>
+                                    <asp:BoundField DataField="emplid" HeaderText="Employee ID" />
+                                    <asp:BoundField DataField="name_a" HeaderText="Employee Name" />
+                                    <asp:BoundField DataField="deptid" HeaderText="Dept" />
+                                    <asp:BoundField DataField="hire_dt" HeaderText="Hired Date" />
+                                    <asp:BoundField DataField="termination_dt" HeaderText="Termination Date" />
+                                </Columns>
+                            </asp:GridView>
+                            
+                            <asp:GridView ID="grdFDProbation" runat="server" AutoGenerateColumns="false" Visible="False">
+                            <Columns>
+                                    <asp:TemplateField>
+                                        <HeaderTemplate>
+                                        </HeaderTemplate>
+                                        <ItemTemplate>
+                                            <asp:CheckBox runat="server" ID="RowCheckBox" ToolTip="Select this employee " />
+                                        </ItemTemplate>
+                                        <ItemStyle Width="25px" />
+                                    </asp:TemplateField>
+                                    <asp:BoundField DataField="emplid" HeaderText="Employee ID" />
+                                    <asp:BoundField DataField="name_a" HeaderText="Employee Name" />
+                                    <asp:BoundField DataField="deptid" HeaderText="Dept" />
+                                    <asp:BoundField DataField="hire_dt" HeaderText="Hired Date" />
+                                    <asp:BoundField DataField="probation_dt" HeaderText="Probation Date" />
+                                </Columns>
+                            </asp:GridView>
+                            
+                            <asp:GridView ID="grdFDProlongation" runat="server" AutoGenerateColumns="false" Visible="False">
+                            <Columns>
+                                    <asp:TemplateField>
+                                        <HeaderTemplate>
+                                        </HeaderTemplate>
+                                        <ItemTemplate>
+                                            <asp:CheckBox runat="server" ID="RowCheckBox" ToolTip="Select this employee " />
+                                        </ItemTemplate>
+                                        <ItemStyle Width="25px" />
+                                    </asp:TemplateField>
+                                    <asp:BoundField DataField="emplid" HeaderText="Employee ID" />
+                                    <asp:BoundField DataField="name_a" HeaderText="Employee Name" />
+                                    <asp:BoundField DataField="deptid" HeaderText="Dept" />
+                                    <asp:BoundField DataField="hire_dt" HeaderText="Hired Date" />
+                                    <asp:BoundField DataField="termination_dt" HeaderText="Termination Date" />
+                                </Columns>
+                            </asp:GridView>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" align="right">
+                            <asp:Button ID="btnEvaluate" runat="server" Text="Evaluate" />
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </asp:Panel>
+    </asp:Panel>
+</asp:Content>

@@ -1,0 +1,942 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model;
+using System.Data.OleDb;
+using System.Data;
+using ehr_email;
+
+// protected void AddToGridView_Click(object sender, EventArgs e)
+// protected void DeleteFromGridView_Click(object sender, EventArgs e)
+// protected void Submit_Click(object sender, EventArgs e)
+// protected void ShowDeptPosition_TextChanged(object sender, EventArgs e)
+// protected void NewJobList_TextChanged(object sender, EventArgs e)
+// protected void Reset_Click(object sender, EventArgs e)
+// protected void ShowWorkShiftPanel_SelectedIndexChanged(object sender, EventArgs e)
+// protected void CheckWorkingDays_CheckedChanged(object sender, EventArgs e)
+// protected void EnableRadio_TextChanged(object sender, EventArgs e)
+// protected void PerformanceBonus_CheckedChanged(object sender, EventArgs e)
+// protected void PersonalBonus_CheckedChanged(object sender, EventArgs e)
+// protected void ForkliftBonus_CheckedChanged(object sender, EventArgs e)
+// protected void GoBack_Click(object sender, EventArgs e)
+// public void PopulateDropDownListOfMultipleEmployees(string deptid)
+// public string getEmplCategory(string EmployeeID)
+// public void showPSDept()
+// public void showPSJobs()
+// public string getApprovalFlowID()
+// public string GetLastRequestID()
+// public string CreateRequestID()
+// public string GetLastTransactionID()
+// public string CreateTransactionID()
+// public void insertBonus(string requestID)
+// public void SendEmailToFirstApprover(string transid, string requestid)
+// public void DeleteExceptionEmployee(string emplid)
+// public string Validation()
+
+namespace EHR.Views.Status
+{
+    public partial class RQ05 : System.Web.UI.Page
+    {
+        DBModel _db = new DBModel();
+        PSModel _ps = new PSModel();
+        MiscModel _mis = new MiscModel();
+        ApprovalModel _appv = new ApprovalModel();
+        AccountModel _accnt = new AccountModel();
+        string _errno = "0";
+        
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            pnlDialog.Visible = false;
+            // Populate the Dropdown List only for first time
+            if (!IsPostBack)
+                PopulateDropDownListOfMultipleEmployees(_ps.GetEmplDepartment((string)(Session["UserID"])));
+            lblRequestDate.Text = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss");
+            if (!IsPostBack) showPSDept();
+            if (!IsPostBack) showPSJobs();
+        }
+
+        /// <summary>
+        /// Handles Event of button "Plus" (Add new employee for batch application)
+        /// Add employee to the GridView GridViewMultipleEmployees
+        /// Validate employee data - cannot add employees with different department, position or category
+        /// </summary>
+        /// <param name="sender">btnAddToGridView</param>
+        /// <param name="e"></param>
+        protected void AddToGridView_Click(object sender, EventArgs e)
+        {
+            DataTable dt = new DataTable();
+            DataColumn column1 = new DataColumn("Employee Name", System.Type.GetType("System.String"));
+            DataColumn column2 = new DataColumn("Employee ID", System.Type.GetType("System.String"));
+            DataColumn column3 = new DataColumn("Department", System.Type.GetType("System.String"));
+            DataColumn column4 = new DataColumn("Remarks", System.Type.GetType("System.String"));
+
+            dt.Columns.Add(column1);
+            dt.Columns.Add(column2);
+            dt.Columns.Add(column3);
+            dt.Columns.Add(column4);
+
+            foreach (GridViewRow r in GridViewMultipleEmployees.Rows)
+            {
+                string[] pomArray = new string[] { r.Cells[1].Text, r.Cells[2].Text, r.Cells[3].Text };
+                dt.Rows.Add(pomArray);
+            }
+
+            // Cannot add same employee twice!
+            foreach (GridViewRow grow in GridViewMultipleEmployees.Rows)
+            {
+                if (grow.Cells[2].Text == ddlMultipleEmployees.SelectedItem.Value)
+                {
+                    lblException.Text = ddlMultipleEmployees.SelectedItem.Text + " (" + ddlMultipleEmployees.SelectedValue + "): Employee already exists in this loop!";
+                    return;
+                }
+            }
+
+            DataRow row = dt.NewRow();
+            row["Employee Name"] = ddlMultipleEmployees.SelectedItem.Text;
+            row["Employee ID"] = ddlMultipleEmployees.SelectedItem.Value;
+            row["Department"] = _ps.GetEmplDepartment(ddlMultipleEmployees.SelectedItem.Value);
+            dt.Rows.Add(row);
+
+            GridViewMultipleEmployees.DataSource = dt;
+            GridViewMultipleEmployees.DataBind();
+
+            //GridViewMultipleEmployees.Rows[0].Cells[2].Controls[3].Visible = true;
+
+            #region Get Employee data and validation
+            // Region Begin
+            string sql = @"SELECT PS_JOB.JOB_DESC_PS, PS_JOB.JOB_CODE, PS_SUB_WCZORG_VW_A.DESCR, PS_SUB_WCZ_AT_VW_A.*
+                           FROM PS_JOB, PS_SUB_WCZORG_VW_A, PS_SUB_WCZ_AT_VW_A
+                           WHERE PS_SUB_WCZ_AT_VW_A.JOBCODE = PS_JOB.JOB_CODE AND
+                                 PS_SUB_WCZ_AT_VW_A.DEPTID = PS_SUB_WCZORG_VW_A.DEPTID AND
+                                 PS_SUB_WCZ_AT_VW_A.EMPLID = '" + ddlMultipleEmployees.SelectedItem.Value + "'";
+            OleDbDataReader dr = _db.GetDataReaderFromPS(sql);
+            if (dr.Read())
+            {
+                string NewCurrDeptid = Convert.ToString(dr["DEPTID"] + " (" + dr["DESCR"] + ")");
+                string NewCurrPosi = Convert.ToString(dr["JOB_DESC_PS"]);
+
+                // Check if new employee is from the same department
+                if (lblCurrentDeptID.Text != "" && lblCurrentDeptID.Text != NewCurrDeptid)
+                {
+                    lblException.Text = Convert.ToString(dr["NAME_A"]) + " (" + Convert.ToString(dr["EMPLID"]) + "): Department " + NewCurrDeptid.Substring(0, 6) + " does not match!";
+                    DeleteExceptionEmployee(Convert.ToString(dr["EMPLID"]));
+                    return;
+                }
+
+                // Check if new employee has the same position
+                if (lblCurrentPosition.Text != "" && lblCurrentPosition.Text != NewCurrPosi)
+                {
+                    lblException.Text = Convert.ToString(dr["NAME_A"]) + " (" + Convert.ToString(dr["EMPLID"]) + "): Position " + NewCurrPosi + " does not match!";
+                    DeleteExceptionEmployee(Convert.ToString(dr["EMPLID"]));
+                    return;
+                }
+
+                lblCurrentDeptID.Text = NewCurrDeptid;
+                lblCurrentPosition.Text = NewCurrPosi;
+            }
+            else
+            { // TODO: Message box doesn't work!
+                DeleteExceptionEmployee(ddlMultipleEmployees.SelectedItem.Value);
+                _errno = "27";
+                _mis.GetMsgBox(_errno, pnlDialog, lblConfirmMsg);
+                return;
+            }
+
+            // Check if new employee has the same category
+            if (lblCurrentEmplCategory.Text != "" && lblCurrentEmplCategory.Text != getEmplCategory(Convert.ToString(dr["EMPLID"])))
+            {
+                lblException.Text = Convert.ToString(dr["NAME_A"]) + " (" + Convert.ToString(dr["EMPLID"]) + "): Employee category does not match!";
+                DeleteExceptionEmployee(Convert.ToString(dr["EMPLID"]));
+                return;
+            }
+            
+            lblCurrentEmplCategory.Text = getEmplCategory(ddlMultipleEmployees.SelectedItem.Value);
+
+            if (lblException.Text != "")
+                lblException.Text = "";
+            // Region End
+            #endregion
+        }
+
+        /// <summary>
+        /// Handles Event of button "Minus" (Remove employee from batch application)
+        /// Remove employee from the GridView GridViewMultipleEmployees
+        /// </summary>
+        /// <param name="sender">btnDeleteFromGridView</param>
+        /// <param name="e"></param>
+        protected void DeleteFromGridView_Click(object sender, EventArgs e)
+        {
+            DataTable dt = new DataTable();
+            DataColumn column1 = new DataColumn("Employee Name", System.Type.GetType("System.String"));
+            DataColumn column2 = new DataColumn("Employee ID", System.Type.GetType("System.String"));
+            DataColumn column3 = new DataColumn("Department", System.Type.GetType("System.String"));
+            DataColumn column4 = new DataColumn("Remarks", System.Type.GetType("System.String"));
+
+            dt.Columns.Add(column1);
+            dt.Columns.Add(column2);
+            dt.Columns.Add(column3);
+            dt.Columns.Add(column4);
+
+            foreach (GridViewRow r in GridViewMultipleEmployees.Rows)
+            {
+                CheckBox cb = (CheckBox)r.Cells[0].FindControl("CheckBoxGridView");
+                if (cb.Checked)
+                    continue;
+                
+                string[] pomArray = new string[] { r.Cells[1].Text, r.Cells[2].Text, r.Cells[3].Text };
+                dt.Rows.Add(pomArray);
+            }
+            GridViewMultipleEmployees.DataSource = dt;
+            GridViewMultipleEmployees.DataBind();
+
+            if (lblException.Text != "")
+            {
+                lblException.Text = "";
+            }
+
+            // Clear form if all employees are deleted from the GridView
+            if (GridViewMultipleEmployees.Rows.Count == 0)
+            {
+                lblCurrentDeptID.Text = "";
+                lblCurrentPosition.Text = "";
+                lblCurrentEmplCategory.Text = "";
+            }
+
+        }
+
+        /// <summary>
+        /// Handles OnClick Event of button Submit
+        /// Validate the form
+        /// Insert into STATUS_CHANGE
+        /// Insert into STATUS_SALARY
+        /// Insert into STATUS_BONUSES
+        /// Get Approvers of an application
+        /// Send email notification to HR Reviewer
+        /// Redirect to RQ06.aspx?id=<requestID>
+        /// </summary>
+        /// <param name="sender">Submit</param>
+        /// <param name="e"></param>
+        protected void Submit_Click(object sender, EventArgs e)
+        {
+            Validate("AmountInputGroup");
+            _errno = Validation();
+            if (IsValid == false) _errno = "12";
+            if (_errno != "0") { _mis.GetMsgBox(_errno, pnlDialog, lblConfirmMsg); return; }
+            
+            string requestID = CreateRequestID();
+            string transactionID = "";
+            string appflowid = getApprovalFlowID();
+            string requestorID = (string)(Session["UserID"]);
+            string requestorDept = _ps.GetEmplDepartment(requestorID);
+            int isSalary_flag = 0;
+            if (txtSalaryAmount.Text != "")
+                isSalary_flag = 1;
+
+            foreach (GridViewRow row in GridViewMultipleEmployees.Rows)
+            {
+                transactionID = CreateTransactionID();
+                #region SQL: Insert STATUS_CHANGE
+                string sqlInsertStatus_Change = @"INSERT INTO STATUS_CHANGE 
+                                  (REQUESTID, TRANSID, APFLOWID, REQUESTORID, REQUESTORDEPTID, REQDATE, EMPLID, CURRDEPT, NEWDEPT,
+                                   CURRPOSI, NEWPOSI, CURREMPLCAT, NEWEMPLCAT, CSHIFTTYPE, CSHIFTTYPETIME, CSHIFTTYPEFROM, CSHIFTTYPETO,
+                                   ISMONDAY, ISTUESDAY, ISWEDNESDAY, ISTHURSDAY, ISFRIDAY, ISSATURDAY, ISSUNDAY, CWORKSHIFTDETAILS,
+                                   TSHIFTTYPE, APPSTATUS, SALARY_FLAG, STATUS) "
+                                + "VALUES ('" + requestID + "', '"
+                                              + transactionID + "', '"
+                                              + appflowid + "', '"
+                                              + requestorID + "', '"
+                                              + requestorDept + "', TO_DATE('"
+                                              + lblRequestDate.Text + "', 'yyyy/MM/dd hh24:mi:ss'), '"
+                                              + row.Cells[2].Text + "', '" // Employee ID
+                                              + lblCurrentDeptID.Text.Substring(0, 6) + "', '"
+                                              + DropDownListNewDeptID.SelectedItem.Value + "', '"
+                                              + lblCurrentPosition.Text + "', '"
+                                              + DropDownListNewJob.SelectedItem.Value + "', '"
+                                              + lblCurrentEmplCategory.Text + "', '"
+                                              + DropDownListNewCategory.SelectedItem.Value + "', '"
+                                              + DropDownListCShiftType.SelectedItem.Value + "', '"
+                                              + DropDownListShiftTypeTime.SelectedItem.Value + "', '"
+                                              + DropDownListShiftFrom.SelectedItem.Value + "', '"
+                                              + DropDownListShiftTo.SelectedItem.Value + "', '"
+                                              + CheckBoxMonday.Checked + "', '"
+                                              + CheckBoxTuesday.Checked + "', '"
+                                              + CheckBoxWednesday.Checked + "', '"
+                                              + CheckBoxThursday.Checked + "', '"
+                                              + CheckBoxFriday.Checked + "', '"
+                                              + CheckBoxSaturday.Checked + "', '"
+                                              + CheckBoxSunday.Checked + "', '"
+                                              + txtWorkShiftDetails.Text + "', '"
+                                              + DropDownListTShiftType.SelectedItem.Value + "', "
+                                              + "'Waiting', "
+                                              + isSalary_flag + ", 'In Progress')";
+
+                _db.GetExecuteNonQuery(sqlInsertStatus_Change);
+                #endregion
+
+                //this codes insert the approvers in APPROVALTRANSACTION table.  
+                string newDept = DropDownListNewDeptID.SelectedValue.ToString();
+                _appv.GetApproval(transactionID, row.Cells[2].Text, appflowid, newDept);
+            }
+
+            #region SQL: Insert STATUS_SALARY
+            string sqlInsertStatus_Salary = "INSERT INTO STATUS_SALARY (REQUESTID, SALARYAMOUNT, INCREASE_DECRESASE) VALUES ('"
+                + requestID + "', '" + txtSalaryAmount.Text + "', '" + RadioButtonListSalary.SelectedValue + "')";
+            if (txtSalaryAmount.Text != "")
+                _db.GetExecuteNonQuery(sqlInsertStatus_Salary);
+            #endregion
+            #region Insert STATUS_BONUSES
+            insertBonus(requestID);
+            #endregion
+
+            SendEmailToFirstApprover(transactionID, requestID);
+            Response.Redirect("RQ06.aspx?id=" + requestID);
+        }
+
+        // <summary>
+        /// Event Changed Department, shows available position for particular department
+        /// </summary>
+        /// <param name="sender">DropDownListNewDeptID</param>
+        /// <param name="e"></param>
+        protected void ShowDeptPosition_TextChanged(object sender, EventArgs e)
+        {
+            string sql = "SELECT DISTINCT JOB_BUSI_TITLE FROM " +
+                         "PS_JOB " +
+                         "WHERE TV_PLANT LIKE '" + DropDownListNewDeptID.SelectedValue.Substring(0, 4) + "%' OR " +
+                               "SV_PLANT LIKE '" + DropDownListNewDeptID.SelectedValue.Substring(0, 4) + "%' OR " +
+                               "SITE_FUNCTION LIKE '" + DropDownListNewDeptID.SelectedValue.Substring(0, 4) + "%' " +
+                         "GROUP BY JOB_BUSI_TITLE";
+            DataTable dt = _db.GetTableFromPS(sql);
+
+            DropDownListNewJob.Items.Clear();
+            int nTotalRecords = dt.Rows.Count;
+            for (int i = 0; i < nTotalRecords; i++)
+            {
+                DropDownListNewJob.Items.Insert(i, new ListItem(dt.Rows[i]["JOB_BUSI_TITLE"].ToString()));
+            }
+            DropDownListNewJob.Items.Insert(0, new ListItem("Unchanged", "Unchanged"));
+
+            if (DropDownListNewDeptID.SelectedValue == "Unchanged")
+            {
+                DropDownListNewJob.Items.Clear();
+                showPSJobs();
+            }
+        }
+
+        /* NOT USED */
+        protected void NewJobList_TextChanged(object sender, EventArgs e)
+        {
+            
+        }
+
+        /// <summary>
+        /// Handles OnClick Event of button Reset
+        /// Clears the form
+        /// </summary>
+        /// <param name="sender">Reset</param>
+        /// <param name="e"></param>
+        protected void Reset_Click(object sender, EventArgs e)
+        {
+            Page.Response.Redirect(Page.Request.Url.ToString(), true);
+        }
+
+        /// <summary>
+        /// Event Changed Employee Category, unhide Workshift panel for Contracted/Temporary employees
+        /// By default Workshift panel is hidden.
+        /// </summary>
+        /// <param name="sender">DropDownListNewCategory</param>
+        /// <param name="e"></param>
+        protected void ShowWorkShiftPanel_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            pnlWorkShift1.Visible = false;
+            pnlWorkShift2.Visible = false;
+
+            if (DropDownListNewCategory.SelectedItem.Value == "Contracted") pnlWorkShift1.Visible = true;
+            else if (DropDownListNewCategory.SelectedItem.Value == "Temporary") pnlWorkShift2.Visible = true;
+        }
+
+        /// <summary>
+        /// Event Check Working days, checks all CheckBoxes of working days (Monday, Tuesday, Wednesday, Thursday, Friday)
+        /// </summary>
+        /// <param name="sender">CheckBoxWorkingDays</param>
+        /// <param name="e"></param>
+        protected void CheckWorkingDays_CheckedChanged(object sender, EventArgs e)
+        {
+            if (CheckBoxWorkingDays.Checked == true)
+            {
+                CheckBoxMonday.Checked = true;
+                CheckBoxTuesday.Checked = true;
+                CheckBoxWednesday.Checked = true;
+                CheckBoxThursday.Checked = true;
+                CheckBoxFriday.Checked = true;
+            }
+            else
+            {
+                CheckBoxMonday.Checked = false;
+                CheckBoxTuesday.Checked = false;
+                CheckBoxWednesday.Checked = false;
+                CheckBoxThursday.Checked = false;
+                CheckBoxFriday.Checked = false;
+            }
+        }
+
+        /// <summary>
+        /// Event Text Changed, enable RadioButtons for Increase/Decrease salary amount
+        /// </summary>
+        /// <param name="sender">txtSalaryAmount</param>
+        /// <param name="e"></param>
+        protected void EnableRadio_TextChanged(object sender, EventArgs e)
+        {
+            RadioButtonListSalary.Enabled = true;
+            RadioButtonListSalary.SelectedIndex = 0;
+            RegexValidatorForSalary.Validate();
+
+            if (txtSalaryAmount.Text == "")
+            {
+                RadioButtonListSalary.Enabled = false;
+                RadioButtonListSalary.SelectedIndex = -1;
+            }
+        }
+
+        /// <summary>
+        /// Event Checked Changed, enable TextBox and RadioButtons for Increase/Decrease Performance bonus
+        /// Validation of Personal and Forklift bonus
+        /// </summary>
+        /// <param name="sender">checkBoxPerformanceBonus</param>
+        /// <param name="e"></param>
+        protected void PerformanceBonus_CheckedChanged(object sender, EventArgs e)
+        {
+            RegexValidatorForPersonalBonus.Validate();
+            RegexValidatorForForkliftBonus.Validate();
+
+            if (checkBoxPerformanceBonus.Checked == true)
+            {
+                txtAmountPerformanceBonus.Enabled = true;
+                RadioButtonListPerformanceBonus.Enabled = true;
+                RadioButtonListPerformanceBonus.SelectedIndex = 0;
+            }
+            else
+            {
+                txtAmountPerformanceBonus.Enabled = false;
+                txtAmountPerformanceBonus.Text = "";
+                RadioButtonListPerformanceBonus.Enabled = false;
+                RadioButtonListPerformanceBonus.SelectedIndex = -1;
+            }
+        }
+
+        /// <summary>
+        /// Event Checked Changed, enable TextBox and RadioButtons for Increase/Decrease Personal bonus
+        /// Validation of Performance and Forklift bonus
+        /// </summary>
+        /// <param name="sender">checkBoxPersonalBonus</param>
+        /// <param name="e"></param>
+        protected void PersonalBonus_CheckedChanged(object sender, EventArgs e)
+        {
+            RegexValidatorForPerformanceBonus.Validate();
+            RegexValidatorForForkliftBonus.Validate();
+
+            if (checkBoxPersonalBonus.Checked == true)
+            {
+                txtAmountPersonalBonus.Enabled = true;
+                RadioButtonListPersonalBonus.Enabled = true;
+                RadioButtonListPersonalBonus.SelectedIndex = 0;
+            }
+            else
+            {
+                txtAmountPersonalBonus.Enabled = false;
+                txtAmountPersonalBonus.Text = "";
+                RadioButtonListPersonalBonus.Enabled = false;
+                RadioButtonListPersonalBonus.SelectedIndex = -1;
+            }
+        }
+
+        /// <summary>
+        /// Event Checked Changed, enable TextBox and RadioButtons for Increase/Decrease Personal bonus
+        /// Validation of Performance and Personal bonus
+        /// </summary>
+        /// <param name="sender">checkBoxForkliftBonus</param>
+        /// <param name="e"></param>
+        protected void ForkliftBonus_CheckedChanged(object sender, EventArgs e)
+        {
+            RegexValidatorForPerformanceBonus.Validate();
+            RegexValidatorForPersonalBonus.Validate();
+
+            if (checkBoxForkliftBonus.Checked == true)
+            {
+                txtAmountForkliftBonus.Enabled = true;
+                RadioButtonListForkliftBonus.Enabled = true;
+                RadioButtonListForkliftBonus.SelectedIndex = 0;
+            }
+            else
+            {
+                txtAmountForkliftBonus.Enabled = false;
+                txtAmountForkliftBonus.Text = "";
+                RadioButtonListForkliftBonus.Enabled = false;
+                RadioButtonListForkliftBonus.SelectedIndex = -1;
+            }
+        }
+
+        /// <summary>
+        /// Handles OnClick Event of button Go Back
+        /// Redirecting to RQ01.aspx
+        /// </summary>
+        /// <param name="sender">GoBack</param>
+        /// <param name="e"></param>
+        protected void GoBack_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("RQ01.aspx");
+        }
+
+        /// <summary>
+        /// Function that fills DropDownListOfMultipleEmployees with employees from user's internal department
+        /// </summary>
+        /// <param name="deptid">User department ID</param>
+        public void PopulateDropDownListOfMultipleEmployees(string deptid)
+        {
+            try { deptid = deptid.Substring(0, 4); }
+            catch (Exception ex) { ; }
+            string sqlSelectEmployees = "SELECT EMPLID, NAME_A, DEPTID, " +
+                                        "SUBSTR(NAME_A, INSTR2(NAME_A, ' ')) AS SURNAME, " +
+                                        "SUBSTR(NAME_A, INSTR2(NAME_A, ' ')) || ' ' || SUBSTR(NAME_A, 1, INSTR2(NAME_A, ' ')) || '(' || DEPTID || ')' AS EMPLOYEE " + 
+                                        "FROM PS_SUB_WCZ_AT_VW_A WHERE DEPTID LIKE '" + deptid + "%' ORDER BY SURNAME";
+            DataTable dt = _db.GetTableFromPS(sqlSelectEmployees);
+
+            ddlMultipleEmployees.DataSource = dt;
+            ddlMultipleEmployees.DataValueField = "EMPLID";
+            ddlMultipleEmployees.DataTextField = "EMPLOYEE";
+            ddlMultipleEmployees.DataBind();
+            ddlMultipleEmployees.Items.Insert(0, new ListItem("-- Select employee --", "0"));
+        }
+
+        /// <summary>
+        /// Function that gets employee category
+        /// </summary>
+        /// <param name="EmployeeID">Accepting one mandatory parameter Employee ID</param>
+        /// <returns>Returns employee category as a string</returns>
+        public string getEmplCategory(string EmployeeID)
+        {
+            string sql = @"SELECT PS.PS_SUB_WCZ_AT_VW_A.EMPLID, PS.PS_SUB_WCZ_AT_VW_A.EMPL_CATEGORY_A, STATUS_EMPLCAT.*
+                           FROM PS.PS_SUB_WCZ_AT_VW_A, STATUS_EMPLCAT
+                           WHERE PS.PS_SUB_WCZ_AT_VW_A.EMPLID = '" + EmployeeID + @"' AND
+                                 STATUS_EMPLCAT.EMPLCATCODE = PS.PS_SUB_WCZ_AT_VW_A.EMPL_CATEGORY_A";
+            OleDbDataReader dr = _db.GetDataReader(sql);
+            dr.Read();
+            return Convert.ToString(dr["EMPLCATDESC"]);
+        }
+
+        /// <summary>
+        /// Function that fills DropDownListNewDeptID with available departments for particular plant
+        /// </summary>
+        public void showPSDept()
+        {
+            string sql = @"SELECT DEPTID, DESCR FROM PS_SUB_WCZORG_VW_A GROUP BY DEPTID, DESCR";
+            DataTable dt = _db.GetTableFromPS(sql);
+
+            int nTotalRecords = dt.Rows.Count;
+            for (int i = 0; i < nTotalRecords; i++)
+            {
+                DropDownListNewDeptID.Items.Insert(i, new ListItem(dt.Rows[i]["DEPTID"].ToString() + " (" + dt.Rows[i]["DESCR"].ToString() + ")", dt.Rows[i]["DEPTID"].ToString()));
+            }
+            DropDownListNewDeptID.Items.Insert(0, new ListItem("Unchanged", "Unchanged"));
+        }
+
+        /// <summary>
+        /// Function that fills DropDownListNewJob with available positions (JOB_BUSI_TITLE) from table PS_JOB
+        /// </summary>
+        public void showPSJobs()
+        {
+            string sessid = _accnt.GetUserSessID();
+
+            string requestordept = _ps.GetEmplDepartment(sessid);
+            string sql = "SELECT DISTINCT JOB_BUSI_TITLE FROM " +
+                         "PS_JOB " +
+                         "WHERE TV_PLANT LIKE '" + requestordept.Substring(0, 4) + "%' OR " +
+                               "SV_PLANT LIKE '" + requestordept.Substring(0, 4) + "%' OR " +
+                               "SITE_FUNCTION LIKE '" + requestordept.Substring(0, 4) + "%' " +
+                         "GROUP BY JOB_BUSI_TITLE";
+            DataTable dt = _db.GetTableFromPS(sql);
+
+            int nTotalRecords = dt.Rows.Count;
+            for (int i = 0; i < nTotalRecords; i++)
+            {
+                DropDownListNewJob.Items.Insert(i, new ListItem(dt.Rows[i]["JOB_BUSI_TITLE"].ToString()));
+            }
+            DropDownListNewJob.Items.Insert(0, new ListItem("Unchanged", "Unchanged"));
+            
+        }
+
+        /// <summary>
+        /// Function that come out with the correct Approval Flow ID of an application
+        /// AF005: Change employee data within department, without salary
+        /// AF006: Change employee data cross departments, within Plant, without salary
+        /// AF007: Change employee data cross Plants, without salary
+        /// AF008: Change employee data within department, including salary
+        /// AF009: Change employee data cross departments, within Plant, including salary
+        /// AF010: Change employee data cross Plants, including salary
+        /// </summary>
+        /// <returns>Returns Approval Flow ID (APPFLOWID) as a string</returns>
+        public string getApprovalFlowID()
+        {
+            string approvalFlowID = "";
+
+            if (DropDownListNewDeptID.SelectedValue == "Unchanged")
+            {
+                approvalFlowID = "AF005"; // Department not changed
+                if (txtSalaryAmount.Text != "")
+                    approvalFlowID = "AF008"; // Salary changed, department not changed
+            }
+            else if (DropDownListNewDeptID.SelectedValue != "Unchanged")
+            {
+                if (lblCurrentDeptID.Text.Substring(0, 3) == "MD3" && DropDownListNewDeptID.SelectedValue.Substring(0, 3) == "MD1")
+                {
+                    approvalFlowID = "AF007"; // Department changed cross plant
+                    if (txtSalaryAmount.Text != "")
+                        approvalFlowID = "AF010"; // Salary changed, department changed cross plant
+                }
+                else if (lblCurrentDeptID.Text.Substring(0, 3) == "MD1" && DropDownListNewDeptID.SelectedValue.Substring(0, 3) == "MD3")
+                {
+                    approvalFlowID = "AF007"; // Department changed cross plant
+                    if (txtSalaryAmount.Text != "")
+                        approvalFlowID = "AF010"; // Salary changed, department changed cross plant
+                }
+                else if (lblCurrentDeptID.Text.Substring(0, 3) == "MD3" && DropDownListNewDeptID.SelectedValue.Substring(0, 2) == "CZ")
+                {
+                    approvalFlowID = "AF007"; // Department changed cross plant
+                    if (txtSalaryAmount.Text != "")
+                        approvalFlowID = "AF010"; // Salary changed, department changed cross plant
+                }
+                else if (lblCurrentDeptID.Text.Substring(0, 2) == "CZ" && DropDownListNewDeptID.SelectedValue.Substring(0, 3) == "MD3")
+                {
+                    approvalFlowID = "AF007"; // Department changed cross plant
+                    if (txtSalaryAmount.Text != "")
+                        approvalFlowID = "AF010"; // Salary changed, department changed cross plant
+                }
+                else if (lblCurrentDeptID.Text.Substring(0, 3) == "MD1" && DropDownListNewDeptID.SelectedValue.Substring(0, 2) == "CZ")
+                {
+                    approvalFlowID = "AF007"; // Department changed cross plant
+                    if (txtSalaryAmount.Text != "")
+                        approvalFlowID = "AF010"; // Salary changed, department changed cross plant
+                }
+                else if (lblCurrentDeptID.Text.Substring(0, 2) == "CZ" && DropDownListNewDeptID.SelectedValue.Substring(0, 3) == "MD1")
+                {
+                    approvalFlowID = "AF007"; // Department changed cross plant
+                    if (txtSalaryAmount.Text != "")
+                        approvalFlowID = "AF010"; // Salary changed, department changed cross plant
+                }
+                else if (lblCurrentDeptID.Text.Substring(0, 3) == "MD0" && DropDownListNewDeptID.SelectedValue.Substring(0, 3) == "MD1")
+                {
+                    approvalFlowID = "AF007"; // Department changed cross plant
+                    if (txtSalaryAmount.Text != "")
+                        approvalFlowID = "AF010"; // Salary changed, department changed cross plant
+                }
+                else if (lblCurrentDeptID.Text.Substring(0, 3) == "MD0" && DropDownListNewDeptID.SelectedValue.Substring(0, 3) == "MD3")
+                {
+                    approvalFlowID = "AF007"; // Department changed cross plant
+                    if (txtSalaryAmount.Text != "")
+                        approvalFlowID = "AF010"; // Salary changed, department changed cross plant
+                }
+                else if (lblCurrentDeptID.Text.Substring(0, 3) == "MD0" && DropDownListNewDeptID.SelectedValue.Substring(0, 2) == "CZ")
+                {
+                    approvalFlowID = "AF007"; // Department changed cross plant
+                    if (txtSalaryAmount.Text != "")
+                        approvalFlowID = "AF010"; // Salary changed, department changed cross plant
+                }
+                else if (lblCurrentDeptID.Text.Substring(0, 4) == "MD0L" && DropDownListNewDeptID.SelectedValue.Substring(0, 4) == "MD0L")
+                {
+                    approvalFlowID = "AF005"; // Internal change of department
+                    if (txtSalaryAmount.Text != "")
+                        approvalFlowID = "AF008"; // Salary changed, department not changed
+                }
+                else if (lblCurrentDeptID.Text.Substring(0, 4) == "MD0H" && DropDownListNewDeptID.SelectedValue.Substring(0, 4) == "MD0H")
+                {
+                    approvalFlowID = "AF005"; // Internal change of department
+                    if (txtSalaryAmount.Text != "")
+                        approvalFlowID = "AF008"; // Salary changed, department not changed
+                }
+                else
+                {
+                    approvalFlowID = "AF006"; // Department changed
+                    if (txtSalaryAmount.Text != "")
+                        approvalFlowID = "AF009"; // Salary, department changed
+                }
+            }
+
+            return approvalFlowID;
+        }
+
+        /// <summary>
+        /// Function that gets last Request ID from table STATUS_CHANGE
+        /// </summary>
+        /// <returns>Returns last Request ID as a string</returns>
+        public string GetLastRequestID()
+        {
+            string OracleQry = "SELECT REQUESTID FROM STATUS_CHANGE WHERE REQUESTID = (Select max(REQUESTID) from STATUS_CHANGE)";
+            string RequestID;
+
+            _db.GetConn();
+            OleDbCommand cmd = new OleDbCommand(OracleQry, _db.conn);
+            OleDbDataReader dr = cmd.ExecuteReader();
+
+            if (dr.Read())
+            {
+                RequestID = Convert.ToString(dr["REQUESTID"]);
+
+            }
+            else
+            {
+                RequestID = "";
+            }
+
+            return RequestID;
+        }
+
+        /// <summary>
+        /// Function that creates new Request ID based on last Request ID
+        /// Format RQYYYYMMDD000X (ex. RQ201208280001)
+        /// </summary>
+        /// <returns>Returns new Request ID as a string</returns>
+        public string CreateRequestID()
+        {
+            string YearNow = DateTime.Today.ToString("yyyy");
+            string MonthNow = String.Format("{0:MM}", DateTime.Now).ToString();
+            string DayNow = String.Format("{0:dd}", DateTime.Now).ToString();
+            string RequestID;
+
+            string LatestRequestID = GetLastRequestID(); // GET THE LAST REQUEST ID ex. RQ201206010001
+
+            if (LatestRequestID != "")
+            {
+                string SufRequestID = LatestRequestID.Substring(10);    // GET THE LAST 4 DIGIT of Request ID (ex. 0001)
+                int SuffixRequest = Convert.ToInt32(SufRequestID);
+                int SuffixRequestVal = SuffixRequest + 1;
+                string SuffixToString = Convert.ToString(SuffixRequestVal);
+                string SuffixReqID = SuffixToString.PadLeft(4, '0');
+
+                RequestID = "RQ" + YearNow + MonthNow + DayNow + SuffixReqID;
+            }
+            else
+            {
+                RequestID = "RQ" + YearNow + MonthNow + DayNow + "0001";
+            }
+
+            return RequestID;
+        }
+
+        /// <summary>
+        /// Function that gets last Transaction ID from table STATUS_CHANGE
+        /// </summary>
+        /// <returns>Returns last Transaction ID as a string</returns>
+        public string GetLastTransactionID()
+        {
+            string OracleQry = "SELECT TRANSID FROM STATUS_CHANGE WHERE TRANSID = (Select max(TRANSID) from STATUS_CHANGE)";
+            string TransactionID;
+
+            _db.GetConn();
+            OleDbCommand cmd = new OleDbCommand(OracleQry, _db.conn);
+            OleDbDataReader dr = cmd.ExecuteReader();
+
+            if (dr.Read())
+            {
+                TransactionID = Convert.ToString(dr["TRANSID"]);
+
+            }
+            else
+            {
+                TransactionID = "";
+            }
+
+            return TransactionID;
+        }
+
+        /// <summary>
+        /// Function that creates new Transaction ID based on last Transaction ID
+        /// Format TRYYYYMMDD000X (ex. TR201208280001)
+        /// </summary>
+        /// <returns></returns>
+        public string CreateTransactionID()
+        {
+            string YearNow = DateTime.Today.ToString("yyyy");
+            string MonthNow = String.Format("{0:MM}", DateTime.Now).ToString();
+            string DayNow = String.Format("{0:dd}", DateTime.Now).ToString();
+            string TransactionID;
+
+            string LatestTransactionID = GetLastTransactionID(); // GET THE LAST REQUEST ID ex. RQ201206010001
+
+            if (LatestTransactionID != "")
+            {
+                string SufRequestID = LatestTransactionID.Substring(10);    // GET THE LAST 4 DIGIT of Request ID (ex. 0001)
+                int SuffixRequest = Convert.ToInt32(SufRequestID);
+                int SuffixRequestVal = SuffixRequest + 1;
+                string SuffixToString = Convert.ToString(SuffixRequestVal);
+                string SuffixReqID = SuffixToString.PadLeft(4, '0');
+
+                TransactionID = "TR" + YearNow + MonthNow + DayNow + SuffixReqID;
+            }
+            else
+            {
+                TransactionID = "TR" + YearNow + MonthNow + DayNow + "0001";
+            }
+
+            return TransactionID;
+        }
+
+        /// <summary>
+        /// Function that inserts request to change bonuses into the table STATUS_BONUSES
+        /// </summary>
+        /// <param name="requestID">Accepting one mandatory parameter Request ID</param>
+        public void insertBonus(string requestID)
+        {
+            string sqlInsertStatus_Bonuses = "";
+
+            if (checkBoxPerformanceBonus.Checked)
+            {
+                sqlInsertStatus_Bonuses = "INSERT  INTO STATUS_BONUSES (REQUESTID, BONUSID, AMOUNT, ISMONTHLYAPPR, INCREASE_DECREASE)" +
+                                          "VALUES ('" + requestID + "', '1', '" + txtAmountPerformanceBonus.Text + "', 'Y', '" + RadioButtonListPerformanceBonus.SelectedValue + "')";
+                _db.GetExecuteNonQuery(sqlInsertStatus_Bonuses);
+            }
+            if (checkBoxPersonalBonus.Checked)
+            {
+                sqlInsertStatus_Bonuses = "INSERT INTO STATUS_BONUSES  (REQUESTID, BONUSID, AMOUNT, ISMONTHLYAPPR, INCREASE_DECREASE)" +
+                                          "VALUES ('" + requestID + "', '2', '" + txtAmountPersonalBonus.Text + "', 'N', '" + RadioButtonListPersonalBonus.SelectedValue + "')";
+                _db.GetExecuteNonQuery(sqlInsertStatus_Bonuses);
+            }
+            if (checkBoxForkliftBonus.Checked)
+            {
+                sqlInsertStatus_Bonuses = "INSERT INTO STATUS_BONUSES  (REQUESTID, BONUSID, AMOUNT, ISMONTHLYAPPR, INCREASE_DECREASE)" +
+                                          "VALUES ('" + requestID + "', '3', '" + txtAmountForkliftBonus.Text + "', 'N', '" + RadioButtonListForkliftBonus.SelectedValue + "')";
+                _db.GetExecuteNonQuery(sqlInsertStatus_Bonuses);
+            }
+        }
+
+        /// <summary>
+        /// Function sends email notification to HR Reviewer
+        /// Sending function developed by Joseph Generoso
+        /// Cls_Email.sendmail(mail_type, sender, recipient, cc, subject, parameters, "", salutation)
+        /// </summary>
+        /// <param name="transid">Transaction ID is needed to get approver ID from table APPROVALTRANSACTION</param>
+        /// <param name="requestid">Request ID is provided in the email</param>
+        public void SendEmailToFirstApprover(string transid, string requestid)
+        {
+
+            if (_mis.IsEmailNotificationTest("Notification", "EHR: Status Change - HR Reviewer Notification", requestid) == false)
+            {
+
+                string mail_type = "Notification";
+                string sender = "noreply@wistron.com ";
+                string recipient = "";
+                string recipient_name = "";
+                string cc = "rhea_prokop@wistron.com; martin_husar@wistron.com";
+                string subject = "EHR: Status Change - HR Reviewer Notification";
+                string parameters = "Approval Level: HR Status Reviewer;Request ID: " + requestid;
+
+                string sqlSelectAPPEMPLID = "SELECT APPEMPLID FROM APPROVALTRANSACTION WHERE APPSEQ = '1' AND REQID = '" + transid + "'";
+                OleDbDataReader dr = _db.GetDataReader(sqlSelectAPPEMPLID);
+                if (dr.Read())
+                {
+                    recipient = Convert.ToString(dr["APPEMPLID"]);
+                    recipient_name = _ps.GetName(recipient);
+                    recipient = _ps.GetEmplEmailAdrress(recipient);
+                }
+
+               Cls_Email.sendmail(mail_type, sender, recipient, cc, subject, parameters, "", recipient_name);
+            }
+        }
+
+        /// <summary>
+        /// Function that deletes employee from GridView GridViewMultipleEmployees
+        /// </summary>
+        /// <param name="emplid">Employee ID</param>
+        public void DeleteExceptionEmployee(string emplid)
+        {
+            DataTable dt = new DataTable();
+            DataColumn column1 = new DataColumn("Employee Name", System.Type.GetType("System.String"));
+            DataColumn column2 = new DataColumn("Employee ID", System.Type.GetType("System.String"));
+            DataColumn column3 = new DataColumn("Department", System.Type.GetType("System.String"));
+            DataColumn column4 = new DataColumn("Remarks", System.Type.GetType("System.String"));
+
+            dt.Columns.Add(column1);
+            dt.Columns.Add(column2);
+            dt.Columns.Add(column3);
+            dt.Columns.Add(column4);
+
+            foreach (GridViewRow r in GridViewMultipleEmployees.Rows)
+            {
+                if (r.Cells[2].Text == emplid)
+                    continue;
+
+                string[] pomArray = new string[] { r.Cells[1].Text, r.Cells[2].Text, r.Cells[3].Text };
+                dt.Rows.Add(pomArray);
+            }
+            GridViewMultipleEmployees.DataSource = dt;
+            GridViewMultipleEmployees.DataBind();
+        }
+
+        /// <summary>
+        /// Function that validate an application form
+        /// - Nothing was changed!
+        /// - Bonus Amount is missing!
+        /// - Department does not match!
+        /// - Changed department is the same as current!
+        /// - Changed position is the same as current!
+        /// - Please select a new position!
+        /// </summary>
+        /// <returns>Returns error number</returns>
+        public string Validation()
+        {
+            string errno = _errno;
+
+            #region Nothing was changed!
+            if (DropDownListNewDeptID.SelectedValue == "Unchanged" &&
+                DropDownListNewJob.SelectedValue == "Unchanged" &&
+                DropDownListNewCategory.SelectedValue == "Unchanged" &&
+                txtSalaryAmount.Text == "" &&
+                checkBoxPerformanceBonus.Checked == false &&
+                checkBoxPersonalBonus.Checked == false &&
+                checkBoxForkliftBonus.Checked == false)
+            {
+                errno = "13"; // Nothing was changed!
+            }
+            #endregion
+
+            #region Bonus Amount is missing!
+            if (checkBoxPerformanceBonus.Checked && txtAmountPerformanceBonus.Text == "") errno = "15";
+            if (checkBoxPersonalBonus.Checked && txtAmountPersonalBonus.Text == "") errno = "15";
+            if (checkBoxForkliftBonus.Checked && txtAmountForkliftBonus.Text == "") errno = "15";
+            #endregion
+
+            #region Department does not match!
+            string sqlSelectDeptid = @"SELECT DISTINCT DEPTID FROM PS_SUB_WCZ_AT_VW_A WHERE JOB_DESCR = '" + DropDownListNewJob.SelectedItem.Value + "'";
+            DataTable dt = _db.GetTableFromPS(sqlSelectDeptid);
+            int nTotalRecords = dt.Rows.Count;
+            for (int i = 0; i < nTotalRecords; i++)
+            {
+                if (DropDownListNewDeptID.SelectedItem.Value.Substring(0, 4) != dt.Rows[i]["DEPTID"].ToString().Substring(0, 4))
+                    errno = "16";
+                else { errno = "0"; break; }
+
+                string currentDeptID = lblCurrentDeptID.Text.Substring(0, 4);
+                string positionDeptID = dt.Rows[i]["DEPTID"].ToString().Substring(0, 4);
+                if (currentDeptID == positionDeptID && DropDownListNewDeptID.SelectedValue == "Unchanged")
+                {
+                    errno = "0";
+                    break;
+                }
+            }
+            #endregion
+
+            #region Changed department is the same as current!
+            if (lblCurrentDeptID.Text.Substring(0, 6) == DropDownListNewDeptID.SelectedValue)
+                errno = "17";
+            #endregion
+
+            #region Changed position is the same as current!
+            if (lblCurrentPosition.Text == DropDownListNewJob.SelectedValue)
+                errno = "18";
+            #endregion
+
+            return errno;
+        }
+    }
+}

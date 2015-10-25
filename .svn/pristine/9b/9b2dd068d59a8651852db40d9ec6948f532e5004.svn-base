@@ -1,0 +1,786 @@
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Views/Shared/Site.Master" AutoEventWireup="true"
+    CodeBehind="Evaluation.aspx.cs" Inherits="EHR.Views.Termination.Evaluation" %>
+
+<%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="asp" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="TopContent" runat="server">
+    <p>
+        &nbsp;</p>
+</asp:Content>
+<asp:Content ID="Content3" ContentPlaceHolderID="LeftContent" runat="server">
+</asp:Content>
+<asp:Content ID="mainEvaluation" ContentPlaceHolderID="mainContent" runat="server">
+    <asp:UpdatePanel ID="UpdatePanel1" runat="server">
+        <ContentTemplate>
+            <asp:Panel ID="pnlSearch" runat="server">
+                <table style="width: 80%; margin-top: 20px;" class="zebra">
+                    <thead>
+                        <tr>
+                            <th colspan="2" align="left" style="padding: 10px;">
+                                SELECT EMPLOYEE ID
+                            </th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <th colspan="2">
+                            </th>
+                        </tr>
+                    </tfoot>
+                    <tbody>
+                        <tr>
+                            <td>
+                                Employee ID:
+                            </td>
+                            <td>
+                                <asp:DropDownList ID="drpEmpID" runat="server" Width="300px" />
+                                <asp:ListBox ID="lstEmpID" runat="server" Visible="false" SelectionMode="Multiple"
+                                    Height="300px" Width="300px"></asp:ListBox>
+                                &nbsp;
+                                <asp:Button ID="btnEvaluate" runat="server" Text="Evaluate" CssClass="ui-button ui-button-text-only ui-widget ui-state-default "
+                                    Style="font-family: BebasNeue; font-size: 15px; letter-spacing: 1px; display: inline;"
+                                    OnClick="btnEvaluate_Click" />
+                                <asp:ImageButton ID="imgbtnAdd" runat="server" ImageUrl="~/Content/images/multiple.png"
+                                    Height="20px" Width="20px" OnClick="imgbtnAdd_Click" ToolTip="evaluate multiple employees(for DL only)"
+                                    Visible="False" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </asp:Panel>
+            <asp:Panel ID="pnlEmpInfo" runat="server" Visible="false">
+                <table style="width: 80%; margin-top: 20px;" class="zebra">
+                    <thead>
+                        <tr>
+                            <th colspan="4" align="left" style="padding: 10px;">
+                                EMPLOYEE INFO
+                            </th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <th colspan="4">
+                            </th>
+                        </tr>
+                    </tfoot>
+                    <tbody>
+                        <tr>
+                            <td>
+                                Employee Name:
+                            </td>
+                            <td>
+                                <asp:TextBox ID="txtEmpName" runat="server" Enabled="false" class="form-field"></asp:TextBox>
+                            </td>
+                            <td>
+                                ID Number:
+                            </td>
+                            <td>
+                                <asp:TextBox ID="txtEmpID" runat="server" Enabled="false" class="form-field"></asp:TextBox>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Dept Name:
+                            </td>
+                            <td>
+                                <asp:TextBox ID="txtDepName" runat="server" Enabled="false" class="form-field"></asp:TextBox>
+                            </td>
+                            <td>
+                                Job Title:
+                            </td>
+                            <td>
+                                <asp:TextBox ID="txtJob" runat="server" Enabled="false" class="form-field"></asp:TextBox>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </asp:Panel>
+            <asp:Panel runat="server" ID="pnlIDL" Visible="false">
+                <table style="width: 80%; margin-top: 50px;" class="no-zebra" cellpadding="5" cellspacing="5">
+                    <thead>
+                        <tr>
+                            <th colspan="6" align="left" style="padding: 10px;">
+                                EVALUATION FORM
+                            </th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td style="width: 600px;">
+                            <span style="padding-left: 20px"><strong>CUSTOMER FOCUS</strong></span>
+                        </td>
+                        <td align="center">
+                            1
+                        </td>
+                        <td align="center">
+                            2
+                        </td>
+                        <td align="center">
+                            3
+                        </td>
+                        <td align="center">
+                            4
+                        </td>
+                        <td align="center">
+                            5
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 40px;">
+                                <asp:Label ID="lblCust1" runat="server" Text="Listen to customers" /></span>
+                        </td>
+                        <td align="center" colspan="5">
+                            <asp:RadioButtonList ID="rblCust1" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblCust1_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator1" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblCust1" Display="None" SetFocusOnError="true" ValidationGroup="v_idl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender1" TargetControlID="RequiredFieldValidator1"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 40px">
+                                <asp:Label ID="lblCust2" runat="server" Text="Understand targeted customers needs" /></span>
+                        </td>
+                        <td align="center" colspan="5">
+                            <asp:RadioButtonList ID="rblCust2" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="true" OnSelectedIndexChanged="rblCust2_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator2" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblCust2" Display="None" SetFocusOnError="true" ValidationGroup="v_idl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender2" TargetControlID="RequiredFieldValidator2"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 40px;">
+                                <asp:Label ID="lblCust3" runat="server" Text="Always find the better ways to exceed customer expectation and earn their loyalty" /></span>
+                        </td>
+                        <td align="center" colspan="5">
+                            <asp:RadioButtonList ID="rblCust3" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblCust3_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator3" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblCust3" Display="None" SetFocusOnError="true" ValidationGroup="v_idl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender3" TargetControlID="RequiredFieldValidator3"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <!--</table>
+    <table style="width: 80%; margin-top: 50px;" class="no-zebra" cellpadding="5" cellspacing="5">-->
+                    <tr>
+                        <td align="right" colspan="6" style="padding: 10px; padding-right: 50px;">
+                            Total Score: &nbsp;<asp:TextBox runat="server" ID="txttotalCust" Enabled="false"
+                                Style="width: 30px"></asp:TextBox>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="6">
+                            &nbsp;
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 20px"><strong>PROFESSIONALISM</strong></span>
+                        </td>
+                        <td align="center">
+                            1
+                        </td>
+                        <td align="center">
+                            2
+                        </td>
+                        <td align="center">
+                            3
+                        </td>
+                        <td align="center">
+                            4
+                        </td>
+                        <td align="center">
+                            5
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 40px;">
+                                <asp:Label ID="lblPro1" runat="server" Text="Always find the better ways to exceed customer expectation" />
+                        </td>
+                        <td align="center" colspan="5">
+                            <asp:RadioButtonList ID="rblPro1" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblPro1_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator4" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblPro1" Display="None" SetFocusOnError="true" ValidationGroup="v_idl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender4" TargetControlID="RequiredFieldValidator4"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 40px">
+                                <asp:Label ID="lblPro2" runat="server" Text="Able to innovate for dependability" /></span>
+                        </td>
+                        <td align="center" colspan="5">
+                            <asp:RadioButtonList ID="rblPro2" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblPro2_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator5" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblPro2" Display="None" SetFocusOnError="true" ValidationGroup="v_idl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender5" TargetControlID="RequiredFieldValidator5"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 40px;">
+                                <asp:Label ID="lblPro3" runat="server" Text="Perform proffesionally to reach world-class standard"></asp:Label></span>
+                        </td>
+                        <td align="center" colspan="5">
+                            <asp:RadioButtonList ID="rblPro3" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblPro3_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator6" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblPro3" Display="None" SetFocusOnError="true" ValidationGroup="v_idl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender6" TargetControlID="RequiredFieldValidator6"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="right" colspan="6" style="padding: 10px; padding-right: 50px;">
+                            Total Score: &nbsp;<asp:TextBox runat="server" ID="txttotalPro" Enabled="false" Style="width: 30px"></asp:TextBox>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="6">
+                            &nbsp;
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 20px"><strong>DISCIPLINE</strong></span>
+                        </td>
+                        <td align="center">
+                            1
+                        </td>
+                        <td align="center">
+                            2
+                        </td>
+                        <td align="center">
+                            3
+                        </td>
+                        <td align="center">
+                            4
+                        </td>
+                        <td align="center">
+                            5
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 40px;">
+                                <asp:Label ID="lblDis1" runat="server" Text="Follow standard operation procedure to ensure quality & punctuality"></asp:Label></span>
+                        </td>
+                        <td align="center" colspan="5">
+                            <asp:RadioButtonList ID="rblDis1" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblDis1_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator7" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblDis1" Display="None" SetFocusOnError="true" ValidationGroup="v_idl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender7" TargetControlID="RequiredFieldValidator7"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 40px">
+                                <asp:Label ID="lblDis2" runat="server" Text="Follow the decision"></asp:Label></span>
+                        </td>
+                        <td align="center" colspan="5">
+                            <asp:RadioButtonList ID="rblDis2" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblDis2_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator8" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblDis2" Display="None" SetFocusOnError="true" ValidationGroup="v_idl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender8" TargetControlID="RequiredFieldValidator8"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 40px;">
+                                <asp:Label ID="lblDis3" runat="server" Text="Speak with data & facts"></asp:Label></span>
+                        </td>
+                        <td align="center" colspan="5">
+                            <asp:RadioButtonList ID="rblDis3" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblDis3_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator9" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblDis3" Display="None" SetFocusOnError="true" ValidationGroup="v_idl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender9" TargetControlID="RequiredFieldValidator9"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 40px;">
+                                <asp:Label ID="lblDis4" runat="server" Text="Fulfill commitments as agreed upon"></asp:Label></span>
+                        </td>
+                        <td align="center" colspan="5">
+                            <asp:RadioButtonList ID="rblDis4" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblDis4_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator10" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblDis4" Display="None" SetFocusOnError="true" ValidationGroup="v_idl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender10" TargetControlID="RequiredFieldValidator10"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 40px;">
+                                <asp:Label ID="lblDis5" runat="server" Text="Assume ownership and have passion to complete assigned tasks"></asp:Label></span>
+                        </td>
+                        <td align="center" colspan="5">
+                            <asp:RadioButtonList ID="rblDis5" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblDis5_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator11" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblDis5" Display="None" SetFocusOnError="true" ValidationGroup="v_idl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender11" TargetControlID="RequiredFieldValidator11"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="right" colspan="6" style="padding: 10px; padding-right: 50px;">
+                            Total Score: &nbsp;<asp:TextBox runat="server" ID="txttotalDis" Enabled="false" Style="width: 30px"></asp:TextBox>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="6">
+                            &nbsp;
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 20px"><strong>TEAM WORK</strong></span>
+                        </td>
+                        <td align="center">
+                            1
+                        </td>
+                        <td align="center">
+                            2
+                        </td>
+                        <td align="center">
+                            3
+                        </td>
+                        <td align="center">
+                            4
+                        </td>
+                        <td align="center">
+                            5
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 40px;">
+                                <asp:Label ID="lblTW1" runat="server" Text="Timely share information and take appropriate actions"></asp:Label></span>
+                        </td>
+                        <td align="center" colspan="5">
+                            <asp:RadioButtonList ID="rblTW1" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblTW1_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator12" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblTW1" Display="None" SetFocusOnError="true" ValidationGroup="v_idl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender12" TargetControlID="RequiredFieldValidator12"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 40px">
+                                <asp:Label ID="lblTW2" runat="server" Text="Understand the impact of individual action on overall business process and result"></asp:Label></span>
+                        </td>
+                        <td align="center" colspan="5">
+                            <asp:RadioButtonList ID="rblTW2" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblTW2_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator13" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblTW2" Display="None" SetFocusOnError="true" ValidationGroup="v_idl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender13" TargetControlID="RequiredFieldValidator13"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 40px;">
+                                <asp:Label ID="lblTW3" runat="server" Text="Speak with data & facts"></asp:Label></span>
+                        </td>
+                        <td align="center" colspan="5">
+                            <asp:RadioButtonList ID="rblTW3" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblTW3_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator14" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblTW3" Display="None" SetFocusOnError="true" ValidationGroup="v_idl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender14" TargetControlID="RequiredFieldValidator14"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 40px;">
+                                <asp:Label ID="lblTW4" runat="server" Text="Be proactive in helping the team to achieve objectives"></asp:Label></span>
+                        </td>
+                        <td align="center" colspan="5">
+                            <asp:RadioButtonList ID="rblTW4" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblTW4_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator15" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblTW4" Display="None" SetFocusOnError="true" ValidationGroup="v_idl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender15" TargetControlID="RequiredFieldValidator15"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 40px;">
+                                <asp:Label ID="lblTW5" runat="server" Text="Place group interest as higher priority to pursue win-win solution for group and the individual"></asp:Label></span>
+                        </td>
+                        <td align="center" colspan="5">
+                            <asp:RadioButtonList ID="rblTW5" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblTW5_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator16" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblTW5" Display="None" SetFocusOnError="true" ValidationGroup="v_idl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender16" TargetControlID="RequiredFieldValidator16"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="right" colspan="6" style="padding: 10px; padding-right: 50px;">
+                            Total Score: &nbsp;<asp:TextBox runat="server" ID="txttotalTW" Enabled="false" Style="width: 30px"></asp:TextBox>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="6">
+                            <span style="padding-left: 20px"><strong>Remarks/Comment</strong></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="right" colspan="6" style="padding: 10px; padding-right: 50px;">
+                            <asp:TextBox runat="server" ID="txtRemarksIDL" TextMode="MultiLine" Rows="10" Columns="100"></asp:TextBox>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="right" colspan="6">
+                            Evaluated by: &nbsp;<asp:DropDownList ID="drpEvalby" runat="server" Style="width: 300px"
+                                AutoPostBack="True">
+                            </asp:DropDownList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator23" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="drpEvalby" Display="None" SetFocusOnError="true" ValidationGroup="v_idl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender23" TargetControlID="RequiredFieldValidator23"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="6" align="right" style="padding: 50px">
+                            <asp:Button ID="btnSaveSubmitIDL" runat="server" Text="Save & Submit" CssClass="ui-button ui-button-text-only ui-widget ui-state-default "
+                                ValidationGroup="v_idl" Style="font-family: BebasNeue; font-size: 20px; letter-spacing: 1px;
+                                display: inline;" OnClick="btnSaveSubmitIDL_Click" />
+                        </td>
+                    </tr>
+                </table>
+            </asp:Panel>
+            <asp:Panel runat="server" ID="pnlDL" Visible="false">
+                <table style="width: 80%; margin-top: 50px;" class="no-zebra" cellpadding="5" cellspacing="5">
+                    <thead>
+                        <tr>
+                            <th colspan="6" align="left" style="padding: 10px;">
+                                EVALUATION FORM (DL)
+                            </th>
+                        </tr>
+                    </thead>
+                    <tr>
+                        <td style="width: 600px;">
+                            <span style="padding-left: 20px"><strong>&nbsp;</strong></span>
+                        </td>
+                        <td align="left" style="width: 100px">
+                            1
+                        </td>
+                        <td align="left" style="width: 100px">
+                            2
+                        </td>
+                        <td align="left" style="width: 100px">
+                            3
+                        </td>
+                        <td align="left" style="width: 100px">
+                            4
+                        </td>
+                        <td align="left" style="width: 100px">
+                            5
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 140px;">
+                                <asp:Label ID="lblAttendance" runat="server" Text="Attendance"></asp:Label></span>
+                        </td>
+                        <td align="left" colspan="5">
+                            <asp:RadioButtonList ID="rblAttendance" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblAttendance_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator17" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblAttendance" Display="None" SetFocusOnError="true" ValidationGroup="v_dl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender17" TargetControlID="RequiredFieldValidator17"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 140px;">
+                                <asp:Label ID="lblQuality" runat="server" Text="Quality"></asp:Label></span>
+                        </td>
+                        <td align="left" colspan="5">
+                            <asp:RadioButtonList ID="rblQuality" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblQuality_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator18" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblQuality" Display="None" SetFocusOnError="true" ValidationGroup="v_dl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender18" TargetControlID="RequiredFieldValidator18"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 140px;">
+                                <asp:Label ID="lblFlexibility" runat="server" Text="Flexibility" /></span>
+                        </td>
+                        <td align="left" colspan="5">
+                            <asp:RadioButtonList ID="rblFlexibility" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblFlexibility_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator19" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblFlexibility" Display="None" SetFocusOnError="true" ValidationGroup="v_dl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender19" TargetControlID="RequiredFieldValidator19"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 140px;">
+                                <asp:Label ID="lblDiscipline" runat="server" Text="Discipline" /></span>
+                        </td>
+                        <td align="left" colspan="5">
+                            <asp:RadioButtonList ID="rblDiscipline" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblDiscipline_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator20" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblDiscipline" Display="None" SetFocusOnError="true" ValidationGroup="v_dl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender20" TargetControlID="RequiredFieldValidator20"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span style="padding-left: 140px;">
+                                <asp:Label ID="lblSense" runat="server" Text="Sense of responsibility" /></span>
+                        </td>
+                        <td align="left" colspan="5">
+                            <asp:RadioButtonList ID="rblSense" Width="500" runat="server" RepeatDirection="Horizontal"
+                                AutoPostBack="True" OnSelectedIndexChanged="rblSense_SelectedIndexChanged">
+                                <asp:ListItem Text="" Value="1" />
+                                <asp:ListItem Text="" Value="2" />
+                                <asp:ListItem Text="" Value="3" />
+                                <asp:ListItem Text="" Value="4" />
+                                <asp:ListItem Text="" Value="5" />
+                            </asp:RadioButtonList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator21" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="rblSense" Display="None" SetFocusOnError="true" ValidationGroup="v_dl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender21" TargetControlID="RequiredFieldValidator21"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="right" colspan="6" style="padding: 10px; padding-right: 50px;">
+                            Total Score: &nbsp;<asp:TextBox runat="server" ID="txtTotalDL" Enabled="false" Style="width: 30px"></asp:TextBox>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="6">
+                            &nbsp;
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="6">
+                            <span style="padding-left: 20px"><strong>Remarks/Comment</strong></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="right" colspan="6" style="padding: 10px; padding-right: 50px;">
+                            <asp:TextBox ID="txtRemarksDL" runat="server" TextMode="MultiLine" Rows="10" Columns="100"></asp:TextBox>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="6" align="right">
+                            Evaluated by: &nbsp;<asp:DropDownList ID="drpEvalbyDL" runat="server" Style="width: 300px">
+                            </asp:DropDownList>
+                            <asp:RequiredFieldValidator ID="RequiredFieldValidator22" runat="server" ErrorMessage="Please Select Score!"
+                                ControlToValidate="drpEvalbyDL" Display="None" SetFocusOnError="true" ValidationGroup="v_dl"></asp:RequiredFieldValidator>
+                            <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender22" TargetControlID="RequiredFieldValidator22"
+                                runat="server">
+                            </asp:ValidatorCalloutExtender>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="6" align="right" style="padding: 50px">
+                            <asp:Button ID="btnSaveSubmitDL" runat="server" Text="Save & Submit" CssClass="ui-button ui-button-text-only ui-widget ui-state-default "
+                                ValidationGroup="v_dl" Style="font-family: BebasNeue; font-size: 20px; letter-spacing: 1px;
+                                display: inline;" OnClick="btnSaveSubmitDL_Click" />
+                        </td>
+                    </tr>
+                </table>
+            </asp:Panel>
+            <asp:UpdatePanel ID="UpdatePanel2" runat="server">
+                <ContentTemplate>
+                    <asp:Panel ID="Panel2" runat="server" Visible="false">
+                    </asp:Panel>
+                </ContentTemplate>
+            </asp:UpdatePanel>
+        </ContentTemplate>
+    </asp:UpdatePanel>
+
+    <script type="text/javascript" language="javascript">
+
+        Sys.WebForms.PageRequestManager.getInstance().add_pageLoaded(pageLoadedHandler)
+
+        function pageLoadedHandler(sender, args)
+            {
+                window.scrollTo(0,0);
+            }
+    </script>
+
+</asp:Content>

@@ -1,0 +1,201 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Web.Mail; 
+using EHR.Model; 
+
+namespace EHR.Recruitment
+{
+    public partial class HireCandidate : System.Web.UI.UserControl
+    {
+        QueryOleDB myQry = new QueryOleDB();
+        ObjectsMisc myMisc = new ObjectsMisc(); 
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            string candidate = Request.QueryString["candidate"];
+            DisabledControls();
+
+            if (Page.IsPostBack == false)
+            {
+                calOnBoardDate.Visible = false;
+                txtCandidateName.Text = myQry.GetCandidateName(candidate);
+                PopulateRequestCtrol(candidate);
+                PopulateJobsCtrol(candidate);
+                LoadDeptData(candidate);
+            }
+        }
+
+        private void DisabledControls()
+        {
+            pnlOK.Visible = false;
+        }
+
+        protected void OnBoardDate_Click(object sender, ImageClickEventArgs e)
+        {
+            if (calOnBoardDate.Visible == false)
+            {
+                calOnBoardDate.Visible = true;
+            }
+            else
+            {
+                calOnBoardDate.Visible = false;
+
+            }
+        }
+
+        protected void CalendarOnBoardDate_Selection_Change(object sender, EventArgs e)
+        {
+            foreach (DateTime day in calOnBoardDate.SelectedDates)
+            {
+                txtOnBoardDate.Text = "";
+                txtOnBoardDate.Text += day.Date.ToString("dd/MM/yyyy");
+                calOnBoardDate.Visible = false;
+            }
+        }
+
+        private void PopulateRequestCtrol(string candidateID)
+        {
+            string OraQry = "Select Distinct (REQUESTID) From CANDIDATEINTDETAILS Where CANDIDATEID='" + candidateID + "'";
+
+            DataTable myDT = myQry.GetTable(OraQry);
+            ddlForRequest.DataSource = myDT;
+            ddlForRequest.DataTextField = "REQUESTID";
+            ddlForRequest.DataValueField = "REQUESTID";
+            ddlForRequest.DataBind();
+            ddlForRequest.Items.Insert(0, new ListItem("-- Select One --", ""));
+        }
+
+        private void PopulateJobsCtrol(string candidateID)
+        {
+            string OraQry = "Select DISTINCT(CANDIDATEJOBS.POSITION) AS POSITION, PS.PS_JOB.JOB_FAMILY_DESC || ', '|| PS.PS_JOB.JOB_BUSI_TITLE AS BUSI_TITLE " +
+                    "From CANDIDATEJOBS INNER JOIN PS.PS_JOB ON  CANDIDATEJOBS.POSITION = PS.PS_JOB.JOB_CODE " +
+                    "Where CANDIDATEID='" + candidateID + "'";
+
+            DataTable myDT = myQry.GetTable(OraQry);
+
+            ddlJobPosition.DataSource = myDT;
+            ddlJobPosition.DataTextField = "BUSI_TITLE";
+            ddlJobPosition.DataValueField = "POSITION";
+            ddlJobPosition.DataBind();
+            ddlJobPosition.Items.Insert(0, new ListItem("-- Select One --", ""));
+
+        }
+
+        protected void SendEmailToCandidate_Click(object sender, EventArgs e)
+        {
+            if (Page.IsValid)
+            {
+                string emailaddcand;
+
+                myQry.GetConn();
+                string candidate = Request.QueryString["candidate"];
+                string OracleCandInfo = "Select EMAILADDRESS From CANDIDATES Where CANDIDATEID = '" + candidate + "'";
+                OleDbCommand myCMDCand = new OleDbCommand(OracleCandInfo, myQry.MyConn);
+                OleDbDataReader myRDCand = myCMDCand.ExecuteReader();
+                    if (myRDCand.Read())
+                    {
+                        emailaddcand = Convert.ToString(myRDCand["EMAILADDRESS"]);
+                    }
+                    else
+                    {
+                        emailaddcand = "no email";
+                    }
+
+                string txtBody = "<br />Dear " + txtCandidateName.Text + " , <br /><br />" +
+
+                "I am pleased to inform you that company Wistron InfoComm (Czech)s.r.o. " +
+                "is offering you job position as " + myQry.GetJob_Code(ddlJobPosition.SelectedValue.ToString()) + " . <br /><br />" +
+
+                "The start salary will be " + txtSalary.Text + " CZK / gross in total monthly.  " +
+                "Salary increasing is possible after probation period, based on your  " +
+                "performance - up to " + txtSalaryAfter.Text + " CZK (it will be a personal evaluation).  <br /><br />" +
+                "In case of wage or bonus increase after probation period, the increase is  " +
+                "effective from the first calendar day of the subsequent month after the end  " +
+                "of probation period.  <br /><br />" +
+
+                "On board date is on " + txtOnBoardDate.Text + " v " + ddlToTime.SelectedValue.ToString() +
+                " in address " + ddlWorkPlace.SelectedValue.ToString() + ".  <br /><br />" +
+
+                "On your on board date, please, don´t forget to bring your identity card,  " +
+                "bank account number and criminal record. <br /><br />" +
+
+                "Please confirm that you received this email. <br /><br />" +
+
+                "In case of any questions you can contact me using email or phone. <br /><br />" +
+
+                "We are looking forward to having you on board soon. <br /><br />" +
+
+                "Best regards <br /><br />" +
+
+                "Vážený/ á  pane/paní  " + txtCandidateName.Text + " <br /><br />" +
+
+                "je nám potěšením Vám oznámit, že Vám společnost Wistron InfoComm (Czech)s.r.o.  " +
+                "nabízí zaměstnání na pozici " + myQry.GetJob_Code(ddlJobPosition.SelectedValue.ToString()) + ".<br /><br /> " +
+
+                "Nástupní měsíční mzda bude činit " + txtSalary.Text + " Kč/hrubého. Navýšení platu je možné po  " +
+                "zkušební lhůtě až do výše " + txtSalaryAfter.Text + "  Kč/hrubého (osobní ohodnocení).  " +
+                "V případě navýšení mzdy nebo bonusu po zkušební době, dojde k tomuto navýšení od 1.  " +
+                "kalendářního dne následujícího měsíce po ukončení zkušební doby.<br /><br /> " +
+
+
+                "Nástupní termín " + txtOnBoardDate.Text + " v " + ddlToTime.SelectedValue.ToString() +
+                "na adrese " + ddlWorkPlace.SelectedValue.ToString() + ". <br /><br /> " +
+
+                "V den nástupu si, prosím, nezapomeňte přinést Váš OP, zápočtový list, číslo účtu a  " +
+                "výpis z rejstříku trestů.<br /><br /> " +
+
+                "Dále bych Vás chtěla poprosit o potvrzení doručení tohoto emailu. <br /><br /> " +
+
+                "V případě jakýchkoliv dotazů se na mě můžete obrátit jak telefonicky, tak emailem.<br /><br /> " +
+
+                "Těšíme se na Váš nástup.  <br /><br />" +
+
+                "Děkuji mnohokrát. <br /><br />" +
+
+                "Přeji pěkný den<br /><br /> " +
+
+                "S pozdravem <br /><br />";
+
+                myMisc.SendJobOfferEmail(emailaddcand, txtCandidateName.Text, myQry.GetJob_Code(ddlJobPosition.SelectedValue.ToString()), txtBody);
+                string emailDeptManager = myQry.GetEmplEmailAddress(myQry.GetManager(ddlForRequest.SelectedValue.ToString()));
+                myQry.EmailBodyGeneral(emailDeptManager, "Candidate Acceptance", myQry.InformationToManager(candidate, txtSalary.Text, txtSalaryAfter.Text)); 
+
+                DateTime MyDate = DateTime.Now;
+                string bd = txtOnBoardDate.Text + " " + ddlToTime.SelectedValue.ToString(); // 25/12/2012 21:02:44
+
+                string onboard = txtOnBoardDate.Text = txtOnBoardDate.Text + " " + ddlToTime.SelectedValue;
+                string UpdateCand = "Update CANDIDATES Set HIRINGSTATUS = 'Acceptance Letter Sent', OFFERSENT = 'YES',  " +
+                    " OFFERFORREQUESTID = '" + ddlForRequest.SelectedValue + "', " +
+                    "OFFERPOSITION = '" + ddlJobPosition.SelectedValue + "', " +
+                    "OFFERONBOARDDATE = to_date('" + bd + "', 'dd/mm/yyyy hh24:mi:ss'), " +
+                    "OFFERDEPT = '" + ddlForDepartment.SelectedValue + "'" + 
+                    "Where CANDIDATEID = '" + candidate + "'";
+
+                OleDbCommand myComand = new OleDbCommand(UpdateCand, myQry.MyConn);
+                myComand.ExecuteNonQuery();
+
+                pnlOK.Visible = true;
+                lblOK.Text = "Your Letter has been sent to " + txtCandidateName.Text;
+                myQry.MyConn.Close();
+            }
+
+            Response.Redirect("~/Recruitment/Candidate.aspx?action=view");
+        }
+
+        private void LoadDeptData(string id)
+        {
+            string OracleQry = "Select Distinct(SUITABLEFORDEPT) From CANDIDATEINTDETAILS Where CANDIDATEID = '"+ id +"'";
+            DataTable myDT = myQry.GetTable(OracleQry);
+
+            ddlForDepartment.DataSource = myDT;
+            ddlForDepartment.DataTextField = "SUITABLEFORDEPT";
+            ddlForDepartment.DataValueField = "SUITABLEFORDEPT";
+            ddlForDepartment.DataBind();
+        }
+    }
+}

@@ -1,0 +1,409 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model;
+
+namespace EHR.Recruitment
+{
+    public partial class InterviewInfo : System.Web.UI.UserControl
+    {
+        ObjectsOleDB myObjs = new ObjectsOleDB();
+        QueryOleDB myQueries = new QueryOleDB();
+        EmailBody myEmail = new EmailBody();
+        ObjectsMisc myMisc = new ObjectsMisc(); 
+              
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            string RequestID;
+            string RequestFromSession = (string)(Session["RequestID"]);
+            string candidateID = (string)(Session["candidateID"]);
+            if (candidateID == "")
+            {
+                candidateID = Request.QueryString["candidate"];
+            }
+
+
+            RequestID = Request.QueryString["request"];
+            
+
+            if (RequestID == "")
+            {
+                RequestID = RequestFromSession;
+            }
+             
+                txtInterviewRequestID.Text = RequestID;
+           
+
+            
+            if (!IsPostBack)
+            {
+
+                pnlOK.Visible = false;
+                lblOK.Visible = false;
+            }
+            txtInterviewer1.Attributes.Add("onfocus", "this.value=''");
+            txtInterviewer2.Attributes.Add("onfocus", "this.value=''");
+            txtInterviewer3.Attributes.Add("onfocus", "this.value=''");
+            txtInterviewer4.Attributes.Add("onfocus", "this.value=''");
+            txtInterviewer5.Attributes.Add("onfocus", "this.value=''");
+
+
+            if (Page.IsPostBack == false)
+            {
+                calInterviewDate.Visible = false;
+                LoadCandData(candidateID);
+                
+                if (RequestID != "")
+                {
+                    LoadRecruiter(RequestID);
+                    LoadManager(RequestID);
+                }
+                PopulateRequests();
+            }
+        }
+
+        private void LoadCandData(string id)
+        {
+
+            string OracleCand = "Select LASTNAME, FIRSTNAME, EMAILADDRESS " +
+                                "from CANDIDATES " +
+                                "where CANDIDATEID = '" + id + "'";
+            myObjs.GetConn();
+            OleDbCommand myCmd = new OleDbCommand(OracleCand, myObjs.MyConn);
+            OleDbDataReader myRD = myCmd.ExecuteReader();
+            while (myRD.Read())
+            {
+                string Lastname = Convert.ToString(myRD["LASTNAME"]);
+                string Firstname = Convert.ToString(myRD["FIRSTNAME"]);
+                txtCandidateName.Text = Lastname + "," + Firstname;
+            }
+         }
+
+        private string GetRequestRecruiter(string RequestID)
+        {
+            myObjs.GetConn();
+            string HRRecruiter;
+            string OraQry = "Select HRRECRUITER From REQUESTS Where RequestID='" + RequestID + "'";
+            OleDbCommand myCMD = new OleDbCommand(OraQry, myObjs.MyConn);
+            OleDbDataReader myRD = myCMD.ExecuteReader();
+            if (myRD.Read())
+            {
+                HRRecruiter = Convert.ToString(myRD["HRRECRUITER"]);
+            }
+            else
+            {
+                string OraBase = "Select HRRECRUITER From BASEDATA";
+                OleDbCommand myBase = new OleDbCommand(OraBase, myObjs.MyConn);
+                OleDbDataReader myBaseRD = myBase.ExecuteReader();
+                myBaseRD.Read();
+                HRRecruiter = Convert.ToString(myBaseRD["HRRECRUITER"]);
+            }
+
+            return HRRecruiter;
+        }
+
+        private void LoadRecruiter(string requestID)
+        {
+            if (requestID != "")
+            {
+
+                string OracleQry = "Select EMPLID, NAME_A From PS.PS_SUB_WCZ_AT_VW_A WHERE DEPTID = 'MD0H00' " +
+                    "AND COMP_DESCR_A = 'Active'";
+                DataTable myDT = myObjs.GetTable(OracleQry);
+                ddlRecruiter.DataSource = myDT;
+                ddlRecruiter.DataTextField = "NAME_A";
+                ddlRecruiter.DataValueField = "EMPLID";
+                ddlRecruiter.DataBind();
+                if (GetRequestRecruiter(requestID) != "")
+                {
+                    ddlRecruiter.SelectedValue = GetRequestRecruiter(requestID);
+                }
+            }
+        }
+
+        private void LoadManager(string requestID)
+        {
+            string OracleQry = "Select REQUESTOR From REQUESTS Where REQUESTID='" + requestID + "'";
+            OleDbCommand myCMD = new OleDbCommand(OracleQry, myObjs.MyConn);
+            OleDbDataReader myRD = myCMD.ExecuteReader();
+            if (myRD.Read())
+            {
+                string REQUESTOR = Convert.ToString(myRD["REQUESTOR"]);
+
+                string OracMngr = "Select MANAGER_ID From PS.PS_SUB_WCZ_AT_VW_A Where EMPLID='" + REQUESTOR + "'";
+                OleDbCommand myCMngr = new OleDbCommand(OracMngr, myObjs.MyConn);
+                OleDbDataReader myRDrr = myCMngr.ExecuteReader();
+                if (myRDrr.Read())
+                {
+                    //use during UAT
+                    string ManagerID = Convert.ToString(myRDrr["MANAGER_ID"]);
+                    
+                    //use during SIT
+                   //string ManagerID = "C1109001";
+                    txtManagerName.Text = myQueries.GetFullName(ManagerID);
+                    hiddenManagerID.Value = ManagerID;
+                }
+            }
+
+        }
+
+        private void PopulateRequests()
+        {
+
+            string OracleQry = "SELECT RequestID, requestor, requiredperson as required, hired, " +
+                "deptcode as department, result as status from requests "  +
+                "where result = 'Approved' OR result = 'RECRUITMENT' AND DELETED = '0'";
+
+
+            DataTable myRequests = myQueries.GetTable(OracleQry); 
+            gridAllRequest.DataSource = myRequests;
+            gridAllRequest.DataBind();
+            myObjs.MyConn.Close();
+
+        }
+
+        protected void InterviewDate_SelectionChanged(object sender, EventArgs e)
+        {
+            foreach (DateTime day in calInterviewDate.SelectedDates)
+            {
+                txtInterviewDate.Text = "";
+                txtInterviewDate.Text += day.ToString("dd/MM/yyyy");
+                calInterviewDate.Visible = false;
+                
+            }
+        }
+
+        protected void InterviewDate_OnClick(object sender, ImageClickEventArgs e)
+        {
+            if (calInterviewDate.Visible == false)
+            {
+                calInterviewDate.Visible = true;
+            }
+            else
+            {
+                calInterviewDate.Visible = false;
+
+            }
+        }
+        protected void SendInterviewInv_Click(object sender, EventArgs e)
+        {
+
+            string candidateID = (string)(Session["candidateID"]);
+            
+            string UserID = (string)(Session["UserID"]);
+
+            DateTime MyDate = DateTime.Now;
+            string bd = txtInterviewDate.Text + " " + ddlToTime.SelectedValue.ToString(); // 25/12/2012 21:02:44
+
+
+            myObjs.GetConn();
+            string OracleIntInv = "Insert into INTERVIEWINVITE (INTERVIEWINVID,  " +
+                                  " CANDIDATEID, HRRECRUITER, DEPTMNGR, REQUESTID, INTERVIEWDATE)" +
+                                  "Values (INTERVIEWINV_SEQ.NextVal, '" + candidateID + "', " + 
+                                  "'" + ddlRecruiter.SelectedValue.ToString() + "', " +
+                                  "'" + hiddenManagerID.Value + "', " +
+                                  "'" + txtInterviewRequestID.Text + "', to_date('" + bd + "','dd/MM/yyyy hh24:mi:ss'))";
+            OleDbCommand myCMDInv = new OleDbCommand(OracleIntInv, myObjs.MyConn);
+            try
+            {
+
+                myCMDInv.ExecuteNonQuery();
+          
+
+            string txtActivity = "Invited Candidate: " + candidateID + "for interview.";
+            
+            myQueries.InsertActivityDesc(txtActivity, UserID);
+            //send email to candidate
+            myMisc.SendExternalEmail(txtInterviewRequestID.Text, candidateID);
+
+            // send email to requestor
+            string emailRequestor = myQueries.GetEmplEmailAddress(myQueries.GetRequestor(txtInterviewRequestID.Text));
+            myMisc.SendEmailToInterviewer(emailRequestor, "Requestor", candidateID, txtInterviewRequestID.Text);
+
+            //send email to recruiter
+            myMisc.SendEmailToInterviewer(myQueries.GetEmplEmailAddress(ddlRecruiter.SelectedValue.ToString()), "Recruiter", candidateID, txtInterviewRequestID.Text);
+
+            // send email to manager
+            myMisc.SendEmailToInterviewer(myQueries.GetEmplEmailAddress(hiddenManagerID.Value), "Manager", candidateID, txtInterviewRequestID.Text);
+
+            string UpdateCandStatus = "Update CANDIDATES Set HIRINGSTATUS = 'For Interview' " +
+                                    "Where CANDIDATEID = '" + candidateID + "'";
+            OleDbCommand myStats = new OleDbCommand(UpdateCandStatus, myObjs.MyConn);
+            myStats.ExecuteNonQuery();
+
+            pnlOK.Visible = true;
+            lblOK.Visible = true;
+            lblOK.Text = "Interview Email has been sent to candidate.";
+            btnSend.Enabled = false;
+            if (txtInterviewer1.Text != "")
+            {
+                string InsertInv1 = "Insert into INTERVIEWINVITEPPL(INTERVIEWINVID, REQUESTID, EMPLID) " +
+                            "Values (INTERVIEWINV_SEQ.NextVal, '" + txtInterviewRequestID.Text + "', " + 
+                            "'" + txtInterviewer1.Text + "')";
+                OleDbCommand myCMD1 = new OleDbCommand(InsertInv1, myObjs.MyConn);
+                myCMD1.ExecuteNonQuery();
+            }
+
+            if (txtInterviewer2.Text != "")
+            {
+                string InsertInv2 = "Insert into INTERVIEWINVITEPPL(INTERVIEWINVID, REQUESTID, EMPLID) " +
+                              "Values (INTERVIEWINV_SEQ.NextVal, '" + txtInterviewRequestID.Text + "', " +
+                              "'" + txtInterviewer2.Text + "')";
+                OleDbCommand myCMD2 = new OleDbCommand(InsertInv2, myObjs.MyConn);
+                myCMD2.ExecuteNonQuery();
+            }
+            if (txtInterviewer3.Text != "")
+            {
+                string InsertInv3 = "Insert into INTERVIEWINVITEPPL(INTERVIEWINVID, REQUESTID, EMPLID) " +
+                                            "Values (INTERVIEWINV_SEQ.NextVal, '" + txtInterviewRequestID.Text + "', " +
+                                            "'" + txtInterviewer3.Text + "')";
+                OleDbCommand myCMD3 = new OleDbCommand(InsertInv3, myObjs.MyConn);
+                myCMD3.ExecuteNonQuery();
+            }
+
+            if (txtInterviewer4.Text != "")
+            {
+                string InsertInv4 = "Insert into INTERVIEWINVITEPPL(INTERVIEWINVID, REQUESTID, EMPLID) " +
+                                            "Values (INTERVIEWINV_SEQ.NextVal, '" + txtInterviewRequestID.Text + "', " +
+                                            "'" + txtInterviewer4.Text + "')";
+                OleDbCommand myCMD4 = new OleDbCommand(InsertInv4, myObjs.MyConn);
+                myCMD4.ExecuteNonQuery();
+            }
+
+            if (txtInterviewer5.Text != "")
+            {
+                string InsertInv5 = "Insert into INTERVIEWINVITEPPL(INTERVIEWINVID, REQUESTID, EMPLID) " +
+                                            "Values (INTERVIEWINV_SEQ.NextVal, '" + txtInterviewRequestID.Text + "', " +
+                                            "'" + txtInterviewer5.Text + "')";
+                OleDbCommand myCMD5 = new OleDbCommand(InsertInv5, myObjs.MyConn);
+                myCMD5.ExecuteNonQuery();
+            }
+            myObjs.MyConn.Close();
+
+           
+            if(txtInterviewer1.Text != "")
+            {
+                string OracleEmailEmail1 = myQueries.GetEmplEmailAddress(txtInterviewer1.Text);
+                if (OracleEmailEmail1 != "")
+                {
+                    myMisc.SendEmailToInterviewer(OracleEmailEmail1, "Interview Panel", candidateID, txtInterviewRequestID.Text);
+                }
+            }
+
+            if (txtInterviewer2.Text != "")
+            {
+                
+                string OracleEmailEmail2 = myQueries.GetEmplEmailAddress(txtInterviewer2.Text);
+                if (OracleEmailEmail2 != "")
+                {
+                    myMisc.SendEmailToInterviewer(OracleEmailEmail2, "Interview Panel", candidateID, txtInterviewRequestID.Text);
+                }
+            }
+
+            if (txtInterviewer3.Text != "")
+            {
+                
+                string OracleEmailEmail3 = myQueries.GetEmplEmailAddress(txtInterviewer3.Text);
+                if (OracleEmailEmail3 != "")
+                {
+                    myMisc.SendEmailToInterviewer(OracleEmailEmail3, "Interview Panel", candidateID, txtInterviewRequestID.Text);
+                }
+            }
+            
+            if (txtInterviewer4.Text != "")
+            {
+                
+                string OracleEmailEmail4 = myQueries.GetEmplEmailAddress(txtInterviewer4.Text);
+                if (OracleEmailEmail4 != "")
+                {
+                    myMisc.SendEmailToInterviewer(OracleEmailEmail4, "Interview Panel", candidateID, txtInterviewRequestID.Text);
+                 }
+            }
+            if (txtInterviewer5.Text != "")
+            {
+                
+                string OracleEmailEmail5 = myQueries.GetEmplEmailAddress(txtInterviewer5.Text);
+                if (OracleEmailEmail5 != "")
+                {
+                    myMisc.SendEmailToInterviewer(OracleEmailEmail5, "Interview Panel", candidateID, txtInterviewRequestID.Text);
+            
+                }
+            }
+
+            }
+            catch (Exception ex)
+            {
+                myMisc.ShowMessage(ex.Message, this.Page);
+            }
+            Response.Redirect("~/Recruitment/Candidate.aspx?action=view");
+           
+        } 
+
+        protected void btnInterviewer1_Click(object sender, EventArgs e)
+        {
+            if (myQueries.GetFullName(txtInterviewer1.Text) == "0")
+            {
+                lblInterviewer1.Text = "ID Does not exists";
+            }
+            else
+            {
+                lblInterviewer1.Text = myQueries.GetFullName(txtInterviewer1.Text);
+            }
+        }
+
+        protected void btnInterviewer2_Click(object sender, EventArgs e)
+        {
+            if (myQueries.GetFullName(txtInterviewer2.Text) == "0")
+            {
+                lblInterviewer2.Text = "ID Does not exists";
+            }
+            else
+            {
+                lblInterviewer2.Text = myQueries.GetFullName(txtInterviewer2.Text);
+            }
+        }
+
+        protected void btnInterviewer3_Click(object sender, EventArgs e)
+        {
+            if (myQueries.GetFullName(txtInterviewer3.Text) == "0")
+            {
+                lblInterviewer3.Text = "ID Does not exists";
+            }
+            else
+            {
+                lblInterviewer3.Text = myQueries.GetFullName(txtInterviewer3.Text);
+            }
+        }
+
+        protected void btnInterviewer4_Click(object sender, EventArgs e)
+        {
+            if (myQueries.GetFullName(txtInterviewer4.Text) == "0")
+            {
+                lblInterviewer4.Text = "ID Does not exists";
+            }
+            else
+            {
+                lblInterviewer4.Text = myQueries.GetFullName(txtInterviewer4.Text);
+            }
+        }
+
+        protected void btnInterviewer5_Click(object sender, EventArgs e)
+        {
+            if (myQueries.GetFullName(txtInterviewer5.Text) == "0")
+            {
+                lblInterviewer5.Text = "ID Does not exists";
+            }
+            else
+            {
+                lblInterviewer5.Text = myQueries.GetFullName(txtInterviewer5.Text);
+            }
+        }
+
+
+     
+    }
+}

@@ -1,0 +1,433 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model;
+using System.Data;
+
+namespace EHR.Views.Termination
+{
+    public partial class BD01 : System.Web.UI.Page
+    {
+        public DBModel dbcon = new DBModel();
+        public MiscModel msg = new MiscModel();
+        public string strSQL;
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (Page.IsPostBack == false)
+            {
+                fillType();
+                bindgrdType();
+                fillListType();
+                bindgrdReason();
+                bindgrdSeverence();
+            }
+            
+        }
+
+        protected void drpType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            fillListReason();
+        }
+
+        protected void btnAddType_Click(object sender, EventArgs e)
+        {
+            if (txtAddType.Text != "")
+            {
+                try
+                {
+                    if (checkDupType(txtAddType.Text) == false)
+                    {
+                        strSQL = "INSERT INTO CONTRACT_TYPE VALUES(CONTRACT_TYPE_SEQ.NEXTVAL,'" + txtAddType.Text + "')";
+                        dbcon.GetExecuteNonQuery(strSQL);
+
+                        string myStringVariable = msg.GetMsgType("36");
+                        ScriptManager.RegisterStartupScript(UpdatePanel1, UpdatePanel1.GetType(), "myalert", "alert('" + myStringVariable + "');", true);
+
+                        txtAddType.Text = "";
+                        bindgrdType();
+                        fillType();
+                    }
+                    else
+                    {
+                        string myStringVariable = msg.GetMsgType("33");
+                        ScriptManager.RegisterStartupScript(UpdatePanel1, UpdatePanel1.GetType(), "myalert", "alert('" + myStringVariable + "');", true);
+                        txtAddType.Text = "";
+                    }
+
+                }
+                catch (System.Exception ex)
+                {
+                    Response.Write(ex.Message);
+                }
+            }
+        }
+
+        protected void btnAddReason_Click(object sender, EventArgs e)
+        {
+            if (txtAddReason.Text != "" && listType.SelectedValue != "")
+            {
+                try
+                {
+                    foreach (ListItem item in listType.Items) 
+                    {
+                        if (item.Selected)
+                        {
+                            int typeID = getTypeID(item.Value);
+                            if (checkDupReason(txtAddReason.Text, typeID) == false)
+                            {
+                                strSQL = "INSERT INTO CONTRACT_REASON VALUES(CONTRACT_REASON_SEQ.NEXTVAL,'" + txtAddReason.Text + "'," + typeID + ",'" + drpCategory.Text + "')";
+                                dbcon.GetExecuteNonQuery(strSQL);
+                                string myStringVariable = msg.GetMsgType("37");
+                                ScriptManager.RegisterStartupScript(UpdatePanel1, UpdatePanel1.GetType(), "myalert", "alert('" + myStringVariable + "');", true);
+                            }
+                            else
+                            {
+                                string myStringVariable = msg.GetMsgType("34");
+                                ScriptManager.RegisterStartupScript(UpdatePanel1, UpdatePanel1.GetType(), "myalert", "alert('" + myStringVariable + "');", true);
+                            }
+                        }
+                    }
+                    txtAddReason.Text = "";
+                    drpCategory.Text = "";
+                    listType.ClearSelection();
+                    bindgrdReason();
+                }
+                catch (System.Exception ex)
+                {
+                    Response.Write(ex.Message);
+                }
+            }
+        }
+
+        protected void btnAddSeverence_Click(object sender, EventArgs e)
+        {
+            if (txtSeverence.Text != "" && listReason.SelectedValue != "")
+            {
+                try
+                {
+                    foreach (ListItem item in listReason.Items)
+                    {
+                        if (item.Selected)
+                        {
+                            int typeID = getTypeID(drpType.Text);
+                            if (txtYear.Text == "")
+                            {
+                                txtYear.Text = "N/A";
+                            }
+
+                            if (checkDupSeverence(txtSeverence.Text, txtYear.Text, Convert.ToInt32(item.Value), typeID) == false)
+                            {
+                                strSQL = "INSERT INTO CONTRACT_SEVERENCE VALUES(CONTRACT_SEVERENCE_SEQ.NEXTVAL,'" + txtSeverence.Text + "','" + txtYear.Text + "'," + item.Value + ",'" + typeID + "','Yes')";
+                                dbcon.GetExecuteNonQuery(strSQL);
+                                string myStringVariable = msg.GetMsgType("38");
+                                ScriptManager.RegisterStartupScript(UpdatePanel1, UpdatePanel1.GetType(), "myalert", "alert('" + myStringVariable + "');", true);
+                            }
+                           else
+                            {
+                                string myStringVariable = msg.GetMsgType("35");
+                                ScriptManager.RegisterStartupScript(UpdatePanel1, UpdatePanel1.GetType(), "myalert", "alert('" + myStringVariable + "');", true);
+                            } 
+                        }
+                    }
+                    drpType.Text = "";
+                    listReason.Items.Clear();
+                    txtSeverence.Text = "";
+                    txtYear.Text = "";
+                    bindgrdSeverence();
+                }
+                catch (System.Exception ex)
+                {
+                    Response.Write(ex.Message);
+                }
+            }
+        }
+
+        protected int getTypeID(string type)
+        {
+            try
+            {
+                strSQL = "SELECT ID FROM CONTRACT_TYPE WHERE TYPE='" + type + "'";
+                DataTable dt = new DataTable();
+                dt = dbcon.GetTable(strSQL);
+                return Convert.ToInt32(dt.Rows[0][0]);
+            }
+            catch (Exception ex)
+            {
+                Response.Write(ex.Message);
+                return 0;
+            }
+        }
+
+        protected void fillType()
+        {
+            try
+            {
+                strSQL = "SELECT TYPE FROM CONTRACT_TYPE";
+                DataTable dt = new DataTable();
+                dt = dbcon.GetTable(strSQL);
+                drpType.Items.Clear();
+                drpType.DataSource = dt;
+                drpType.DataTextField = dt.Columns[0].ToString();
+                drpType.DataBind();
+
+                drpType.Items.Insert(0, "");
+            }
+            catch (System.Exception ex)
+            {
+                Response.Write(ex.Message);
+            }
+        }
+
+        protected void bindgrdType()
+        {
+            try
+            {
+                strSQL = "SELECT * FROM CONTRACT_TYPE";
+                DataTable dt = new DataTable();
+                dt = dbcon.GetTable(strSQL);
+                grdType.DataSource = dt;
+                grdType.DataBind();
+            }
+            catch (System.Exception ex)
+            {
+                Response.Write(ex.Message);
+            }
+        }
+
+        protected bool checkDupType(string type)
+        {
+            strSQL = "SELECT * FROM CONTRACT_TYPE WHERE TYPE ='" + type + "'";
+            DataTable dt = new DataTable();
+            dt = dbcon.GetTable(strSQL);
+            if (dt.Rows.Count > 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        protected bool checkDupReason(string reason, int typeid)
+        {
+            
+            strSQL = "SELECT * FROM CONTRACT_REASON WHERE REASON ='" + reason + "' AND TYPE_ID =" + typeid;
+            DataTable dt = new DataTable();
+            dt = dbcon.GetTable(strSQL);
+            if (dt.Rows.Count > 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        protected bool checkDupSeverence(string ave_sal, string year,int reasonid, int typeid)
+        {
+            strSQL = "SELECT * FROM CONTRACT_SEVERENCE WHERE X_AVE_MONTHLY_SALARY ='" + ave_sal + "' AND YEAR_OF_STAY ='" + year + "' AND REASON_ID =" + reasonid + " AND TYPE_ID =" + typeid;
+            DataTable dt = new DataTable();
+            dt = dbcon.GetTable(strSQL);
+            if (dt.Rows.Count > 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        protected void bindgrdReason()
+        {
+            try
+            {
+                strSQL = "SELECT A.ID,A.REASON, B.TYPE FROM CONTRACT_REASON A, CONTRACT_TYPE B WHERE A.TYPE_ID = B.ID";
+                DataTable dt = new DataTable();
+                dt = dbcon.GetTable(strSQL);
+                grdReason.DataSource = dt;
+                grdReason.DataBind();
+            }
+            catch (System.Exception ex)
+            {
+                Response.Write(ex.Message);
+            }
+        }
+
+        protected void bindgrdSeverence()
+        {
+            try
+            {
+                strSQL = "SELECT A.ID,A.X_AVE_MONTHLY_SALARY,A.VALID,A.YEAR_OF_STAY,B.REASON,C.TYPE FROM CONTRACT_SEVERENCE A, CONTRACT_REASON B, CONTRACT_TYPE C WHERE A.REASON_ID=B.ID AND A.TYPE_ID=C.ID";
+                DataTable dt = new DataTable();
+                dt = dbcon.GetTable(strSQL);
+                grdSeverence.DataSource = dt;
+                grdSeverence.DataBind();
+            }
+            catch (System.Exception ex)
+            {
+                Response.Write(ex.Message);
+            }
+        }
+
+        protected void fillListType()
+        {
+            try
+            {
+                strSQL = "SELECT DISTINCT(TYPE) FROM CONTRACT_TYPE";
+                DataTable dt = new DataTable();
+                dt = dbcon.GetTable(strSQL);
+                listType.DataSource = dt;
+                listType.DataTextField = dt.Columns[0].ToString();
+                listType.DataBind();
+            }
+            catch(Exception ex)
+            {
+                Response.Write(ex.Message);
+            }
+        }
+
+        protected void fillListReason()
+        {
+            try
+            {
+                if (drpType.Text != "")
+                {
+                    int typeID = getTypeID(drpType.SelectedValue);
+                    strSQL = "SELECT DISTINCT(REASON),ID FROM CONTRACT_REASON WHERE TYPE_ID=" + typeID;
+                    DataTable dt = new DataTable();
+                    dt = dbcon.GetTable(strSQL);
+                    listReason.DataSource = dt;
+                    listReason.DataTextField = dt.Columns[0].ToString();
+                    listReason.DataValueField = dt.Columns[1].ToString();
+                    listReason.DataBind();
+                }
+            }
+            catch (Exception ex)
+            {
+                Response.Write(ex.Message);
+            }
+        }
+
+        protected void grdType_RowEditing(object sender, GridViewEditEventArgs e)
+        {
+            grdType.EditIndex = e.NewEditIndex;
+            bindgrdType();
+        }
+
+        protected void grdType_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+        {
+            grdType.EditIndex = -1;
+            bindgrdType();
+        }
+
+        protected void grdType_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        {
+            GridViewRow row = (GridViewRow)grdType.Rows[e.RowIndex];
+            int id = Int32.Parse(grdType.DataKeys[e.RowIndex].Value.ToString());
+            TextBox type = (TextBox)grdType.Rows[e.RowIndex].FindControl("textType");
+            if (checkDupType(type.Text) == false)
+            {
+                strSQL = "UPDATE CONTRACT_TYPE SET TYPE='" + type.Text + "' WHERE ID =" + id;
+                dbcon.GetExecuteNonQuery(strSQL);
+                grdType.EditIndex = -1;
+                bindgrdType();
+                fillType();
+            }
+            else
+            {
+                string myStringVariable = msg.GetMsgType("33");
+                ScriptManager.RegisterStartupScript(UpdatePanel1, UpdatePanel1.GetType(), "myalert", "alert('" + myStringVariable + "');", true);
+                grdType.EditIndex = -1;
+                bindgrdType();
+            }
+        }
+
+        protected void grdType_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            bindgrdType();
+            grdType.PageIndex = e.NewPageIndex;
+            grdType.DataBind();
+        }
+
+        protected void grdReason_RowEditing(object sender, GridViewEditEventArgs e)
+        {
+            grdReason.EditIndex = e.NewEditIndex;
+            bindgrdReason();
+        }
+
+        protected void grdReason_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+        {
+            grdReason.EditIndex = -1;
+            bindgrdReason();
+        }
+
+        protected void grdReason_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        {
+            GridViewRow row = (GridViewRow)grdReason.Rows[e.RowIndex];
+            Label type = (Label)grdReason.Rows[e.RowIndex].FindControl("labelType");
+            int typeid = getTypeID(type.Text);
+            int id = Int32.Parse(grdReason.DataKeys[e.RowIndex].Value.ToString());
+            TextBox reason = (TextBox)grdReason.Rows[e.RowIndex].FindControl("textReason");
+            if (checkDupReason(reason.Text, typeid) == false)
+            {
+                strSQL = "UPDATE CONTRACT_REASON SET REASON='" + reason.Text + "' WHERE ID =" + id;
+                dbcon.GetExecuteNonQuery(strSQL);
+                grdReason.EditIndex = -1;
+                bindgrdReason();
+                bindgrdSeverence();
+            }
+            else
+            {
+                string myStringVariable = msg.GetMsgType("34");
+                ScriptManager.RegisterStartupScript(UpdatePanel1, UpdatePanel1.GetType(), "myalert", "alert('" + myStringVariable + "');", true);
+                grdReason.EditIndex = -1;
+                bindgrdReason();
+            }
+        }
+
+        protected void grdReason_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            bindgrdReason();
+            grdReason.PageIndex = e.NewPageIndex;
+            grdReason.DataBind();
+        }
+
+        protected void grdSeverence_RowEditing(object sender, GridViewEditEventArgs e)
+        {
+            grdSeverence.EditIndex = e.NewEditIndex;
+            bindgrdSeverence();
+        }
+
+        protected void grdSeverence_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+        {
+            grdSeverence.EditIndex = -1;
+            bindgrdSeverence();
+        }
+
+        protected void grdSeverence_RowUpdating(object sender, GridViewUpdateEventArgs e)
+        {
+            GridViewRow row = (GridViewRow)grdSeverence.Rows[e.RowIndex];
+            int id = Int32.Parse(grdSeverence.DataKeys[e.RowIndex].Value.ToString());
+            TextBox severence = (TextBox)grdSeverence.Rows[e.RowIndex].FindControl("textSeverence");
+            DropDownList valid = (DropDownList)grdSeverence.Rows[e.RowIndex].FindControl("drpValid");
+            TextBox year = (TextBox)grdSeverence.Rows[e.RowIndex].FindControl("textYear");
+            strSQL = "UPDATE CONTRACT_SEVERENCE SET X_AVE_MONTHLY_SALARY='" + severence.Text + "', VALID='" + valid.Text + "', YEAR_OF_STAY='" + year.Text + "' WHERE ID =" + id;
+            dbcon.GetExecuteNonQuery(strSQL);
+            grdSeverence.EditIndex = -1;
+            bindgrdSeverence();
+        }
+
+        protected void grdSeverence_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            bindgrdSeverence();
+            grdSeverence.PageIndex = e.NewPageIndex;
+            grdSeverence.DataBind();
+        }
+    }
+}

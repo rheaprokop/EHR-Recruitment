@@ -1,0 +1,285 @@
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PR01.aspx.cs" Inherits="EHR.Views.Status.PR01" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" >
+<head runat="server">
+    <title></title>
+    <script language="JavaScript">
+<!--
+        function printPartOfPage(elementId)
+        {
+            var printContent = document.getElementById(elementId);
+            var printWindow = window.open('', '', 'left=50000,top=50000,width=0,height=0');
+
+            printWindow.document.write(printContent.innerHTML);
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+            printWindow.close();
+        }
+// -->
+    </script>
+    
+</head>
+<body>
+
+    <form id="form1" runat="server">
+        <asp:Panel ID="Panel1" Visible="true" runat="server" >
+        <div id="otep">
+            <table style='font-family: tahoma; font-size: 10.0pt; width: 100%;
+                border-top: solid 1px; border-bottom: solid 1px'>
+                <tr>
+                    <td>
+                        <asp:Label ID="p_lblEmplID" runat="server" Text="Employee ID: " Font-Bold="True"></asp:Label>
+                        <asp:Label ID="p_lblEmplIDv" runat="server" Text=""></asp:Label>
+                    </td>
+                    <td>
+                        <asp:Label ID="p_lblReqDate" runat="server" Text="Request Date: " 
+                            Font-Bold="True"></asp:Label>
+                        <asp:Label ID="p_lblReqDatev" runat="server" Text=""></asp:Label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <asp:Label ID="p_lblEmpName" runat="server" Text="Employee Name: " 
+                            Font-Bold="True"></asp:Label>
+                        <asp:Label ID="p_lblEmpNamev" runat="server" Text=""></asp:Label>
+                    </td>
+                    <td>
+                        <asp:Label ID="p_lblReqID" runat="server" Text="Request ID: " Font-Bold="True"></asp:Label>
+                        <asp:Label ID="p_lblReqIDv" runat="server" Text=""></asp:Label>
+                    </td>
+                </tr>
+            </table>
+            <br />
+            <table style='font-family: tahoma; font-size: 10.0pt; width: 100%;
+                border-top: solid 1px; border-bottom: solid 1px; border-spacing: 0'>
+                <tr>
+                    <td style="width: 33%">
+                        <asp:Label ID="Label1" runat="server" Text="Change of Department" 
+                            Font-Italic="True" Font-Bold="True"></asp:Label>
+                    </td>
+                    <td style="width: 33%">
+                        <asp:Label ID="Label2" runat="server" Text="Current" Font-Bold="True"></asp:Label>
+                    </td>
+                    <td style="width: 33%">
+                        <asp:Label ID="Label9" runat="server" Text="New" Font-Bold="True"></asp:Label>
+                    </td>
+                </tr>
+                <tr style="background-color: #F2F2F2">
+                    <td style="width: 33%; border-top: solid 1px">
+                        <asp:Label ID="Label5" runat="server" Text="Department Code" Font-Bold="True"></asp:Label>
+                    </td>
+                    <td style="width: 33%; border-top: solid 1px">
+                        <span style='width: 0px;'></span>
+                        <asp:Label ID="p_lblChangeDeptCurrent" runat="server" Text=""></asp:Label>
+                    </td>
+                    <td style="width: 33%; border-top: solid 1px">
+                        <span style='width: 0px;'></span>
+                        <asp:Label ID="p_lblChangeDeptNew" runat="server" Text=""></asp:Label>
+                    </td>
+                </tr>
+            </table>
+            <br />
+            <table style='font-family: tahoma; font-size: 10.0pt; width: 100%;
+                border-top: solid 1px; border-bottom: solid 1px; border-spacing: 0'>
+                <tr>
+                    <td style="width: 33%">
+                        <asp:Label ID="Label3" runat="server" Text="Change of Position" 
+                            Font-Italic="True" Font-Bold="True"></asp:Label>
+                    </td>
+                    <td style="width: 33%">
+                        <asp:Label ID="Label4" runat="server" Text="Current" Font-Bold="True"></asp:Label>
+                    </td>
+                    <td style="width: 33%">
+                        <asp:Label ID="Label6" runat="server" Text="New" Font-Bold="True"></asp:Label>
+                    </td>
+                </tr>
+                <tr style="background-color: #F2F2F2">
+                    <td style="width: 33%; border-top: solid 1px">
+                        <asp:Label ID="Label7" runat="server" Text="Position" Font-Bold="True"></asp:Label>
+                    </td>
+                    <td style="width: 33%; border-top: solid 1px">
+                        <span style='width: 0px;'></span>
+                        <asp:Label ID="Label8" runat="server" Text=""></asp:Label>
+                    </td>
+                    <td style="width: 33%; border-top: solid 1px">
+                        <span style='width: 0px;'></span>
+                        <asp:Label ID="Label10" runat="server" Text=""></asp:Label>
+                    </td>
+                </tr>
+            </table>
+            <br />
+            <table style='font-family: tahoma; font-size: 10.0pt; width: 100%;
+                border-top: solid 1px; border-bottom: solid 1px; border-spacing: 0'>
+                <tr>
+                    <td style="width: 33%">
+                        <asp:Label ID="Label11" runat="server" Text="Employee Category" 
+                            Font-Italic="True" Font-Bold="True"></asp:Label>
+                    </td>
+                    <td style="width: 33%">
+                        <asp:Label ID="Label12" runat="server" Text="Current" Font-Bold="True"></asp:Label>
+                    </td>
+                    <td style="width: 33%">
+                        <asp:Label ID="Label13" runat="server" Text="New" Font-Bold="True"></asp:Label>
+                    </td>
+                </tr>
+                <tr style="background-color: #F2F2F2">
+                    <td style="width: 33%; border-top: solid 1px">
+                        <asp:Label ID="Label14" runat="server" Text="Category" Font-Bold="True"></asp:Label>
+                    </td>
+                    <td style="width: 33%; border-top: solid 1px">
+                        <span style='width: 0px;'></span>
+                        <asp:Label ID="Label15" runat="server" Text=""></asp:Label>
+                    </td>
+                    <td style="width: 33%; border-top: solid 1px">
+                        <span style='width: 0px;'></span>
+                        <asp:Label ID="Label16" runat="server" Text=""></asp:Label>
+                    </td>
+                </tr>
+            </table>
+            <br />
+            <asp:Label ID="Label17" runat="server" Text="Workshift Change Details" Font-Italic="True"
+                Font-Bold="True" Font-Names="Tahoma" Font-Size="10pt"></asp:Label>
+            <table style='font-family: tahoma; font-size: 10.0pt; width: 100%;
+                border-spacing: 0'>
+                <tr>
+                    <td align="center" style="border-top: solid 1px; border-right: dotted 1px">
+                        <asp:Label ID="Label18" runat="server" Text="Applicant Remarks" 
+                            Font-Bold="True"></asp:Label>
+                    </td>
+                    <td align="center" style="border-top: solid 1px">
+                        <asp:Label ID="Label19" runat="server" Text="HR Review Remarks" 
+                            Font-Bold="True"></asp:Label>
+                    </td>
+                </tr>
+                <tr bgcolor="#F2F2F2" style="height: 45px">
+                    <td align="center" style="border-top: solid 1px; border-bottom: solid 1px; border-right: dotted 1px">
+                        <span style='width: 0px;'></span>
+                        <asp:Label ID="p_lblARemarksv" runat="server" Text=""></asp:Label>
+                    </td>
+                    <td align="center" style="border-top: solid 1px; border-bottom: solid 1px">
+                        <span style='width: 0px;'></span>
+                        <asp:Label ID="p_lblHRemarksv" runat="server" Text=""></asp:Label>
+                    </td>
+                </tr>
+            </table>
+            <br />
+            <table style='font-family: tahoma; font-size: 10.0pt; width: 100%;
+                border-spacing: 0'>
+                <tr>
+                    <td style='width: 33%; border-top: solid 1px; border-right: dotted 1px'>
+                        <asp:Label ID="Label20" runat="server" Text="Salary Change" Font-Italic="True" 
+                            Font-Bold="True"></asp:Label>
+                    </td>
+                    <td style='width: 33%; border-top: solid 1px; border-right: dotted 1px'>
+                        <asp:Label ID="Label21" runat="server" Text="Current" Font-Bold="True"></asp:Label>
+                    </td>
+                    <td style='width: 33%; border-top: solid 1px'>
+                        <asp:Label ID="Label22" runat="server" Text="New" Font-Bold="True"></asp:Label>
+                    </td>
+                </tr>
+                <tr style="background-color: #F2F2F2">
+                    <td style='width: 33%; border-top: solid 1px; border-right: dotted 1px'>
+                        <asp:Label ID="Label23" runat="server" Text="Basic Salary" Font-Bold="True"></asp:Label>
+                    </td>
+                    <td style='width: 33%; border-top: solid 1px; border-right: dotted 1px'>
+                        <span style='width: 0px;'></span>
+                        <asp:Label ID="p_lblBasicSalaryCurrent" runat="server" Text=""></asp:Label>
+                    </td>
+                    <td style='width: 33%; border-top: solid 1px'>
+                        <span style='width: 0px;'></span>
+                        <asp:Label ID="p_lblBasicSalaryNew" runat="server" Text=""></asp:Label>
+                    </td>
+                </tr>
+                <tr style="background-color: #F2F2F2">
+                    <td style='width: 33%; border-top: solid 1px; border-right: dotted 1px'>
+                        <asp:Label ID="Label24" runat="server" Text="Performance Bonus" 
+                            Font-Bold="True"></asp:Label>
+                    </td>
+                    <td style='width: 33%; border-top: solid 1px; border-right: dotted 1px'>
+                        <span style='width: 0px;'></span>
+                        <asp:Label ID="p_lblBonusCurrent_perf" runat="server" Text=""></asp:Label>
+                    </td>
+                    <td style='width: 33%; border-top: solid 1px'>
+                        <span style='width: 0px;'></span>
+                        <asp:Label ID="p_lblBonusNew_perf" runat="server" Text=""></asp:Label>
+                    </td>
+                </tr>
+                <tr style="background-color: #F2F2F2">
+                    <td style='width: 33%; border-top: solid 1px; border-right: dotted 1px'>
+                        <asp:Label ID="Label25" runat="server" Text="Personal Bonus" Font-Bold="True"></asp:Label>
+                    </td>
+                    <td style='width: 33%; border-top: solid 1px; border-right: dotted 1px'>
+                        <span style='width: 0px;'></span>
+                        <asp:Label ID="_lblBonusCurrent_pers" runat="server" Text=""></asp:Label>
+                    </td>
+                    <td style='width: 33%; border-top: solid 1px'>
+                        <span style='width: 0px;'></span>
+                        <asp:Label ID="p_lblBonusNew_pers" runat="server" Text=""></asp:Label>
+                    </td>
+                </tr>
+                <tr style="background-color: #F2F2F2">
+                    <td style='width: 33%; border-top: solid 1px; border-bottom: solid 1px; border-right: dotted 1px'>
+                        <asp:Label ID="Label26" runat="server" Text="Forklift Bonus" Font-Bold="True"></asp:Label>
+                    </td>
+                    <td style='width: 33%; border-top: solid 1px; border-bottom: solid 1px; border-right: dotted 1px'>
+                        <span style='width: 0px;'></span>
+                        <asp:Label ID="p_lblBonusCurrent_fork" runat="server" Text=""></asp:Label>
+                    </td>
+                    <td style='width: 33%; border-top: solid 1px; border-bottom: solid 1px'>
+                        <span style='width: 0px;'></span>
+                        <asp:Label ID="p_lblBonusNew_fork" runat="server" Text=""></asp:Label>
+                    </td>
+                </tr>
+            </table>
+            <br />
+            <table><tr><td style="width: 100%">
+            <asp:GridView ID="GridView1" runat="server" AutoGenerateColumns = "False" 
+               style = "float: left; width: 100%; margin-left: 0px; margin-right: 0px;"
+                DataKeyNames = "REQID" 
+                BorderColor="Black" BorderWidth="1px"> 
+               <Columns>  
+               
+                    <asp:BoundField ItemStyle-Width = "100px" DataField = ""
+                       HeaderText = "Approver"> 
+                        <ItemStyle Width="100px" />
+                    </asp:BoundField>
+                    <asp:BoundField ItemStyle-Width = "100px" DataField = ""
+                       HeaderText = "Approved by">    
+                        <ItemStyle Width="100px" />
+                    </asp:BoundField>
+                    <asp:BoundField ItemStyle-Width = "80px" DataField = ""
+                       HeaderText = "Date/Time">
+                        <ItemStyle Width="80px" />
+                    </asp:BoundField>
+                    <asp:TemplateField ItemStyle-Width="120px">
+                        <HeaderTemplate>Signature</HeaderTemplate>
+                        <ItemTemplate><asp:Image ID="imgSignature" runat="server" /></ItemTemplate>
+                    </asp:TemplateField>
+                   <asp:BoundField ItemStyle-Width = "250px" DataField = ""
+                       HeaderText = "Comment">                
+                       <ItemStyle Width="250px" />
+                    </asp:BoundField>
+             </Columns>  
+            </asp:GridView>
+            </td><td></td></tr></table>
+            <br />
+            <table style='font-family: tahoma; font-size: 10.0pt; font-weight: bold; width: 100%'>
+                <tr>
+                    <td style="width: 70%">
+                        <asp:Label ID="Label72" runat="server" Text="Printed by: "></asp:Label>
+                        <asp:Label ID="Label73" runat="server" Text=""></asp:Label>
+                    </td>
+                    <td style="width: 30%">
+                        <asp:Label ID="Label74" runat="server" Text="Date: "></asp:Label>
+                        <asp:Label ID="Label75" runat="server" Text=""></asp:Label>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </asp:Panel>
+    </form>
+</body>
+</html>

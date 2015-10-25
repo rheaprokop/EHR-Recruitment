@@ -1,0 +1,152 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="EHR.Views.Shared.Site" %>
+
+<%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="asp" %>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<head runat="server">
+    <title>E-Human Resources Applications System</title>
+    <link href="../../Content/css/light/Style.css" rel="stylesheet" type="text/css" />
+     <link href="../../Content/fonts/BebasNeue/style.css" rel="stylesheet" type="text/css" />
+     <link href="../../Content/css/jQuery/jquery.ui.all.css" rel="stylesheet" type="text/css" />
+     <script src="../../Scripts/jQuery/jquery-1.6.2.js" type="text/javascript"></script>
+     <script src="../../Scripts/jQuery/jquery.ui.core.js" type="text/javascript"></script>
+     <script src="../../Scripts/jQuery/jquery.ui.widget.js" type="text/javascript"></script>
+     <script src="../../Scripts/jQuery/jquery.ui.button.js" type="text/javascript"></script> 
+     <script src="../../Scripts/jQuery/jquery.ui.tabs.js" type="text/javascript"></script>
+     <script src="../../Scripts/jQuery/jquery.ui.datepicker.js" type="text/javascript"></script>
+     <script src="../../Scripts/jQuery/jquery.ui.dialog.js" type="text/javascript"></script>
+     <script src="../../Scripts/jQuery/jquery.ui.position.js" type="text/javascript"></script> 
+
+    <asp:ContentPlaceHolder ID="head" runat="server">
+    </asp:ContentPlaceHolder>
+</head>
+<body>
+    <form id="frmEHR" runat="server">
+    <%--<asp:ScriptManager ID="MainScriptManager" runat="server" />  --%>
+    <asp:ToolkitScriptManager ID="ToolkitScriptManager1" runat="server">
+    </asp:ToolkitScriptManager>
+    <!--TOP HEADER-->
+    <div id="gk-nav">
+        <div id="gk-nav-wrap" class="main clearfix">
+            <h1 class="logo">
+                <a href=""></a>
+            </h1>
+            <a href="../../Account/ChangePassword.aspx"><span style="float: right; color: White;
+                padding-right: 5px">Change Password</span></a>
+            <asp:Panel runat="server" ID="panel_manage">
+                <span id="separator" style="float: right; color: White; padding-right: 5px">|</span>
+                <a href="../Admin/ManageUser.aspx"><span id="span_manage" style="float: right; color: White;
+                    padding-right: 5px">Manage User</span></a>
+            </asp:Panel>
+        </div>
+        <div id="gk-mainnav">
+            <div class="menu-nav">
+                <table style="float: right; padding-bottom: 10px;">
+                    <tr>
+                        <td>
+                            <asp:Menu ID="mnuTopButton" runat="server" Orientation="Horizontal">
+                                <Items>
+                                </Items>
+                                <StaticMenuItemStyle CssClass="menus-top" BorderColor="#ececec" />
+                                <StaticHoverStyle BackColor="#FFFFFF" Font-Bold="False" CssClass="menus-hover" />
+                                <StaticSelectedStyle BackColor="#FFFFFF" Font-Bold="False" ForeColor="#111111" />
+                            </asp:Menu>
+                            <asp:ContentPlaceHolder ID="TopContent" runat="server">
+                            </asp:ContentPlaceHolder>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <!--END OF TOP HEADER-->
+    <!--START OF MAIN-->
+    <div id="mainPage" class="main ">
+        <div id="gk-mainbody" style="width: 100%;">
+            <!--START OF MAIN CONTAINER-->
+            <!--START OF LEFT-->
+            <div id="gk-left" class="column" style="width: 14%; height: 1500px;">
+                <div class="inner-wrap">
+                    <div class="gk-mass gk-mass-top clearfix">
+                        <div class="moduletable clear">
+                            <div class="moduletable_content">
+                                <div class="moduletable subtitle color">
+                                    <div style="padding-left: 30px; font-family: BebasNeue; font-style: normal; text-decoration: none;">
+                                        <span>Welcome, </span><span style="display: block; font-size: 20px; color: #015664;
+                                            margin-top: -20px;">
+                                            <asp:Label runat="server" ID="lblFirstName" Text="Rhea" style="font-family: BebasNeue;"></asp:Label></span>
+                                        <span style="margin-top: -40px; font-family: BebasNeue;">YOUR EMPLOYEE ID IS: </span><span style="display: block;
+                                            font-size: 18px; color: #015664; margin-top: -10px;">
+                                            <asp:Label runat="server" ID="lblEmployeeID" Text="C1109001" style="font-family: BebasNeue;"></asp:Label></span>
+                                    </div>
+                                </div>
+                                <!--SEARCH BOX HERE-->
+                            </div>
+                        </div>
+                        <div class="moduletable clear">
+                            <div class="moduletable_content">
+                                <ul class="menu" style="margin-top: 30px;">
+                                    <asp:Panel runat="server" ID="pnlInbox">
+                                        <li><span style="padding-left: 30px;" class="selected"><a href="http://ehr.qas.wcz.wistron/Views/Home/Default.aspx">Home</a></span></li>
+                                        <li><span style="padding-left: 30px;" class="selected"><a href="http://ehr.qas.wcz.wistron/Recruitment/Main/Main.aspx">My Dashboard</a></span></li>
+ 
+                                        <li><span style="padding-left: 30px;" class="selected"><a href="Site.Master">
+                                            Inbox</a></span></li>  
+                                        </asp:Panel> 
+                                    <asp:ContentPlaceHolder ID="LeftContent" runat="server">
+                                    </asp:ContentPlaceHolder>
+                                   <li><span style="padding-left: 30px;"> 
+                                        <asp:LinkButton ID="LinkSignOut" runat="server" OnClick="LinkSignOut_Click" CausesValidation="false">Sign Out</asp:LinkButton></span></li> 
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--END OF LEFT-->
+            <!--START OF RIGHT-->
+            <div id="gk-main" style="width: 83%">
+                <div class="inner ctop cright cbottom">
+                    <div id="gk-body-wrap">
+                        <div id="gk-contentwrap">
+                            <div id="gk-content" style="width: 100%; margin-top: 0px;" dir="ltr">
+                                <asp:ContentPlaceHolder runat="server" ID="mainContent">
+                                </asp:ContentPlaceHolder>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--END OF RIGHT-->
+        </div>
+    </div>
+    <!--END OF MAIN-->
+    </form>
+
+    <script type="text/javascript">
+ 	    $(function() {
+ 	        // a workaround for a flaw in the demo system (http://dev.jqueryui.com/ticket/4375), ignore! 
+ 	    $("#pnlDialog").dialog({
+
+ 	        resizable: false,
+ 	        height: 700,
+ 	        width: 800,
+ 	        modal: true,
+ 	        title: "Approval Box",
+ 	        buttons: {
+ 	            "Close": function() {
+ 	                $(this).dialog("close");
+ 	                confirmed = true;
+ 	                obj.click();
+ 	            }
+ 	        }
+ 	    });
+    </script>
+
+    <asp:Panel runat="server" ID="pnlError" Style="display: none" CssClass="mws-jui-dialog">
+        <p>
+            <asp:Label runat="server" ID="lblError"></asp:Label></p>
+    </asp:Panel>
+</body>
+</html>

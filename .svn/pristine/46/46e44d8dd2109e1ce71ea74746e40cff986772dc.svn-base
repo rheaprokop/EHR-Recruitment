@@ -1,0 +1,398 @@
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Views/Shared/Site.Master" AutoEventWireup="true" CodeBehind="RQ05.aspx.cs" Inherits="EHR.Views.Status.RQ05" %>
+<asp:Content ID="Head" ContentPlaceHolderID="head" runat="server">
+</asp:Content>
+<asp:Content ID="Top" ContentPlaceHolderID="TopContent" runat="server">
+</asp:Content>
+<asp:Content ID="Left" ContentPlaceHolderID="LeftContent" runat="server">
+</asp:Content>
+<asp:Content ID="Main" ContentPlaceHolderID="mainContent" runat="server">
+    <div class="header">
+  <div>
+   <asp:Label ID="lblCandidateTitle" Text="Status Change Form" runat="server" CssClass="logotext"></asp:Label>
+   </div>
+ <div style=" float: right; margin-top: -10px;" class="ui-buttonset">
+ <asp:HyperLink runat="server" NavigateUrl="~/Views/Status/RQ13.aspx" Enabled="false"  ID="btnViewAll" Text="View All Request" CssClass="ui-widget ui-state-default ui-corner" style="font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left; padding-right: 20px; padding-left: 20px;" />
+ <asp:HyperLink  runat="server" NavigateUrl="~/Views/Status/RQ01.aspx" Enabled="false" ID="btnAssign" Text="Create Request" CssClass="ui-widget ui-state-default ui-corner" style="font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left;  padding-right: 20px; padding-left: 20px;" />
+<asp:HyperLink  runat="server" NavigateUrl="~/Views/Status/RQ14.aspx" ID="btnMyRequests" Text="My Requests" CssClass="ui-widget ui-state-default ui-corner" style="color: #111111; font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left;  padding-right: 20px; padding-left: 20px;" />
+ <asp:HyperLink  runat="server" Target="_blank" NavigateUrl="http://mfgkm-wcz.wistron.com/IT/_layouts/PowerPoint.aspx?PowerPointView=ReadingView&PresentationId=/IT/AP/EHR/E-Status/EHR%20Status%20Change%20Training%20Material.ppt&Source=http%3A%2F%2Fmfgkm%2Dwcz%2Ewistron%2Ecom%2FIT%2FAP%2FForms%2FAllItems%2Easpx%3FRootFolder%3D%252FIT%252FAP%252FEHR%252FE%252DStatus%26FolderCTID%3D0x012000E05A5B7CAF61A94F84F8DEA75B64C524%26View%3D%7B344C2270%2DC858%2D4D1E%2DAB3A%2DD41AD7EF55BB%7D&DefaultItemOpen=1"  Visible="true" ID="HyperLink1" Text="Help" CssClass="ui-widget ui-state-default ui-corner" style="color: #111111; font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left;  padding-right: 20px; padding-left: 20px;" />
+ </div>
+</div> 
+
+ <table class="no-zebra" style="margin-top: 30px;">
+<tr><td>
+        <table style="width: 100%" >
+        <thead>
+            <tr style="widows: 67px;">
+                <th colspan="2" align="left" style="padding: 10px;">Status Change Form - Change employee Data
+                       <div style="float:right; height:30px;"><asp:Button ID="Button1" CssClass="ui-button  ui-widget" 
+                    style="color: #111111; font-family: BebasNeue; font-size: 16px; letter-spacing: 1px; float: right;" Text="Go back" runat="server" OnClientClick="return confirm('Are you sure you want to leave this form? Your data will be lost!')" OnClick="GoBack_Click" class="mws-button gray"/></div>
+                </th>
+            </tr>
+        </thead>
+        </table>
+        
+        <asp:UpdatePanel ID="upMultipleGridView" runat="server">
+                <ContentTemplate>
+                <table style="width: 80%" align="center" cellpadding="5" cellspacing="5">
+                    	 <tr><td colspan="1">&nbsp;</td></tr>
+                    	 <tr style="height: 30px;">
+                    	 <td style="font-size: 16px; border-bottom: solid 1px #111111;" colspan="1">
+                    	 <strong>Multiple Employees</strong>
+                         </td>
+                    	 </tr>
+                    	 <tr>
+                    	 <td><asp:DropDownList ID="ddlMultipleEmployees" runat="server">
+                    	     </asp:DropDownList>&nbsp;<asp:ImageButton ID="btnAddToGridView" runat="server" OnClick="AddToGridView_Click" ImageUrl="~/Content/css/icons/16/add.png" />&nbsp;&nbsp;
+                    	     <asp:ImageButton ID="btnDeleteFromGridView" runat="server" OnClick="DeleteFromGridView_Click" ImageUrl="~/Content/css/icons/16/cancel.png" />
+                    	 </td>
+                    	 </tr>
+                     	 <tr style="border-bottom: solid 1px #111111;"><td  colspan="1">
+                     	     <asp:GridView ID="GridViewMultipleEmployees" runat="server" Width="600px"  >
+                     	        <Columns>
+                     	            <asp:TemplateField>
+                     	                <ItemTemplate>
+                     	                    <asp:CheckBox ID="CheckBoxGridView" runat="server" />
+                     	                </ItemTemplate>
+                     	            </asp:TemplateField>
+                     	        </Columns>
+                            </asp:GridView>
+                     	 </td></tr>
+                     	 </table>
+                     	 
+                    	 
+                    	 <table style="width: 80%" align="center" cellpadding="5" cellspacing="5">
+                         <tr><td colspan="3"><asp:Label ID="lblException" runat="server" ForeColor="Red"></asp:Label></td></tr>
+                    	 <tr style="height: 40px;"> 
+                    	 <td style="width: 60%;"> &nbsp;</td>
+                    	 <td style=" font-size: 14px;"><strong>Request Date:</strong></td>
+                    	 <td style="font-size: 14px;"><asp:Label ID="lblRequestDate" runat="server"></asp:Label></td> 
+                    	 </tr>
+                    	   	 
+                    	 </table>  
+                    	 
+                    	 <table style="width: 80%" align="center" cellpadding="5" cellspacing="5">
+                    	 <tr style="height: 30px;"><td style="font-size: 16px; border-bottom: solid 1px #111111;" colspan="3"><strong>Change of Department</strong></td></tr>
+                    	 <tr style="height: 30px;"><td style="width: 30%">&nbsp;</td><td  style="width: 30%"><strong>CURRENT</strong></td><td  style="width: 30%"><strong>NEW</strong></td></tr>
+                    	 <tr style="height: 30px;"><td style="width: 30%"><strong>Department Code</strong></td><td  style="width: 30%"><strong><asp:Label ID="lblCurrentDeptID" runat="server"></asp:Label></strong></td><td  style="width: 30%"><strong>
+                    	 <asp:DropDownList ID="DropDownListNewDeptID" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ShowDeptPosition_TextChanged" style="width: 250px; padding: 5px;"></asp:DropDownList></strong></td></tr>
+                     	 </table>
+                     	 
+                         <table style="width: 80%" align="center" cellpadding="5" cellspacing="5">
+                    	 <tr style="height: 30px;"><td style="font-size: 16px; border-bottom: solid 1px #111111;" colspan="3"><strong>Change of Position</strong></td></tr>
+                    	 <tr><td class="style1"></td><td class="style1"><strong>CURRENT</strong></td>
+                             <td class="style1"><strong>NEW</strong></td></tr>
+                    	 <tr style="height: 30px;"><td style="width: 30%"><strong>Position</strong></td><td  style="width: 30%"><strong><asp:Label ID="lblCurrentPosition" runat="server"></asp:Label></strong></td><td  style="width: 30%"><strong>
+                    	 <asp:DropDownList ID="DropDownListNewJob" runat="server" style="width: 250px; padding: 5px;"></asp:DropDownList></strong></td></tr>
+                     	 </table>
+                     	 </ContentTemplate>
+                         </asp:UpdatePanel>
+                         
+                          <asp:UpdatePanel ID="UpdatePanel" runat="server">
+                         <ContentTemplate>
+                         <table style="width: 80%" align="center" cellpadding="5" cellspacing="5">
+                    	 <tr style="height: 30px;"><td style="font-size: 16px; border-bottom: solid 1px #111111;" colspan="3"><strong>Employee Category</strong></td></tr>
+                    	 <tr style="height: 30px;"><td style="width: 30%">&nbsp;</td><td  style="width: 30%"><strong>CURRENT</strong></td><td  style="width: 30%"><strong>NEW</strong></td></tr>
+                    	 <tr style="height: 30px;"><td style="width: 30%"><strong>Category</strong></td><td  style="width: 30%"><strong><asp:Label ID="lblCurrentEmplCategory" runat="server"></asp:Label></strong></td><td  style="width: 30%"><strong>      	 
+                    	 <asp:DropDownList ID="DropDownListNewCategory" AutoPostBack="true" OnSelectedIndexChanged="ShowWorkShiftPanel_SelectedIndexChanged" runat="server" style="width: 250px; padding: 5px;">
+                    	    <asp:ListItem Selected>Unchanged</asp:ListItem>
+                    	    <asp:ListItem>Contracted</asp:ListItem>
+                    	    <asp:ListItem>Temporary</asp:ListItem>
+                    	 </asp:DropDownList></strong></td></tr>
+                     	 </table>
+                     	 
+                     	 <asp:Panel ID="pnlWorkShift1" runat="server" visible="false">
+                     	     <table style="width: 80%" align="center" cellpadding="5" cellspacing="5">
+                    	     <tr style="height: 30px;"><td style="font-size: 16px; border-bottom: solid 1px #111111;" colspan="4"><strong>Change of Work Shift</strong></td></tr>
+                     	     <tr><td colspan="4">&nbsp;</td></tr>
+                     	     <tr style="height: 30px;">
+                     	     <td style="width: 25%"><strong>Work Shift Types</strong></td>
+                     	     <td  style="width: 20%"><asp:DropDownList ID="DropDownListCShiftType"  runat="server" style="width: 150px; padding: 5px;"><asp:ListItem Selected>Select Type</asp:ListItem><asp:ListItem>Regular</asp:ListItem><asp:ListItem>Irregular</asp:ListItem></asp:DropDownList></td>
+                     	     <td  style="width: 20%"><strong>Full/Part Time</strong></td>
+                     	     <td style="width: 20%"><asp:DropDownList ID="DropDownListShiftTypeTime" runat="server"  runat="server" style="width: 150px; padding: 5px;">
+                     	         <asp:ListItem Selected>Select Type</asp:ListItem>
+                     	         <asp:ListItem>Full Time</asp:ListItem>
+                     	         <asp:ListItem>Part Time</asp:ListItem>
+                     	         </asp:DropDownList></td>
+                     	     </tr>
+                            <tr><td colspan="4">&nbsp;</td></tr>
+                     	     <tr style="height: 30px;">
+                     	     <td style="width: 25%"><strong>Work Shift Options</strong></td>
+                     	     <td colspan="3">&nbsp;&nbsp;&nbsp;&nbsp;<strong>Time From:</strong> &nbsp;&nbsp;&nbsp;&nbsp;
+                     	     <asp:DropDownList ID="DropDownListShiftFrom"  runat="server" style="width: 100px; padding: 5px;">
+                     	         <asp:ListItem Value="01:00">01:00</asp:ListItem>
+                                 <asp:ListItem Value="01:30">01:30</asp:ListItem>
+                                 <asp:ListItem Value="02:00">02:00</asp:ListItem>
+                                 <asp:ListItem Value="02:30">02:30</asp:ListItem>
+                                 <asp:ListItem Value="03:00">03:00</asp:ListItem>
+                                 <asp:ListItem Value="03:30">03:30</asp:ListItem>
+                                 <asp:ListItem Value="04:00">04:00</asp:ListItem>
+                                 <asp:ListItem Value="04:30">04:30</asp:ListItem>
+                                 <asp:ListItem Value="05:00">05:00</asp:ListItem>
+                                 <asp:ListItem Value="05:30">05:30</asp:ListItem>
+                                 <asp:ListItem Value="06:00">06:00</asp:ListItem>
+                                 <asp:ListItem Value="06:30">06:30</asp:ListItem>
+                                 <asp:ListItem Value="07:00">07:00</asp:ListItem>
+                                 <asp:ListItem Selected Value="07:30">07:30</asp:ListItem>
+                                 <asp:ListItem Value="08:00">08:00</asp:ListItem>
+                                 <asp:ListItem Value="08:30">08:30</asp:ListItem>
+                                 <asp:ListItem Value="09:00">09:00</asp:ListItem>
+                                  <asp:ListItem Value="09:30">09:30</asp:ListItem>
+                                 <asp:ListItem Value="10:00">10:00</asp:ListItem>
+                                 <asp:ListItem Value="10:30">10:30</asp:ListItem>
+                                 <asp:ListItem Value="11:00">11:00</asp:ListItem>
+                                 <asp:ListItem Value="11:30">11:30</asp:ListItem>
+                                 <asp:ListItem Value="12:00">12:00</asp:ListItem>
+                                 <asp:ListItem Value="12:30">12:30</asp:ListItem>
+                                 <asp:ListItem Value="13:00">13:00</asp:ListItem>
+                                 <asp:ListItem Value="13:30">13:30</asp:ListItem>
+                                 <asp:ListItem Value="14:00">14:00</asp:ListItem>
+                                 <asp:ListItem Value="14:30">14:30</asp:ListItem>
+                                 <asp:ListItem Value="15:00">15:00</asp:ListItem>
+                                 <asp:ListItem Value="15:30">15:30</asp:ListItem>
+                                 <asp:ListItem Value="16:00">16:00</asp:ListItem>
+                                 <asp:ListItem Value="16:30">16:30</asp:ListItem>
+                                 <asp:ListItem Value="17:00">17:00</asp:ListItem>
+                                 <asp:ListItem Value="17:30">17:30</asp:ListItem>
+                                 <asp:ListItem Value="18:00">18:00</asp:ListItem>
+                                 <asp:ListItem Value="18:30">18:30</asp:ListItem>
+                                 <asp:ListItem Value="19:00">19:00</asp:ListItem>
+                                 <asp:ListItem Value="19:30">19:30</asp:ListItem>
+                                 <asp:ListItem Value="20:00">20:00</asp:ListItem>
+                                 <asp:ListItem Value="20:30">20:30</asp:ListItem>
+                                 <asp:ListItem Value="21:00">21:00</asp:ListItem>
+                                 <asp:ListItem Value="21:30">21:30</asp:ListItem>
+                                 <asp:ListItem Value="22:00">22:00</asp:ListItem>
+                                 <asp:ListItem Value="22:30">22:30</asp:ListItem>
+                                 <asp:ListItem Value="23:00">23:00</asp:ListItem>
+                                 <asp:ListItem Value="23:30">23:30</asp:ListItem>
+                                 <asp:ListItem Value="24:00">24:00</asp:ListItem> 
+                                 <asp:ListItem Value="24:30">24:30</asp:ListItem>
+                     	     </asp:DropDownList>
+                     	     &nbsp;&nbsp;&nbsp;&nbsp;<strong>To:</strong>&nbsp;&nbsp;&nbsp;&nbsp;
+                     	     <asp:DropDownList ID="DropDownListShiftTo"  runat="server" style="width: 100px; padding: 5px;">
+                     	         <asp:ListItem Value="01:00">01:00</asp:ListItem>
+                                 <asp:ListItem Value="01:30">01:30</asp:ListItem>
+                                 <asp:ListItem Value="02:00">02:00</asp:ListItem>
+                                 <asp:ListItem Value="02:30">02:30</asp:ListItem>
+                                 <asp:ListItem Value="03:00">03:00</asp:ListItem>
+                                 <asp:ListItem Value="03:30">03:30</asp:ListItem>
+                                 <asp:ListItem Value="04:00">04:00</asp:ListItem>
+                                 <asp:ListItem Value="04:30">04:30</asp:ListItem>
+                                 <asp:ListItem Value="05:00">05:00</asp:ListItem>
+                                 <asp:ListItem Value="05:30">05:30</asp:ListItem>
+                                 <asp:ListItem Value="06:00">06:00</asp:ListItem>
+                                 <asp:ListItem Value="06:30">06:30</asp:ListItem>
+                                 <asp:ListItem Value="07:00">07:00</asp:ListItem>
+                                 <asp:ListItem Value="07:30">07:30</asp:ListItem>
+                                 <asp:ListItem Value="08:00">08:00</asp:ListItem>
+                                 <asp:ListItem Value="08:30">08:30</asp:ListItem>
+                                 <asp:ListItem Value="09:00">09:00</asp:ListItem>
+                                  <asp:ListItem Value="09:30">09:30</asp:ListItem>
+                                 <asp:ListItem Value="10:00">10:00</asp:ListItem>
+                                 <asp:ListItem Value="10:30">10:30</asp:ListItem>
+                                 <asp:ListItem Value="11:00">11:00</asp:ListItem>
+                                 <asp:ListItem Value="11:30">11:30</asp:ListItem>
+                                 <asp:ListItem Value="12:00">12:00</asp:ListItem>
+                                 <asp:ListItem Value="12:30">12:30</asp:ListItem>
+                                 <asp:ListItem Value="13:00">13:00</asp:ListItem>
+                                 <asp:ListItem Value="13:30">13:30</asp:ListItem>
+                                 <asp:ListItem Value="14:00">14:00</asp:ListItem>
+                                 <asp:ListItem Value="14:30">14:30</asp:ListItem>
+                                 <asp:ListItem Value="15:00">15:00</asp:ListItem>
+                                 <asp:ListItem Value="15:30">15:30</asp:ListItem>
+                                 <asp:ListItem Value="16:00">16:00</asp:ListItem>
+                                 <asp:ListItem Value="16:30">16:30</asp:ListItem>
+                                 <asp:ListItem Value="17:00">17:00</asp:ListItem>
+                                 <asp:ListItem Selected Value="17:30">17:30</asp:ListItem>
+                                 <asp:ListItem Value="18:00">18:00</asp:ListItem>
+                                 <asp:ListItem Value="18:30">18:30</asp:ListItem>
+                                 <asp:ListItem Value="19:00">19:00</asp:ListItem>
+                                 <asp:ListItem Value="19:30">19:30</asp:ListItem>
+                                 <asp:ListItem Value="20:00">20:00</asp:ListItem>
+                                 <asp:ListItem Value="20:30">20:30</asp:ListItem>
+                                 <asp:ListItem Value="21:00">21:00</asp:ListItem>
+                                 <asp:ListItem Value="21:30">21:30</asp:ListItem>
+                                 <asp:ListItem Value="22:00">22:00</asp:ListItem>
+                                 <asp:ListItem Value="22:30">22:30</asp:ListItem>
+                                 <asp:ListItem Value="23:00">23:00</asp:ListItem>
+                                 <asp:ListItem Value="23:30">23:30</asp:ListItem>
+                                 <asp:ListItem Value="24:00">24:00</asp:ListItem> 
+                                 <asp:ListItem Value="24:30">24:30</asp:ListItem>
+                     	     </asp:DropDownList></td>
+                         	  
+                     	     </tr>      
+                     	     <tr><td colspan="4">&nbsp;</td></tr>
+                            <tr style="height: 30px;">
+                     	     <td style="width: 25%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<asp:CheckBox ID="CheckBoxWorkingDays" runat="server" AutoPostBack="true" OnCheckedChanged="CheckWorkingDays_CheckedChanged" /> <label>Working days</label></td>
+                     	     <td colspan="3"> 
+                     	     <ul class="mws-form-list inline">
+
+                    						    <li><asp:CheckBox ID="CheckBoxMonday"    runat="server" /> <label>Monday</label></li>
+                    						    <li><asp:CheckBox ID="CheckBoxTuesday"   runat="server" /> <label>Tuesday</label></li>
+                    						    <li><asp:CheckBox ID="CheckBoxWednesday" runat="server" /> <label>Wednesday</label></li>
+                    						    <li><asp:CheckBox ID="CheckBoxThursday"  runat="server" /> <label>Thursday</label></li>
+                    						    <li><asp:CheckBox ID="CheckBoxFriday"    runat="server" /> <label>Friday</label></li>
+                    						    <li><asp:CheckBox ID="CheckBoxSaturday"  runat="server" /> <label>Saturday</label></li>
+                    						    <li><asp:CheckBox ID="CheckBoxSunday"    runat="server" /> <label>Sunday</label></li>
+                    					    </ul>
+                     	     </td> 
+                     	     </tr>                           	 
+                     	     <tr><td colspan="4">&nbsp;</td></tr>  
+                             <tr><td colspan="4"><strong>Details of Work-Shift: <span style="color: Red">(*Please enter Work Time, Days and Hours Per Week in details.)</strong></span></td></tr>
+             	             <tr><td colspan="4"><asp:TextBox ID="txtWorkShiftDetails" runat="server" Columns="100" Rows="50" TextMode="MultiLine" style="height: 150px;"></asp:TextBox></td></tr>
+                     	     </table>               	 
+                     	 </asp:Panel>
+                     	                      	 
+                     	 <asp:Panel ID="pnlWorkShift2" runat="server" visible="false">                    	 
+                     	     <table style="width: 80%" align="center" cellpadding="5" cellspacing="5">
+                    	         <tr style="height: 30px;"><td style="font-size: 16px; border-bottom: solid 1px #111111;" colspan="2"><strong>Change of Work Shift</strong></td></tr>
+                     	         <tr style="height: 30px;"><td   colspan="2" style="width: 30%"><strong>&nbsp;</strong></td></tr>
+
+                     	         <tr style="height: 30px;">
+                     	         <td  style="width: 30%"><strong>Work Shift Types:</strong></td>
+                     	         <td><asp:DropDownList ID="DropDownListTShiftType" runat="server"  style="width: 250px; padding: 5px;">
+                     	            <asp:ListItem Selected>Select Type</asp:ListItem>
+                     	            <asp:ListItem>300 hours in a calendar year</asp:ListItem>
+                                    <asp:ListItem>Maximum 1/2 of working hours</asp:ListItem>
+                                    </asp:DropDownList>
+                     	         </td>
+                     	         </tr>
+                     	     </table>     
+                     	 </asp:Panel> 
+                     	 </ContentTemplate>
+                     	 </asp:UpdatePanel>
+
+<asp:UpdatePanel ID="UpdatePanelSalaryRadio" runat="server">
+                     	 <ContentTemplate>
+                         <table style="width: 80%" align="center" cellpadding="5" cellspacing="5">
+                    	     <tr style="height: 30px;"><td style="font-size: 16px; border-bottom: solid 1px #111111;" colspan="3"><strong>Change of Basic Salary</strong></td></tr>
+                     	     <tr style="height: 30px;"><td style="width: 30%">&nbsp;</td><td  style="width: 30%"><strong>&nbsp;</strong></td><td  style="width: 30%"><strong>&nbsp;</strong></td></tr>
+
+                     	     <tr style="height: 30px;">
+                     	     <td style="width: 30%">
+                     	        
+                     	        <asp:RadioButtonList Enabled="false" ID="RadioButtonListSalary" runat="server" RepeatDirection="Horizontal">
+                     	            <asp:ListItem Text="Increase" />
+                     	            <asp:ListItem Text="Decrease" />
+                     	        </asp:RadioButtonList>
+                     	     </td>
+                       	     <td  style="width: 30%" colspan="2"><strong>Enter Fixed Amount:</strong>&nbsp;&nbsp;&nbsp;
+                     	        <asp:TextBox runat="server" ID="txtSalaryAmount" OnTextChanged="EnableRadio_TextChanged" AutoPostBack="true" CssClass="mws-textinput" style="font-size: 14px;" ></asp:TextBox>&nbsp;&nbsp;CZK
+                     	     <asp:RegularExpressionValidator ID="RegexValidatorForSalary" runat="server"
+                     	            ControlToValidate="txtSalaryAmount"
+                     	            ValidationGroup="AmountInputGroup"
+                     	            ErrorMessage="Wrong format of Salary Amount!"
+                     	            ValidationExpression="^\d+$">
+                     	     </asp:RegularExpressionValidator>
+                     	     </td>
+                     	     </tr>
+                     	 </table>
+                     	 </ContentTemplate>
+                     	 </asp:UpdatePanel>
+                     	 
+                     	 <asp:UpdatePanel ID="UpdatePanelEnableBonus" runat="server">
+                     	 <ContentTemplate>
+                     	 <table style="width: 80%" align="center" cellpadding="5" cellspacing="5">
+                	         <tr style="height: 30px;">
+                                 <td colspan="3" style="font-size: 16px; border-bottom: solid 1px #111111;"><strong>Change of Bonus</strong></td></tr>
+                 	         <tr>
+                 	            <td colspan="3">
+                 	                <asp:RegularExpressionValidator ID="RegexValidatorForPerformanceBonus" runat="server"
+                 	                     ControlToValidate="txtAmountPerformanceBonus"
+                 	                     ValidationGroup="AmountInputGroup"
+                 	                     ErrorMessage="Wrong format of Performance Bonus Amount!" 
+                 	                     Display="Dynamic"
+                 	                     ValidationExpression="^\d+$">
+                 	                </asp:RegularExpressionValidator>
+                 	                <asp:RegularExpressionValidator ID="RegexValidatorForPersonalBonus" runat="server"
+                 	                     ControlToValidate="txtAmountPersonalBonus"
+                 	                     ValidationGroup="AmountInputGroup"
+                 	                     ErrorMessage="Wrong format of Personal Bonus Amount!" 
+                 	                     Display="Dynamic"
+                 	                     ValidationExpression="^\d+$">
+                 	                </asp:RegularExpressionValidator>
+                 	                <asp:RegularExpressionValidator ID="RegexValidatorForForkliftBonus" runat="server"
+                 	                     ControlToValidate="txtAmountForkliftBonus"
+                 	                     ValidationGroup="AmountInputGroup"
+                 	                     Display="Dynamic"
+                 	                     ErrorMessage="Wrong format of Forklift Bonus Amount!" 
+                 	                     ValidationExpression="^\d+$">
+                 	                </asp:RegularExpressionValidator>
+                 	                &nbsp;
+                 	             </td>
+                 	         </tr>      
+                     	     <tr style="height: 30px;">
+                     	     <td style="width: 25%"><asp:CheckBox ID="checkBoxPerformanceBonus" runat="server" AutoPostBack="true" OnCheckedChanged="PerformanceBonus_CheckedChanged"></asp:CheckBox><strong>Performance Bonus</strong></td>
+                     	     <td><asp:TextBox Enabled="false" runat="server" ID="txtAmountPerformanceBonus" CssClass="mws-textinput" style="font-size: 14px;" ></asp:TextBox>&nbsp;&nbsp;CZK
+                     	     </td>
+                     	     <td style="width: 50%">
+                     	        <asp:RadioButtonList Enabled="false" ID="RadioButtonListPerformanceBonus" runat="server" RepeatDirection="Horizontal">
+                     	            <asp:ListItem Text="Increase" />
+                     	            <asp:ListItem Text="Decrease" />
+                     	        </asp:RadioButtonList>
+                     	     </td>
+                      	     </tr>
+                      	     <tr style="height: 30px;">
+                     	     <td style="width: 25%"><asp:CheckBox ID="checkBoxPersonalBonus" runat="server" AutoPostBack="true" OnCheckedChanged="PersonalBonus_CheckedChanged"></asp:CheckBox><strong>Personal Bonus</strong></td>
+                     	     <td><asp:TextBox Enabled="false" runat="server" ID="txtAmountPersonalBonus" CssClass="mws-textinput" style="font-size: 14px;" ></asp:TextBox>&nbsp;&nbsp;CZK
+                     	     </td>
+                     	     <td>
+                     	        <asp:RadioButtonList Enabled="false" ID="RadioButtonListPersonalBonus" runat="server" RepeatDirection="Horizontal">
+                     	            <asp:ListItem Text="Increase" />
+                     	            <asp:ListItem Text="Decrease" />
+                     	        </asp:RadioButtonList>
+                     	     </td>
+                      	     </tr>
+                      	     <tr style="height: 30px;">
+                     	     <td style="width: 25%"><asp:CheckBox ID="checkBoxForkliftBonus" runat="server" AutoPostBack="true" OnCheckedChanged="ForkliftBonus_CheckedChanged"></asp:CheckBox><strong>Forklift Bonus</strong></td>
+                     	     <td><asp:TextBox Enabled="false" runat="server" ID="txtAmountForkliftBonus" CssClass="mws-textinput" style="font-size: 14px;" ></asp:TextBox>&nbsp;&nbsp;CZK
+                     	     </td>
+                     	     <td>
+                     	        <asp:RadioButtonList Enabled="false" ID="RadioButtonListForkliftBonus" runat="server" RepeatDirection="Horizontal">
+                     	            <asp:ListItem Text="Increase" />
+                     	            <asp:ListItem Text="Decrease" />
+                     	         </asp:RadioButtonList>
+                     	     </td>
+                      	     </tr>
+                      	     <tr><td colspan="3">&nbsp;</td></tr>
+                      	 </table>
+                      	 </ContentTemplate>
+                      	 </asp:UpdatePanel>
+                      	 
+                      	 
+                      	 <table style="width: 100%">
+                      	 <thead>
+                      	    <tr><th>
+                      	         <div style="float:right">
+                                     <asp:Button ID="Submit" Text="Submit" runat="server" 
+                                     OnClientClick="return confirm('Are you sure you want to submit?')" OnClick="Submit_Click" 
+                                     CssClass="ui-button  ui-widget" 
+                    style="color: #111111; font-family: BebasNeue; font-size: 16px; letter-spacing: 1px; float: right;"
+                     />
+                                     <asp:Button ID="Reset" Text="Reset" runat="server" OnClick="Reset_Click"  CssClass="ui-button  ui-widget" 
+                    style="color: #111111; font-family: BebasNeue; font-size: 16px; letter-spacing: 1px; float: right;" />
+                                 </div>
+                             </th></tr>  
+                         </thead>	 </table>	 
+</td></tr>
+</table>  
+    
+ 	<Script type="text/javascript">
+ 	    $(function() {
+ 	        // a workaround for a flaw in the demo system (http://dev.jqueryui.com/ticket/4375), ignore!
+
+
+ 	    $("#ctl00_mainContent_pnlDialog").dialog({
+ 	            height: 230,
+ 	            width: 430,
+ 	            modal: true
+ 	        });
+ 	    });
+	</script>
+	<asp:Panel runat="server" ID="pnlDialog" CssClass="mws-jui-dialog">
+	 
+        <asp:Label runat="server" ID="lblConfirmMsg"></asp:Label> 
+                         
+	</asp:Panel>
+
+</asp:Content>

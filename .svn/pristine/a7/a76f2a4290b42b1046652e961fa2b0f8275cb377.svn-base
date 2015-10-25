@@ -1,0 +1,139 @@
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Views/Shared/Site.Master" AutoEventWireup="true" CodeBehind="RQ13.aspx.cs" Inherits="EHR.Views.Status.RQ13" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="TopContent" runat="server">
+</asp:Content>
+<asp:Content ID="Content3" ContentPlaceHolderID="LeftContent" runat="server">
+</asp:Content>
+<asp:Content ID="Content4" ContentPlaceHolderID="mainContent" runat="server">
+<div class="header">
+  <div>
+   <asp:Label ID="lblCandidateTitle" Text="Reports" runat="server" CssClass="logotext"></asp:Label>
+   </div>
+ <div style=" float: right; margin-top: -10px;" class="ui-buttonset">
+ <asp:HyperLink runat="server" NavigateUrl="~/Views/Status/RQ13.aspx" Enabled="false"  ID="btnViewAll" Text="View All Request" CssClass="ui-widget ui-state-default ui-corner" style="font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left; padding-right: 20px; padding-left: 20px;" />
+ <asp:HyperLink  runat="server" NavigateUrl="~/Views/Status/RQ01.aspx" ID="btnAssign" Text="Create Request" CssClass="ui-widget ui-state-default ui-corner" style="font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left;  padding-right: 20px; padding-left: 20px;" />
+<asp:HyperLink  runat="server" NavigateUrl="~/Views/Status/RQ14.aspx" ID="btnMyRequests" Text="My Requests" CssClass="ui-widget ui-state-default ui-corner" style="color: #111111; font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left;  padding-right: 20px; padding-left: 20px;" />
+ </div>
+</div> 
+<script>
+    	    $(function() {
+    	        $("#tabs").tabs();
+    	    });
+
+    	    
+</script>
+<div id="tabs" style="font-size: 80%; width: 100%; height: 1500px; margin-top: 50px;">
+	    <ul>
+		     
+		    <li><a href="#tabs-1">Employee Data Report</a></li> 
+	    </ul>
+	    
+	    <div id="tabs-1">
+	    
+	        <table style="width: 95%; margin-top: 20px; margin-left: 15px;" class="zebra">
+                     <thead>
+                        <tr>
+                            <th colspan="4" align="left" style="padding: 10px; font-weight: normal;">FIND A REQUEST</th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <th colspan="4"></th>
+                        </tr>
+                    </tfoot>
+                
+                    <tbody> 
+                         <tr>
+                             <td class="form-label" >Enter Keyword: </td>
+                             <td style="width: 350px;">
+                             <asp:TextBox ID="txtSearchEmplData" runat="server"  Enabled="true" style="width: 200px; margin-left: 10px" CssClass="form-field" >
+                             </asp:TextBox> <asp:Button ID="btnRequestID" runat="server"  OnClick="FindStatusRequest_Click" Text="Find" class="mws-button green"  style="width: 80px; font-family: BebasNeue; font-size: 20px; letter-spacing: 1px;display: inline;" />
+                              </td>
+                             <td colspan="2" style="text-align: left">
+                             <asp:Label runat="server" ID="lblEmptySearchData" style="color: Red"></asp:Label>
+                              </td>
+                         </tr>  
+                         <tr>
+                             <td class="form-label" >Enter Range: </td>
+                             <td colspan="2"  >
+                             <asp:TextBox ID="txtFrom" runat="server"  Enabled="false" style="width: 100px; margin-left: 10px" CssClass="form-field" />
+                             <asp:Calendar SelectionMode="DayWeekMonth"
+                                      id="calFromDate" 
+                                      style="overflow: auto; position:absolute;top:100;left:250;display:block;z-index:0;"
+                                      runat="server"  
+                                      FirstDayOfWeek="Monday" TodayDayStyle-BackColor="#CCCCCC" DayNameFormat="Shortest" 
+                                      BorderWidth="2px" 
+                                      BackColor="White"  
+                                      ForeColor="Black" 
+                                      Font-Names="Verdana" BorderColor="#999999"
+                                      BorderStyle="Outset" CellPadding="1" CssClass="calendar"
+                                      OnSelectionChanged="TxtFromCalendar_SelectionChanged"></asp:Calendar>
+                                       <asp:ImageButton ID="btnFromCalendar" runat="server" OnClick="CalendarFrom_OnClick" 
+                                     ImageUrl="~/Content/css/light/images/calendar.gif" CausesValidation="false"
+                                      style="width:16px; height:15px;"/>
+                             <asp:TextBox ID="txtTo" runat="server"  Enabled="false" style="width: 100px; margin-left: 10px" CssClass="form-field" />
+                              <asp:Calendar SelectionMode="DayWeekMonth"
+                                      id="calToDate" 
+                                      style="overflow: auto; position:absolute;top:100;left:250;display:block;z-index:0;"
+                                      runat="server"  
+                                      FirstDayOfWeek="Monday" TodayDayStyle-BackColor="#CCCCCC" DayNameFormat="Shortest" 
+                                      BorderWidth="2px" 
+                                      BackColor="White"  
+                                      ForeColor="Black" 
+                                      Font-Names="Verdana" BorderColor="#999999"
+                                      BorderStyle="Outset" CellPadding="1" CssClass="calendar"
+                                      OnSelectionChanged="TxtToCalendar_SelectionChanged"></asp:Calendar>
+                                      <asp:ImageButton ID="btnToCalendar" runat="server" OnClick="CalendarTo_Click" 
+                                     ImageUrl="~/Content/css/light/images/calendar.gif" CausesValidation="false"
+                                      style="width:16px; height:15px;"/>
+                              </td>
+                             <td  style="text-align: left">
+                             <asp:Button ID="btnGetDateRange" runat="server"   Text="Get Date Range" class="mws-button green"  OnClick="BtnGetDateRange_Click"  style="width: 180px; font-family: BebasNeue; font-size: 20px; letter-spacing: 1px;display: inline;" /></td>
+                         </tr>                           
+                         
+                         
+           </tbody></table>  
+         <br /> 
+         <asp:Label runat="server" ID="lblTotalRecords"></asp:Label>
+         <br /> 
+	    <asp:GridView ID="gridStatusChangeReport" runat="server" AutoGenerateColumns = "false"  
+	     CssClass="grid-zebra" AllowPaging ="true"  OnPageIndexChanging = "OnPagingStatus"   Width="1200px"  
+         DataKeyNames = "REQUESTID" PageSize = "10" GridLines="None" Font-Size="11px" HeaderStyle-Font-Size="11px"> 
+   <Columns>   
+             <asp:BoundField ItemStyle-Width = "150px" DataField = "REQUESTID"
+           HeaderText = "Request ID" HeaderStyle-Font-Size="Small" /> 
+          <asp:BoundField ItemStyle-Width = "150px" DataField = "EMPLID"
+           HeaderText = "Emp ID" HeaderStyle-Font-Size="Small" /> 
+          <asp:BoundField ItemStyle-Width = "150px" DataField = "NAME"
+           HeaderText = "Employee" HeaderStyle-Font-Size="Small" />       
+            <asp:BoundField ItemStyle-Width = "150px" DataField = "REQUESTORID"
+           HeaderText = "Requestor" HeaderStyle-Font-Size="Small" />
+            <asp:BoundField ItemStyle-Width = "150px" DataField = "DEPTID"
+           HeaderText = "Dept ID" HeaderStyle-Font-Size="Small" />      
+          <asp:BoundField ItemStyle-Width = "150px" DataField = "CURRDEPT"
+           HeaderText = "Curr Dept" HeaderStyle-Font-Size="Small" /> 
+          <asp:BoundField ItemStyle-Width = "150px" DataField = "NEWDEPT"
+           HeaderText = "New Dept" HeaderStyle-Font-Size="Small" /> 
+          <asp:BoundField ItemStyle-Width = "150px" DataField = "CURRPOSI"
+           HeaderText = "Curr Posi" HeaderStyle-Font-Size="Small" />       
+            <asp:BoundField ItemStyle-Width = "150px" DataField = "NEWPOSI"
+           HeaderText = "New Posi" HeaderStyle-Font-Size="Small" />
+            <asp:BoundField ItemStyle-Width = "150px" DataField = "CURREMPLCAT"
+           HeaderText = "Curr Cat" HeaderStyle-Font-Size="Small" />  
+            <asp:BoundField ItemStyle-Width = "150px" DataField = "NEWEMPLCAT"
+           HeaderText = "New Cat" HeaderStyle-Font-Size="Small"/>
+            <asp:BoundField ItemStyle-Width = "150px" DataField = "APPSTATUS"
+           HeaderText = "Status" HeaderStyle-Font-Size="Small" />                                   
+         </Columns> 
+         <PagerSettings Mode="NextPreviousFirstLast" Position="TopAndBottom" 
+                    NextPageImageUrl="~/Content/css/light/images/next.png" 
+                    PreviousPageImageUrl="~/Content/css/light/images/previous.png"  FirstPageImageUrl="~/Content/css/light/images/first.png"   />
+    </asp:GridView> 
+    
+	    </div>
+	     
+ </div>
+
+    
+</asp:Content>

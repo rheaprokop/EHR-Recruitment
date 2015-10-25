@@ -1,0 +1,223 @@
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Views/Shared/Site.Master" AutoEventWireup="true" CodeBehind="RQ03.aspx.cs" Inherits="EHR.Views.Status.RQ03" %>
+<asp:Content ID="Head" ContentPlaceHolderID="head" runat="server">
+</asp:Content>
+<asp:Content ID="Top" ContentPlaceHolderID="TopContent" runat="server">
+</asp:Content>
+<asp:Content ID="Left" ContentPlaceHolderID="LeftContent" runat="server">
+    <asp:Panel runat="server" ID="pnlStatus"> 
+    <!--STATUS CHANGE LINK BUTTON-->
+    <li><span style="padding-left: 30px;" class="selected"><a href="../Status/RQ01.aspx">Fill Form</span></a></li>
+    <!-- END OF STATUS CHANGE LINK BUTTON-->
+    </asp:Panel>
+</asp:Content>
+<asp:Content ID="main" ContentPlaceHolderID="mainContent" runat="server">
+
+<div class="header">
+  <div>
+   <asp:Label ID="lblCandidateTitle" Text="Status Change Form" runat="server" CssClass="logotext"></asp:Label>
+   </div>
+ <div style=" float: right; margin-top: -10px;" class="ui-buttonset">
+ <asp:HyperLink runat="server" NavigateUrl="~/Views/Status/RQ13.aspx" Enabled="false"  ID="btnViewAll" Text="View All Request" CssClass="ui-widget ui-state-default ui-corner" style="font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left; padding-right: 20px; padding-left: 20px;" />
+ <asp:HyperLink  runat="server" NavigateUrl="~/Views/Status/RQ01.aspx" ID="btnAssign" Text="Create Request" CssClass="ui-widget ui-state-default ui-corner" style="font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left;  padding-right: 20px; padding-left: 20px;" />
+<asp:HyperLink  runat="server" NavigateUrl="~/Views/Status/RQ14.aspx" ID="btnMyRequests" Text="My Requests" CssClass="ui-widget ui-state-default ui-corner" style="color: #111111; font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left;  padding-right: 20px; padding-left: 20px;" />
+ <asp:HyperLink  runat="server" Target="_blank" NavigateUrl="http://mfgkm-wcz.wistron.com/IT/_layouts/PowerPoint.aspx?PowerPointView=ReadingView&PresentationId=/IT/AP/EHR/E-Status/EHR%20Status%20Change%20Training%20Material.ppt&Source=http%3A%2F%2Fmfgkm%2Dwcz%2Ewistron%2Ecom%2FIT%2FAP%2FForms%2FAllItems%2Easpx%3FRootFolder%3D%252FIT%252FAP%252FEHR%252FE%252DStatus%26FolderCTID%3D0x012000E05A5B7CAF61A94F84F8DEA75B64C524%26View%3D%7B344C2270%2DC858%2D4D1E%2DAB3A%2DD41AD7EF55BB%7D&DefaultItemOpen=1"  Visible="true" ID="HyperLink1" Text="Help" CssClass="ui-widget ui-state-default ui-corner" style="color: #111111; font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left;  padding-right: 20px; padding-left: 20px;" />
+ </div>
+</div> 
+
+ <table class="no-zebra" style="margin-top: 30px;">
+<tr><td>
+<table style="width: 100%">
+    <thead>
+        <tr>
+            <th colspan="3" align="left" style="padding: 10px;">Status Change Form -   <asp:Label style="color:Red; display:inline;" runat="server" ID="lblRequestTitle" Text="Your Application has been sent"></asp:Label></th>
+        </tr>
+    </thead>
+    </table>
+    
+            <table style="width: 80%" align="center" cellpadding="5" cellspacing="5">
+             <tr><td colspan="4">&nbsp;</td></tr>
+        	 <tr style="height: 40px;">
+        	 <td style="width: 20%;  font-size: 14px;"><strong>Employee ID:</strong></td>
+        	 <td style="font-size: 14px;"><asp:TextBox ID="txtEmployeeId" runat="server" 
+        	 CssClass="mws-textinput" style="font-size: 14px;" Enabled="false"></asp:TextBox></td>
+        	 <td style="width: 20%; font-size: 14px;"><strong>Request Date:</strong></td>
+        	 <td style="font-size: 14px;"><asp:Label ID="lblRequestDate" runat="server"></asp:Label></td> 
+        	 </tr>
+        	 <tr style="height: 40px;">
+        	 <td style="width: 20%; font-size: 14px;"><strong>Employee Name:</strong></td>
+        	 <td style="font-size: 14px;"><asp:TextBox ID="txtEmployeeName" runat="server" 
+        	 CssClass="mws-textinput" style="font-size: 14px;" Enabled="false"></asp:TextBox></td>
+        	 <td style="width: 20%; font-size: 14px;"><strong>Request No:</strong></td>
+        	 <td style="font-size: 14px;"><asp:Label ID="lblRequestID" runat="server"></asp:Label></td> 
+        	 </tr>                    	            	 
+        	 </table>  
+        	 
+        	 <table style="width: 80%" align="center" cellpadding="5" cellspacing="5">
+        	 <tr style="height: 30px;"><td style="font-size: 16px; border-bottom: solid 1px #111111;" colspan="3"><strong>Change of Department</strong></td></tr>
+        	 <tr style="height: 30px;"><td style="width: 30%">&nbsp;</td><td  style="width: 30%"><strong>CURRENT</strong></td><td  style="width: 30%"><strong>NEW</strong></td></tr>
+        	 <tr style="height: 30px;"><td style="width: 30%"><strong>Department Code</strong></td>
+        	 <td  style="width: 30%"><strong><asp:Label ID="lblCurrentDeptID" runat="server"></asp:Label></strong></td><td  style="width: 30%"><strong>
+        	 <asp:Label ID="lblNewDeptID" runat="server"></asp:Label></strong></td></tr>
+         	 </table>
+         	 
+             <table style="width: 80%" align="center" cellpadding="5" cellspacing="5">
+        	 <tr style="height: 30px;"><td style="font-size: 16px; border-bottom: solid 1px #111111;" colspan="3"><strong>Change of Position</strong></td></tr>
+        	 <tr style="height: 30px;"><td style="width: 30%">&nbsp;</td><td  style="width: 30%"><strong>CURRENT</strong></td><td  style="width: 30%"><strong>NEW</strong></td></tr>
+        	 <tr style="height: 30px;"><td style="width: 30%"><strong>Position</strong></td><td  style="width: 30%"><strong><asp:Label ID="lblCurrentPosition" runat="server"></asp:Label></strong></td><td  style="width: 30%">
+        	 <asp:Label ID="lblNewPosition" runat="server"></asp:Label></td></tr>
+         	 </table>
+         	 
+             <table style="width: 80%" align="center" cellpadding="5" cellspacing="5">
+        	 <tr style="height: 30px;"><td style="font-size: 16px; border-bottom: solid 1px #111111;" colspan="3"><strong>Change of Employee Category</strong></td></tr>
+        	 <tr style="height: 30px;"><td style="width: 30%">&nbsp;</td><td  style="width: 30%"><strong>CURRENT</strong></td><td  style="width: 30%"><strong>NEW</strong></td></tr>
+        	 <tr style="height: 30px;"><td style="width: 30%"><strong>Category</strong></td><td  style="width: 30%"><strong><asp:Label ID="lblCurrentCategory" runat="server"></asp:Label></strong></td><td  style="width: 30%">
+        	 <asp:Label ID="lblNewCategory" runat="server"></asp:Label></td></tr>
+         	 </table>    
+         	 <asp:Panel runat="server" ID="pnlWorkShiftContracted">
+               <table style="width: 80%" align="center" cellpadding="5" cellspacing="5">
+        	 <tr style="height: 30px;"><td style="font-size: 16px; border-bottom: solid 1px #111111;" colspan="3"><strong>Workshift Type Details</strong></td></tr>
+        	 <tr style="height: 30px;"><td style="width: 30%">&nbsp;</td><td  style="width: 30%"><strong>Type</strong></td><td  style="width: 30%"><strong>Full/Part Time</strong></td></tr>
+        	 <tr style="height: 30px;"><td style="width: 30%"><strong>&nbsp;</strong></td>
+        	 <td  style="width: 30%"><strong><asp:Label ID="lblWorkShiftType" runat="server"></asp:Label></strong></td><td  style="width: 30%"><strong>
+        	 <asp:Label ID="lblWorkShiftTypeTime" runat="server"></asp:Label></strong></td></tr>
+        	 
+        	 <tr style="height: 30px;">
+        	 <td style="width: 30%; text-align: right;"><strong>Days & Time: &nbsp;&nbsp;</strong></td>
+        	 <td  style="width: 70%" colspan="2"><strong><asp:Label ID="lblTime" runat="server"  style="display:inline"></asp:Label>&nbsp;&nbsp;<asp:Label ID="lblDays" runat="server"  style="display:inline"></asp:Label></strong></td>
+        	 </tr>
+        	 <tr style="height: 30px;">
+        	 <td style="width: 30%; text-align: right;"><strong>Work Shift Detail: &nbsp;&nbsp;</strong></td>
+        	 <td  style="width: 70%" colspan="2"><strong><asp:Label ID="lblCWorkShiftDetails" runat="server"  style="display:inline"></asp:Label></strong></td>
+        	 </tr> 
+        	        	        	 
+         	 </table>
+         	 <asp:HiddenField runat="server" ID="hiddenWorkshiftDetails"/>
+         	 <asp:HiddenField runat="server" ID="hiddenTransID" />
+         	  </asp:Panel>
+         	  
+         	   <asp:Panel runat="server" ID="pnlWorkShiftTemporary">
+         	  <table style="width: 80%" align="center" cellpadding="5" cellspacing="5">
+        	 <tr style="height: 30px;">
+                 <td style="font-size: 16px; border-bottom: solid 1px #111111;" colspan="2"><strong>Workshift Type Details</strong></td></tr>
+         	 <tr style="height: 30px;">
+        	 <td style="width: 30%; text-align: right;"><strong>Type: &nbsp;&nbsp;</strong></td>
+        	 <td  style="width: 70%"><strong>
+        	 <asp:Label ID="lblWorkShiftTemporary" runat="server"  style="display:inline"></asp:Label>
+        	 </strong></td>
+        	 </tr> 
+          	 </table> 
+         	  </asp:Panel>
+         	  <asp:Panel runat="server" ID="pnlReviewerUpdate" Visible="false">
+         	   <table style="width: 80%" align="center" cellpadding="5" cellspacing="5">
+              <tr style="height: 30px; padding: 5px;">
+        	                 <td style="width: 30%; text-align: right;"><strong>Reviewer Updates: &nbsp;&nbsp;</strong></td>
+        	                 <td  style="width: 70%"><strong><asp:Textbox runat="server" ID="txtReviewerWorkShift" Rows="40" Columns="80" TextMode="MultiLine"></asp:Textbox></strong></td>
+        	                 </tr>
+              </table>
+              </asp:Panel>
+               
+              
+                         <table style="width: 80%" align="center" cellpadding="5" cellspacing="5">
+                         	 
+                    	 <tr style="height: 30px;">
+                    	 <td style="font-size: 16px; border-bottom: solid 1px #111111;" colspan="2"><strong>Change of Basic Salary</strong></td> 
+                    	 </tr> 
+                    	 <tr><td colspan="2">&nbsp;</td></tr> 
+                    	 <tr>
+                    	 <td style="width: 50%"><strong><asp:Label runat="server" ID="lblFixedAmount" Text="Fixed Amount:" style="display: inline;"></asp:Label></strong><br /><asp:Label runat="server" ID="lblSalary" style="display:inline;"></asp:Label> </td>
+                    	 <td>
+                    	 <strong>Types of Bonuses Applied:</strong><br />
+                    	 <asp:Repeater runat="server" ID="rptBonuses"><ItemTemplate>
+                    	 <asp:Image ID="Image1" runat="server" ImageUrl="~/Content/css/icons/16/bullet_add_1.png" />&nbsp;<asp:Label runat="server" ID="lblBonus" Text='<%#DataBinder.Eval(Container.DataItem, "AMOUNT")%>' style="display: inline"></asp:Label>&nbsp;<asp:Label runat="server" ID="lblIncreaseDecrease" Text='<%#DataBinder.Eval(Container.DataItem, "INCREASE_DECREASE")%>' style="display: inline"></asp:Label>&nbsp;CZK, <asp:Label runat="server" ID="lblbonusname" style="display: inline" Text='<%#DataBinder.Eval(Container.DataItem, "BONUSDESC")%>'></asp:Label>&nbsp;<br />
+                    	 </ItemTemplate></asp:Repeater>
+                    	 <asp:Label runat="server" ID="lblNoBonus"></asp:Label>
+                    	 </td>
+                    	 
+                    	 </tr>
+                     	 </table>    
+             <asp:Panel runat="server" ID="pnlUpdateSalary" Visible="false">
+             <table style="width: 80%" align="center" cellpadding="5" cellspacing="5"> 
+        	 <tr style="height: 30px;">
+        	 <td style="font-size: 16px; border-bottom: solid 1px #111111;"><strong>Change of Basic Salary</strong></td> 
+        	 </tr> 
+        	 <tr><td>
+        	        <table style="width:100%" cellspacing="5" cellpadding="5">
+        	        <tr><td colspan="4">&nbsp;</td></tr>
+        	        <tr><td>&nbsp;</td><td><strong>CURRENT</strong></td><td><strong>NEW</strong></td><td><strong>HR MGR CONFIRMATION</strong></td></tr>
+        	        <tr>
+        	        <td>Basic Salary</td>
+        	        <td><asp:TextBox runat="server" ID="txtSalaryCurrent" CssClass="mws-textinput" style="font-size: 14px;" text="0.00"></asp:TextBox>&nbsp;&nbsp;CZK</td>
+        	        <td><asp:TextBox runat="server" ID="txtSalaryNew" CssClass="mws-textinput" style="font-size: 14px;" text="0.00" ></asp:TextBox>&nbsp;&nbsp;CZK</td>
+        	        <td><asp:TextBox runat="server" ID="txtSalaryHR" CssClass="mws-textinput" style="font-size: 14px;" text="0.00" ></asp:TextBox>&nbsp;&nbsp;CZK</td>
+        	        </tr>
+       	           <tr>
+        	        <td>Personal Evaluation</td>
+        	        <td><asp:TextBox runat="server" ID="txtPersonalCurrent" CssClass="mws-textinput" style="font-size: 14px;" text="0.00"></asp:TextBox>&nbsp;&nbsp;CZK</td>
+        	        <td><asp:TextBox runat="server" ID="txtPersonalNew" CssClass="mws-textinput" style="font-size: 14px;" text="0.00" ></asp:TextBox>&nbsp;&nbsp;CZK</td>
+        	        <td><asp:TextBox runat="server" ID="txtPersonalHR" CssClass="mws-textinput" style="font-size: 14px;" text="0.00" ></asp:TextBox>&nbsp;&nbsp;CZK</td>
+        	        </tr>                   	        
+        	        <tr>
+        	        <td>Performance Evaluation</td>
+        	        <td><asp:TextBox runat="server" ID="txtPerformanceCurrent" CssClass="mws-textinput" style="font-size: 14px;" text="0.00"></asp:TextBox>&nbsp;&nbsp;CZK</td>
+        	        <td><asp:TextBox runat="server" ID="txtPerformanceNew" CssClass="mws-textinput" style="font-size: 14px;" text="0.00" ></asp:TextBox>&nbsp;&nbsp;CZK</td>
+        	        <td><asp:TextBox runat="server" ID="txtPerformanceHR" CssClass="mws-textinput" style="font-size: 14px;" text="0.00" ></asp:TextBox>&nbsp;&nbsp;CZK</td>
+        	        </tr>   
+       	           <tr>
+        	        <td>Forklift Bonus</td>
+        	        <td><asp:TextBox runat="server" ID="txtForkliftCurrent" CssClass="mws-textinput" style="font-size: 14px;" text="0.00"></asp:TextBox>&nbsp;&nbsp;CZK</td>
+        	        <td><asp:TextBox runat="server" ID="txtForkliftNew" CssClass="mws-textinput" style="font-size: 14px;" text="0.00" ></asp:TextBox>&nbsp;&nbsp;CZK</td>
+        	        <td><asp:TextBox runat="server" ID="txtForkliftHR" CssClass="mws-textinput" style="font-size: 14px;" text="0.00" ></asp:TextBox>&nbsp;&nbsp;CZK</td>
+        	        </tr>                    	                        	        
+        	        </table>
+        	 </td></tr>  
+         	 </table> 
+         	 </asp:Panel>
+         	 <table style="float: right; width: 100%;"> 
+          	    <tr><td>
+          	         <div style="float:right; margin-right: 100px; margin-top: 20px; margin-bottom: 20px;">
+                         <asp:Button ID="Submit" Text="Exit to dashboard" OnClick="Exit_Click" runat="server" class="mws-button red" />
+                     </div>
+                 </td></tr>   
+            </table>
+            
+            <asp:GridView ID="gridSingleApprover" runat="server" AutoGenerateColumns = "false" 
+             style = "float: left; margin-left: 100px; margin-botttom: 50px;" CssClass="grid-zebra"
+         OnRowDataBound="GridSingleApprover_RowDataBound" DataKeyNames = "REQID" GridLines="None"> 
+                         
+                           <Columns>  
+                               
+                        <asp:BoundField ItemStyle-Width = "200px" DataField = "APPROVERDESC"
+                           HeaderText = "APPROVER DESC"/> 
+                        <asp:BoundField ItemStyle-Width = "150px" DataField = "APPEMPLID"
+                           HeaderText = "EMPLOYEE ID"/>   
+                        <asp:BoundField ItemStyle-Width = "200px" DataField = "ACTUALAPPROVER"
+                           HeaderText = "APPROVED BY"/>    
+                        <asp:BoundField ItemStyle-Width = "150px" DataField = "RESULT"
+                           HeaderText = "STATUS"/> 
+                       <asp:BoundField ItemStyle-Width = "250px" DataField = "REMARKS"
+                           HeaderText = "REMARK"/>                
+                         </Columns> 
+                    </asp:GridView>
+</td></tr> 
+</table>
+
+ 
+
+<Script type="text/javascript">
+    $(function() {
+        // a workaround for a flaw in the demo system (http://dev.jqueryui.com/ticket/4375), ignore!
+
+
+        $("#pnlDialog").dialog({
+            height: 230,
+            width: 430,
+            modal: true
+        });
+    });
+	</script>
+	<asp:Panel runat="server" ID="pnlDialog" style="display:none" CssClass="mws-jui-dialog">
+	 
+        <asp:Label runat="server" ID="lblErrorMsg"></asp:Label> 
+                         
+	</asp:Panel>
+</asp:Content>

@@ -1,0 +1,327 @@
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Views/Shared/Site.Master" AutoEventWireup="true"
+    CodeBehind="BD01.aspx.cs" Inherits="EHR.Views.Termination.BD01" MaintainScrollPositionOnPostback="true" %>
+
+<%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="asp" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="TopContent" runat="server">
+</asp:Content>
+<asp:Content ID="Content3" ContentPlaceHolderID="LeftContent" runat="server">
+</asp:Content>
+<asp:Content ID="Content4" ContentPlaceHolderID="mainContent" runat="server">
+    <div class="header">
+        <div>
+            <asp:Label ID="lblCandidateTitle" Text="Status Change Form" runat="server" CssClass="logotext"></asp:Label>
+        </div>
+        <div style="float: right; margin-top: -10px;" class="ui-buttonset">
+            <asp:HyperLink runat="server" NavigateUrl="#" Enabled="false" ID="btnViewAll" Text="View All Request"
+                CssClass="ui-widget ui-state-default ui-corner" Style="font-family: BebasNeue;
+                font-size: 22px; letter-spacing: 1px; float: left; padding-right: 20px; padding-left: 20px;" />
+            <asp:HyperLink runat="server" NavigateUrl="#" Enabled="false" ID="btnAssign" Text="Create Request"
+                CssClass="ui-widget ui-state-default ui-corner" Style="font-family: BebasNeue;
+                font-size: 22px; letter-spacing: 1px; float: left; padding-right: 20px; padding-left: 20px;" />
+            <asp:HyperLink runat="server" NavigateUrl="#" ID="btnMyRequests" Text="My Requests"
+                CssClass="ui-widget ui-state-default ui-corner" Style="color: #111111; font-family: BebasNeue;
+                font-size: 22px; letter-spacing: 1px; float: left; padding-right: 20px; padding-left: 20px;" />
+            <asp:HyperLink runat="server" NavigateUrl="#" Visible="false" ID="btnCloseApplication"
+                Text="Process Requests" CssClass="ui-widget ui-state-default ui-corner" Style="color: #111111;
+                font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left; padding-right: 20px;
+                padding-left: 20px;" />
+            <asp:HyperLink runat="server" Target="_blank" NavigateUrl="http://mfgkm-wcz.wistron.com/IT/_layouts/PowerPoint.aspx?PowerPointView=ReadingView&PresentationId=/IT/AP/EHR/E-Status/EHR%20Status%20Change%20Training%20Material.ppt&Source=http%3A%2F%2Fmfgkm%2Dwcz%2Ewistron%2Ecom%2FIT%2FAP%2FForms%2FAllItems%2Easpx%3FRootFolder%3D%252FIT%252FAP%252FEHR%252FE%252DStatus%26FolderCTID%3D0x012000E05A5B7CAF61A94F84F8DEA75B64C524%26View%3D%7B344C2270%2DC858%2D4D1E%2DAB3A%2DD41AD7EF55BB%7D&DefaultItemOpen=1"
+                Visible="true" ID="HyperLink1" Text="Help" CssClass="ui-widget ui-state-default ui-corner"
+                Style="color: #111111; font-family: BebasNeue; font-size: 22px; letter-spacing: 1px;
+                float: left; padding-right: 20px; padding-left: 20px;" />
+        </div>
+    </div>
+    <br />
+    <!--TABS STARTS HERE-->
+
+    <script type="text/javascript">
+    	  	    $(function() {
+    	  	        $("#tabs").tabs();
+    	  	    }); 	  	    
+    </script>
+
+    <div id="tabs" style="font-size: 80%; width: 100%; height: 1200px; margin-top: 50px;">
+        <ul>
+            <li><a href="#tabs-types">Termination Types</a></li>
+            <li><a href="#tabs-reason">Reasons</a></li>
+            <li><a href="#tabs-severance">Severance Types</a></li>
+        </ul>
+        <div id="tabs-types">
+            <asp:UpdatePanel ID="UpdatePanel3" runat="server">
+                <ContentTemplate>
+                    <asp:GridView ID="grdType" runat="server" Style="width: 70%" AutoGenerateEditButton="True"
+                        OnRowUpdating="grdType_RowUpdating" OnRowEditing="grdType_RowEditing" OnRowCancelingEdit="grdType_RowCancelingEdit"
+                        OnPageIndexChanging="grdType_PageIndexChanging" class="zebra" AutoGenerateColumns="False"
+                        DataKeyNames="ID" AllowPaging="True" PageSize="5">
+                        <Columns>
+                            <asp:TemplateField HeaderText="Type">
+                                <ItemTemplate>
+                                    <asp:Label ID="lblType" runat="server" Text='<%# Bind("Type") %>'></asp:Label>
+                                </ItemTemplate>
+                                <EditItemTemplate>
+                                    <asp:TextBox ID="textType" runat="server" Text='<%# Bind("Type") %>'></asp:TextBox>
+                                </EditItemTemplate>
+                            </asp:TemplateField>
+                        </Columns>
+                    </asp:GridView>
+                    <br />
+                    <table style="width: 100%; margin-top: 20px;" class="no-zebra">
+                        <thead>
+                            <tr>
+                                <th colspan="2" align="left" style="padding: 10px; font-size: smaller">
+                                    Add New Termination Type
+                                </th>
+                            </tr>
+                        </thead>
+                        <tr>
+                            <td style="width: 20%">
+                                <span style="float: right">Termination Type:</span>
+                            </td>
+                            <td style="width: 80%; padding: 10px;">
+                                <asp:TextBox runat="server" ID="txtAddType" Style="width: 300px; color: #111111;
+                                    font-family: BebasNeue; font-size: 16px; letter-spacing: 1px;" ValidationGroup="v_type"></asp:TextBox>
+                                <asp:RequiredFieldValidator ID="RequiredFieldValidator1" runat="server" ErrorMessage="Please Enter Type"
+                                    ControlToValidate="txtAddType" Display="None" ValidationGroup="v_type"></asp:RequiredFieldValidator>
+                                <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender1" runat="server" PopupPosition="TopRight"
+                                    TargetControlID="RequiredFieldValidator1">
+                                </asp:ValidatorCalloutExtender>
+                                <asp:Button runat="server" ID="btnAddType" Text="Save New Type" OnClick="btnAddType_Click"
+                                    ValidationGroup="v_type" />
+                            </td>
+                        </tr>
+                    </table>
+                </ContentTemplate>
+            </asp:UpdatePanel>
+        </div>
+        <div id="tabs-reason">
+            <!--GRID REASON-->
+            <asp:UpdatePanel ID="grdReason_UpdatePanel" runat="server">
+                <ContentTemplate>
+                    <asp:GridView ID="grdReason" runat="server" Style="width: 100%" AutoGenerateEditButton="True"
+                        OnRowUpdating="grdReason_RowUpdating" OnRowEditing="grdReason_RowEditing" OnRowCancelingEdit="grdReason_RowCancelingEdit"
+                        OnPageIndexChanging="grdReason_PageIndexChanging" class="zebra" AutoGenerateColumns="False"
+                        DataKeyNames="ID" AllowPaging="True" PageSize="5">
+                        <Columns>
+                            <asp:TemplateField HeaderText="Reason">
+                                <ItemTemplate>
+                                    <asp:Label ID="lblReason" runat="server" Text='<%# Bind("Reason") %>'></asp:Label>
+                                </ItemTemplate>
+                                <EditItemTemplate>
+                                    <asp:TextBox ID="textReason" runat="server" Text='<%# Bind("Reason") %>'></asp:TextBox>
+                                </EditItemTemplate>
+                            </asp:TemplateField>
+                            <asp:TemplateField HeaderText="Type">
+                                <ItemTemplate>
+                                    <asp:Label ID="labelType" runat="server" Text='<%# Bind("Type") %>'></asp:Label>
+                                </ItemTemplate>
+                            </asp:TemplateField>
+                        </Columns>
+                    </asp:GridView>
+                </ContentTemplate>
+            </asp:UpdatePanel>
+            <br />
+            <asp:UpdatePanel ID="UpdatePanel2" runat="server">
+                <ContentTemplate>
+                    <table style="width: 100%; margin-top: 20px;" class="no-zebra">
+                        <thead>
+                            <tr>
+                                <th colspan="2" align="left" style="padding: 10px; font-size: smaller">
+                                    Add New Termination Reason
+                                </th>
+                            </tr>
+                        </thead>
+                        <tr>
+                            <td style="width: 20%">
+                                <span style="float: right">Termination Reason:</span>
+                            </td>
+                            <td style="width: 80%; padding: 10px;">
+                                <asp:TextBox runat="server" ID="txtAddReason" Style="width: 300px; color: #111111;
+                                    font-family: BebasNeue; font-size: 16px; letter-spacing: 1px;" ValidationGroup="v_reason"></asp:TextBox>
+                                <asp:RequiredFieldValidator ID="RequiredFieldValidator2" runat="server" ValidationGroup="v_reason" ErrorMessage="Please Enter Reason"
+                                    ControlToValidate="txtAddReason" Display="None"></asp:RequiredFieldValidator>
+                                <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender2" runat="server" TargetControlID="RequiredFieldValidator2">
+                                </asp:ValidatorCalloutExtender>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="width: 20%">
+                                <span style="float: right">Select Type:</span>
+                            </td>
+                            <td style="width: 80%; padding: 10px;">
+                                <asp:ListBox runat="server" ID="listType" SelectionMode="Multiple" ValidationGroup="v_reason" Style="height: 100px;
+                                    width: 300px;"></asp:ListBox>
+                                <asp:RequiredFieldValidator ID="RequiredFieldValidator3" runat="server" ValidationGroup="v_reason" ErrorMessage="Please select atleast one type." ControlToValidate="listType" Display="None"></asp:RequiredFieldValidator>
+                                <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender3" runat="server" TargetControlID="RequiredFieldValidator3">
+                                </asp:ValidatorCalloutExtender>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="width: 20%">
+                                <span style="float: right">Category:</span>
+                            </td>
+                            <td style="width: 80%; padding: 10px;">
+                                <asp:DropDownList ID="drpCategory" runat="server" Width="300px">
+                                <asp:ListItem Selected="True"></asp:ListItem>
+                                <asp:ListItem>Auto</asp:ListItem>
+                                <asp:ListItem>Manual</asp:ListItem>
+                                <asp:ListItem>Limited</asp:ListItem>
+                                </asp:DropDownList>
+                                <asp:Label ID="Label1" runat="server" Text="Fill in this section to indicate whether 'Expected Termination Date' will be (Auto, Manual or Limited) input in Termination Request Form." Font-Bold="False" ForeColor="Green" Font-Size="Smaller"></asp:Label>
+                                <asp:RequiredFieldValidator ID="RequiredFieldValidator7" runat="server" ValidationGroup="v_reason" ErrorMessage="Please select Category." ControlToValidate="drpCategory" Display="None"></asp:RequiredFieldValidator>
+                                <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender7" runat="server" TargetControlID="RequiredFieldValidator7">
+                                </asp:ValidatorCalloutExtender>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="padding: 10px; float: right" align="right">
+                                <asp:Button runat="server" ID="Button1" OnClick="btnAddReason_Click" ValidationGroup="v_reason" Text="Save New Reason" />
+                            </td>
+                        </tr>
+                    </table>
+                </ContentTemplate>
+            </asp:UpdatePanel>
+        </div>
+        <div id="tabs-severance">
+            <asp:UpdatePanel ID="grdSeverence_UpdatePanel" runat="server">
+                <ContentTemplate>
+                    <asp:GridView ID="grdSeverence" runat="server" Style="width: 100%" AutoGenerateEditButton="True"
+                        OnRowUpdating="grdSeverence_RowUpdating" OnRowEditing="grdSeverence_RowEditing"
+                        OnPageIndexChanging="grdSeverence_PageIndexChanging" OnRowCancelingEdit="grdSeverence_RowCancelingEdit"
+                        class="zebra" AutoGenerateColumns="False" DataKeyNames="ID" PageSize="5" AllowPaging="True">
+                        <Columns>
+                            <asp:TemplateField HeaderText="Ave Monthly Salary">
+                                <ItemTemplate>
+                                    <asp:Label ID="lblSeverence" runat="server" Text='<%# Bind("X_Ave_Monthly_Salary") %>'></asp:Label>
+                                </ItemTemplate>
+                                <EditItemTemplate>
+                                    <asp:TextBox ID="textSeverence" runat="server" Text='<%# Bind("X_Ave_Monthly_Salary") %>'></asp:TextBox>
+                                </EditItemTemplate>
+                            </asp:TemplateField>
+                            <asp:TemplateField HeaderText="Valid">
+                                <ItemTemplate>
+                                    <asp:Label ID="labelValid" runat="server" Text='<%# Bind("Valid") %>'></asp:Label>
+                                </ItemTemplate>
+                                <EditItemTemplate>
+                                    <asp:DropDownList ID="drpValid" runat="server" Text='<%# Bind("Valid") %>'>
+                                        <asp:ListItem>Yes</asp:ListItem>
+                                        <asp:ListItem>No</asp:ListItem>
+                                    </asp:DropDownList>
+                                </EditItemTemplate>
+                            </asp:TemplateField>
+                            <asp:TemplateField HeaderText="Year Of Stay">
+                                <ItemTemplate>
+                                    <asp:Label ID="lblYear" runat="server" Text='<%# Bind("Year_Of_Stay") %>'></asp:Label>
+                                </ItemTemplate>
+                                <EditItemTemplate>
+                                    <asp:TextBox ID="textYear" runat="server" Text='<%# Bind("Year_Of_Stay") %>'></asp:TextBox>
+                                </EditItemTemplate>
+                            </asp:TemplateField>
+                            <asp:TemplateField HeaderText="Reason">
+                                <ItemTemplate>
+                                    <asp:Label ID="labelReason" runat="server" Text='<%# Bind("Reason") %>'></asp:Label>
+                                </ItemTemplate>
+                            </asp:TemplateField>
+                            <asp:TemplateField HeaderText="Type">
+                                <ItemTemplate>
+                                    <asp:Label ID="labelType" runat="server" Text='<%# Bind("Type") %>'></asp:Label>
+                                </ItemTemplate>
+                            </asp:TemplateField>
+                        </Columns>
+                    </asp:GridView>
+                </ContentTemplate>
+            </asp:UpdatePanel>
+            <br />
+            <asp:UpdatePanel ID="UpdatePanel1" runat="server">
+                <ContentTemplate>
+                    <table style="width: 100%; margin-top: 20px;" class="no-zebra">
+                        <thead>
+                            <tr>
+                                <th colspan="2" align="left" style="padding: 10px; font-size: smaller">
+                                    Add New Termination Severence
+                                </th>
+                            </tr>
+                        </thead>
+                        <tr>
+                            <td style="width: 20%">
+                                <span style="float: right">Select Type:</span>
+                            </td>
+                            <td style="width: 80%; padding: 10px;">
+                                <asp:DropDownList ID="drpType" runat="server" AutoPostBack="True" ValidationGroup="v_severence" OnSelectedIndexChanged="drpType_SelectedIndexChanged">
+                                </asp:DropDownList>
+                                <asp:RequiredFieldValidator ID="RequiredFieldValidator4" runat="server" ValidationGroup="v_severence" ErrorMessage="Please Select Type"
+                                    ControlToValidate="drpType" Display="None"></asp:RequiredFieldValidator>
+                                <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender4" runat="server" TargetControlID="RequiredFieldValidator4">
+                                </asp:ValidatorCalloutExtender>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="width: 20%">
+                                <span style="float: right">Select Reason:</span>
+                            </td>
+                            <td style="width: 80%; padding: 10px;">
+                                <asp:ListBox runat="server" ID="listReason" SelectionMode="Multiple" ValidationGroup="v_severence" Style="height: 100px;
+                                    width: 300px;"></asp:ListBox>
+                                    <asp:RequiredFieldValidator ID="RequiredFieldValidator5" runat="server" ValidationGroup="v_severence" ErrorMessage="Please select atleast one reason."
+                                    ControlToValidate="listReason" Display="None"></asp:RequiredFieldValidator>
+                                <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender5" runat="server" TargetControlID="RequiredFieldValidator5">
+                                </asp:ValidatorCalloutExtender>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="width: 20%">
+                                <span style="float: right">Times Ave Monthly Salary:</span>
+                            </td>
+                            <td style="width: 80%; padding: 10px;">
+                                <asp:TextBox runat="server" ID="txtSeverence" ValidationGroup="v_severence" Style="width: 300px; color: #111111;
+                                    font-family: BebasNeue; font-size: 16px; letter-spacing: 1px;" MaxLength="3"></asp:TextBox>
+                               <%-- <asp:FilteredTextBoxExtender ID="FilteredTextBoxExtender1" runat="server" TargetControlID="txtSeverence"
+                                    FilterType="Numbers">
+                                </asp:FilteredTextBoxExtender>--%>
+                                <asp:RequiredFieldValidator ID="RequiredFieldValidator6" runat="server" ValidationGroup="v_severence" ErrorMessage="Please Enter Times of Average Monthly Salary."
+                                    ControlToValidate="txtSeverence" Display="None"></asp:RequiredFieldValidator>
+                                <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender6" runat="server" TargetControlID="RequiredFieldValidator6">
+                                </asp:ValidatorCalloutExtender>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="width: 20%">
+                                <span style="float: right">Year of Stay:</span>
+                            </td>
+                            <td style="width: 80%; padding: 10px;">
+                                <asp:TextBox runat="server" ID="txtYear" ValidationGroup="v_severence" Style="width: 300px; color: #111111; font-family: BebasNeue;
+                                    font-size: 16px; letter-spacing: 1px;"></asp:TextBox>
+                                    <%--<asp:RequiredFieldValidator ID="RequiredFieldValidator7" runat="server" ValidationGroup="v_severence" ErrorMessage="Please Enter Year Of Stay."
+                                    ControlToValidate="txtYear" Display="None"></asp:RequiredFieldValidator>
+                                <asp:ValidatorCalloutExtender ID="ValidatorCalloutExtender7" runat="server" TargetControlID="RequiredFieldValidator7">
+                                </asp:ValidatorCalloutExtender>--%>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="padding: 10px; float: right" align="right">
+                                <asp:Button runat="server" ID="btnAddSeverence" ValidationGroup="v_severence" OnClick="btnAddSeverence_Click" Text="Save New Severence"/>
+                            </td>
+                        </tr>
+                    </table>
+                </ContentTemplate>
+            </asp:UpdatePanel>
+        </div>
+    </div>
+    <script type="text/javascript">
+ 	    $(function() {
+ 	        // a workaround for a flaw in the demo system (http://dev.jqueryui.com/ticket/4375), ignore!
+
+ 	        $("#ctl00_mainContent_pnlDialog").dialog({
+ 	            height: 230,
+ 	            width: 430,
+ 	            modal: true
+ 	        });
+ 	    });
+    </script>
+
+    <asp:Panel runat="server" ID="pnlDialog" Style="display: none" CssClass="mws-jui-dialog"
+        Visible="false">
+        <asp:Label runat="server" ID="lblMsg"></asp:Label>
+    </asp:Panel>
+</asp:Content>

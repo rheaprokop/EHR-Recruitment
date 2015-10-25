@@ -1,0 +1,19 @@
+﻿<%@ Control Language="C#" AutoEventWireup="true" CodeBehind="ApprovalManager.ascx.cs" Inherits="EHR.Recruitment.ApprovalManager" %>
+ <asp:Panel runat="server" ID="pnlAssignPICManager"> 
+  <asp:Label runat="server" ID="Label1" Text="REQUEST ID NO:" CssClass="table-title" style="color: #111111; margin-left: 20px;"></asp:Label> <asp:Label runat="server" ID="lblRequestID" CssClass="table-title"></asp:Label>
+ <br />
+<table style="width: 1100px; margin-left: 20px; margin-top: -30px;"><tr><td style="">
+           
+       <asp:GridView ID="gridAssignPIC" CellPadding="0" CellSpacing="0" GridLines="None"  
+         runat="server" CssClass="grid-zebra" style="width: 1100px;"   >
+         <Columns>
+        <asp:BoundField DataField="FlowID" HeaderText="FlowID" Visible="False" /> 
+      </Columns> 
+        </asp:GridView>
+                          
+                          
+</td></tr>
+ 
+</table>      
+
+</asp:Panel>   

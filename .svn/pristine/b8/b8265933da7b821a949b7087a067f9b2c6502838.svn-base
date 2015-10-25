@@ -1,0 +1,1065 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model;
+using ehr_email;
+using System.Text.RegularExpressions;
+using System.Collections;
+
+namespace EHR.Views.Status
+{
+    public partial class RQ07 : System.Web.UI.Page
+    {
+        DBModel _db = new DBModel();
+        PSModel _ps = new PSModel();
+        ApprovalModel _appv = new ApprovalModel();
+        AccountModel _accnt = new AccountModel();
+        MiscModel _misc = new MiscModel();
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            string id = Request.QueryString["id"]; 
+
+            if (Page.IsPostBack == false)
+            {
+                PopulateMultEmployees(id);
+                ViewRequest(id); 
+                EnableButtonForApprover(id);
+            }
+        }
+
+        private void PopulateMultEmployees(string reqID)
+        {
+            string sqlApprover = "SELECT A.APPROVERVALUE APPROVERVALUE  FROM APPROVALTRANSACTION A,  STATUS_CHANGE B " +
+                     "WHERE A.REQID = B.TRANSID AND B.REQUESTID = '" + reqID + "' " +
+                     " AND A.RESULT = 'W' AND ROWNUM = 1";
+
+            OleDbDataReader _rd = _db.GetDataReader(sqlApprover);
+            string currApprover;
+            if (_rd.Read())
+            {
+                currApprover = Convert.ToString(_rd["APPROVERVALUE"]);
+            }
+            else
+            {
+                currApprover = "";
+            }
+
+            string sql;
+            if (currApprover == "")
+            {
+                sql = "SELECT DISTINCT(A.EMPLID) EMPLID, B.NAME NAME_A, B.DEPTID DEPTID, A.APPSTATUS STATUS,  " +
+                         "A.TRANSID TRANSID, C.REMARKS REMARKS " +
+                         "FROM STATUS_CHANGE A, LIB_USERS B, APPROVALTRANSACTION C " +
+                         "WHERE A.REQUESTID='" + reqID + "' AND A.EMPLID = B.USERID " +
+                         "AND A.TRANSID = C.REQID AND C.APPROVERVALUE = 'GM'";
+            }
+            else
+            {
+                sql = "SELECT DISTINCT(A.EMPLID) EMPLID, B.NAME NAME_A, B.DEPTID DEPTID, A.APPSTATUS STATUS,  " +
+                         "A.TRANSID TRANSID, C.REMARKS REMARKS " +
+                         "FROM STATUS_CHANGE A, LIB_USERS B, APPROVALTRANSACTION C " +
+                         "WHERE A.REQUESTID='" + reqID + "' AND A.EMPLID = B.USERID " +
+                         "AND A.TRANSID = C.REQID AND C.APPROVERVALUE = '" + currApprover + "'";
+            }
+
+            DataTable _dt = _db.GetTable(sql);
+            gridMultEmployees.DataSource = _dt;
+            gridMultEmployees.DataBind();
+        }
+
+        private void ViewRequest(string reqID)
+        {
+            string sql = "SELECT REQUESTID, TRANSID, APFLOWID, REQUESTORID, " +
+                        "REQUESTORDEPTID, TO_CHAR(REQDATE,'dd.MM.YYYY') AS REQDATE, EMPLID, CURRDEPT, " +
+                        "NEWDEPT, CURRPOSI, NEWPOSI, CURREMPLCAT, NEWEMPLCAT, CSHIFTTYPE, " +
+                        "CSHIFTTYPETIME, CSHIFTTYPEFROM, CSHIFTTYPETO, ISMONDAY, " +
+                        "ISTUESDAY, ISWEDNESDAY, ISTHURSDAY, ISFRIDAY, ISSATURDAY, ISSUNDAY, " +
+                        "CWORKSHIFTDETAILS, TSHIFTTYPE, APPSTATUS, REVIEWERSHIFTUPDATE FROM " +
+                        "STATUS_CHANGE WHERE ROWNUM = 1 AND REQUESTID = '" + reqID + "'";
+
+            OleDbDataReader rd = _db.GetDataReader(sql);
+            if (rd.Read())
+            {
+                txtRequestNo.Text = Convert.ToString(rd["REQUESTID"]);
+                lblRequestDate.Text = Convert.ToString(rd["REQDATE"]);
+                lblCurrentDeptID.Text = Convert.ToString(rd["CURRDEPT"]);
+                lblNewDeptID.Text = Convert.ToString(rd["NEWDEPT"]);
+                lblCurrentPosition.Text = Convert.ToString(rd["CURRPOSI"]);
+                lblNewPosition.Text = Convert.ToString(rd["NEWPOSI"]);
+                lblCurrentCategory.Text = Convert.ToString(rd["CURREMPLCAT"]);
+                lblNewCategory.Text = Convert.ToString(rd["NEWEMPLCAT"]);
+                lblWorkShiftTemporary.Text = Convert.ToString(rd["TSHIFTTYPE"]);
+                txtReviewerWorkShift.Text = Convert.ToString(rd["REVIEWERSHIFTUPDATE"]);
+                if (lblWorkShiftTemporary.Text == "Select Type")
+                {
+                    lblWorkShiftTemporary.Text = "";
+                }
+                if (lblNewCategory.Text == "Contracted")
+                {
+
+                    pnlWorkShiftContracted.Visible = true;
+                    pnlWorkShiftTemporary.Visible = false;
+                }
+                else if (lblNewCategory.Text == "Temporary")
+                {
+                    pnlWorkShiftContracted.Visible = false;
+                    pnlWorkShiftTemporary.Visible = true;
+                }
+                else if (lblNewCategory.Text == "Unchanged")
+                {
+                    pnlWorkShiftContracted.Visible = false;
+                    pnlWorkShiftTemporary.Visible = false;
+                }
+
+                lblWorkShiftType.Text = Convert.ToString(rd["CSHIFTTYPE"]);
+                if (lblWorkShiftType.Text == "Select Type") lblWorkShiftType.Text = "UNCHANGED";
+                lblWorkShiftTypeTime.Text = Convert.ToString(rd["CSHIFTTYPETIME"]);
+                if (lblWorkShiftTypeTime.Text == "Select Type") lblWorkShiftTypeTime.Text = "UNCHANGED";
+                lblTime.Text = Convert.ToString(rd["CSHIFTTYPEFROM"]) + " - " + Convert.ToString(rd["CSHIFTTYPETO"]) + ",";
+
+                if (Convert.ToString(rd["ISMONDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Monday&nbsp;&nbsp;";
+                }
+
+                if (Convert.ToString(rd["ISTUESDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Tuesday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISWEDNESDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Wednesday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISTHURSDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Thursday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISFRIDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Friday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISSATURDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Saturday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISSUNDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Sunday&nbsp;&nbsp;";
+                }
+
+                lblCWorkShiftDetails.Text = Convert.ToString(rd["CWORKSHIFTDETAILS"]);
+                if (lblCWorkShiftDetails.Text == "") lblCWorkShiftDetails.Text = "UNCHANGED";
+
+                string transno = Convert.ToString(rd["TRANSID"]);
+                hiddenTransID.Value = transno;
+
+                string appstatus = Convert.ToString(rd["APPSTATUS"]);
+
+
+                PopulateApproverForMult(txtRequestNo.Text); //populate approvers
+                string workshiftDetails = txtReviewerWorkShift.Text;
+                ShowUpdateWorkShift(transno); //update workshift details
+                ShowUpdateAmount(transno, txtRequestNo.Text); //update amounts
+
+                PopulateEmplAppv(transno);
+                
+            }
+            string salarySQL = "SELECT SALARYAMOUNT, INCREASE_DECRESASE FROM STATUS_SALARY WHERE REQUESTID = '" + txtRequestNo.Text + "'";
+            OleDbDataReader salary_rd = _db.GetDataReader(salarySQL);
+
+            if (salary_rd.Read())
+            {
+
+                lblSalary.Text = Convert.ToString(salary_rd["SALARYAMOUNT"]);
+                string incdrease = Convert.ToString(salary_rd["INCREASE_DECRESASE"]);
+                lblSalary.Text = lblSalary.Text + " CZK" + " " + incdrease;
+            }
+            else
+            {
+                lblSalary.Text = "UNCHANGED";
+            }
+
+            string bonusesSQL = "SELECT A.AMOUNT AMOUNT, A.INCREASE_DECREASE INCREASE_DECREASE, " +
+                  "A.ISMONTHLYAPPR MONTHAPPV , B.BONUSDESCR  BONUSDESC FROM STATUS_BONUSES A, " +
+                  "STATUS_BONUSTYPES B WHERE A.BONUSID = B.BONUSID AND A.REQUESTID =  '" + txtRequestNo.Text + "'";
+            DataTable _dt = _db.GetTable(bonusesSQL);
+            rptBonuses.DataSource = _dt;
+            rptBonuses.DataBind();
+
+            if (rptBonuses.Items.Count == 0)
+            {
+                lblNoBonus.Text = "UNCHANGED";
+            }
+        }
+        
+        protected void BtnSubmit_Click(object sender, EventArgs e)
+        {
+            if (_appv.HasApproverSignature(_accnt.GetUserSessID()) == true)
+            {
+                if (IsPostBack == true)
+                {
+                    string reviewSQL = "UPDATE STATUS_CHANGE SET REVIEWERSHIFTUPDATE = '" + txtReviewerWorkShift.Text +
+               "', STATUS='Approval Process' WHERE REQUESTID = '" + txtRequestNo.Text + "'";
+                    _db.GetExecuteNonQuery(reviewSQL);
+                }
+
+
+                foreach (GridViewRow gvrow in gridMultEmployees.Rows)
+                {
+                    string appv;
+                    string transno = (string)gridMultEmployees.DataKeys[gvrow.RowIndex].Value;
+
+                    RadioButtonList rblAnswer = (RadioButtonList)gvrow.FindControl("rd");
+                    appv = rblAnswer.SelectedValue;
+
+                    UpdateRecord(transno, appv);
+                    UpdateApproverAmount(_accnt.GetUserSessID(), transno, txtRequestNo.Text);
+
+
+                    if (gvrow.RowIndex == 0)
+                    {
+
+                        try
+                        {
+
+                            //send email to next approver
+                            if (_misc.IsEmailNotificationTest("Notification", "Notification for:" + _appv.GetCurrentApprover(hiddenTransID.Value), txtRequestNo.Text) == false)
+                            {
+
+                                string mail_type = "Notification";
+                                string sender_ = "noreply@wistron.com ";
+
+                                string recipient = _ps.GetEmplEmailAdrress(_appv.GetCurrentApprover(transno));
+                                if (recipient == "")
+                                {
+                                    recipient = "rhea_prokop@wistron.com";
+                                }
+                                string recipient_name = _ps.GetEmplFirstName(_appv.GetCurrentApprover(transno));
+                                string cc = "rhea_prokop@wistron.com; martin_husar@wistron.com";
+                                string subject = "EHR: Status Change - Approval Notification";
+                                string parameters = "Approval Link: <a href='http://ehr.qas.wcz.wistron/Views/Status/RQ07.aspx?id=" + txtRequestNo.Text + "'>" + txtRequestNo.Text + "</a>";
+
+                                Cls_Email.sendmail(mail_type, sender_, recipient, cc, subject, parameters, "", recipient_name);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                        }
+
+
+                    }
+                }
+
+                string reqID = Request.QueryString["id"];
+
+                _db.GetConn();
+                string getPICsql = "SELECT TRANSID FROM STATUS_CHANGE WHERE REQUESTID='" + reqID + "' AND ROWNUM = 1";
+                OleDbDataReader rd = _db.GetDataReader(getPICsql);
+                rd.Read();
+                string transid = Convert.ToString(rd["TRANSID"]);
+
+                string countRec = "SELECT COUNT(APPSTATUS)  FROM STATUS_CHANGE " +
+                    " WHERE REQUESTID = '" + reqID + "'";
+                string countRejected = "SELECT COUNT(APPSTATUS)  FROM STATUS_CHANGE " +
+                    " WHERE APPSTATUS='Rejected' And REQUESTID = '" + reqID + "'";
+                int Rec = _db.GetExecuteScalar(countRec);
+                int Rejected = _db.GetExecuteScalar(countRejected);
+                if (Rec == Rejected)
+                {
+                    //send email to next approver
+                    if (_misc.IsEmailNotificationTest("Notify_Reject", "EHR: Status Change - Reject Notification", txtRequestNo.Text) == false)
+                    {
+
+                        string mail_type = "Notify_Reject";
+                        string sender_ = "noreply@wistron.com ";
+
+                        string recipient = _ps.GetEmplEmailAdrress(_misc.GetRequestor(txtRequestNo.Text, "STATUS_CHANGE"));
+                        string recipient_name = _ps.GetEmplFirstName(_misc.GetRequestor(txtRequestNo.Text, "STATUS_CHANGE"));
+                        string cc = "rhea_prokop@wistron.com; martin_husar@wistron.com";
+                        string subject = "EHR: Status Change - Reject Notification";
+                        string parameters = "Link: <a href='http://ehr.qas.wcz.wistron/Views/Status/RQ07.aspx?id=" + txtRequestNo.Text + "'>" + txtRequestNo.Text + "</a>";
+
+                        Cls_Email.sendmail(mail_type, sender_, recipient, cc, subject, parameters, "", recipient_name);
+                    }
+                }
+
+
+                MailPIC(reqID);
+                //insert method update bonus and salary   
+                Response.Redirect("~/Views/Shared/Inbox.aspx");
+            }
+            else
+            {
+                _misc.ShowMessage("You cannot approved without signature.", this.Page);
+            }
+        }
+
+        private void UpdateRecord(string transno, string appv)
+        {
+            DateTime today_dt = DateTime.Now;
+            string signed = String.Format("{0:dd.MM.yyyy}", today_dt);
+
+            //select who is the current approver
+            string sqlCurrAppv = "SELECT APPSEQ, APPROVERVALUE FROM APPROVALTRANSACTION " +
+             "WHERE APPEMPLID = '" + _accnt.GetUserSessID() + "' AND " +
+             "REQID = '" + transno + "' AND RESULT = 'W'";
+            OleDbDataReader _rd = _db.GetDataReader(sqlCurrAppv);
+
+            string currAppValue;
+            int appSeq;
+            if (_rd.Read())
+            {
+                currAppValue = Convert.ToString(_rd["APPROVERVALUE"]);
+                appSeq = Convert.ToInt32(_rd["APPSEQ"]);
+            }
+            else
+            {
+                currAppValue = "";
+                appSeq = 0;
+            }
+
+
+            string sql;
+            string appstatus;
+            switch (appv)
+            {
+                case "A":
+                    if (currAppValue == "HR_STA_REV" || currAppValue == "HR_STA_PAY")
+                    {
+                        sql = "UPDATE APPROVALTRANSACTION SET ACTUALAPPROVER = '" + _accnt.GetUserSessID() + "', " +
+                       "RESULT = 'A', REMARKS = '" + txtApproveRemarks.Text + "', DATESIGNED = TO_DATE('" + signed + "','dd.mm.yyyy') " +
+                       "WHERE RESULT = 'W' AND APPEMPLID = '" + _accnt.GetUserSessID() + "' AND " +
+                       "REQID = '" + transno + "' AND APPSEQ = '" + appSeq + "'";
+
+                        if (currAppValue == "HR_STA_REV")
+                        {
+                            string sqlUpdateHRPIC = "UPDATE STATUS_CHANGE SET HR_PIC = '" + _accnt.GetUserSessID() + "' WHERE TRANSID = '" + transno + "'";
+                            _db.GetExecuteNonQuery(sqlUpdateHRPIC);
+                        }
+                        else if (currAppValue == "HR_STA_PAY")
+                        {
+                            string sqlUpdatePayPIC = "UPDATE STATUS_CHANGE SET PAYROLL_PIC = '" + _accnt.GetUserSessID() + "' WHERE TRANSID = '" + transno + "'";
+                            _db.GetExecuteNonQuery(sqlUpdatePayPIC);
+                        } 
+
+                    }
+                    else
+                    {
+                        sql = "UPDATE APPROVALTRANSACTION SET ACTUALAPPROVER = '" + _accnt.GetUserSessID() + "', " +
+                         "RESULT = 'A', REMARKS = '" + txtApproveRemarks.Text + "', DATESIGNED = SYSDATE " +
+                         "WHERE RESULT = 'W' AND APPEMPLID = '" + _accnt.GetUserSessID() + "' AND " +
+                         "REQID = '" + transno + "' AND APPSEQ = '" + appSeq + "'";
+                    }
+                    appstatus = "Approved";
+                    _db.GetExecuteNonQuery(sql);
+                    _appv.IsNextApprover(transno);
+                    break;
+                case "R":
+
+                    string rejectSQL = "UPDATE APPROVALTRANSACTION SET ACTUALAPPROVER = '" + _accnt.GetUserSessID() + "', " +
+                     "RESULT = 'R', REMARKS = '" + txtRejectRemarks.Text + "', DATESIGNED = SYSDATE WHERE APPEMPLID = '" + _accnt.GetUserSessID() + "' AND " +
+                     "REQID = '" + transno + "' AND RESULT = 'W'";
+                    _db.GetExecuteNonQuery(rejectSQL);
+
+                    string closesql = "UPDATE APPROVALTRANSACTION SET RESULT = 'R' WHERE RESULT = 'O' AND " +
+                     "REQID = '" + transno + "'";
+                    _db.GetExecuteNonQuery(closesql);
+                    appstatus = "Rejected";
+                    string sqlIsStatus = "UPDATE STATUS_CHANGE SET STATUS = 'Rejected' WHERE TRANSID = '" + transno + "'";
+                    _db.GetExecuteNonQuery(sqlIsStatus);
+                    break;
+                default:
+                    appstatus = "";
+                    break;
+            }
+
+            string appStatusSql = "UPDATE STATUS_CHANGE SET APPSTATUS = '" + appstatus + "' WHERE TRANSID = '" + transno + "'";
+            _db.GetExecuteNonQuery(appStatusSql);
+
+            
+
+
+        }
+        private void UpdateApproverAmount(string userid, string transno, string reqID)
+        {
+            string sql = "SELECT APPROVERVALUE FROM APPROVALTRANSACTION WHERE APPEMPLID = '" + userid +
+               "' AND REQID = '" + transno + "' AND APPROVERVALUE != 'HR_STA_REV'";
+
+
+            OleDbDataReader _rd = _db.GetDataReader(sql);
+            string appvalue;
+            if (_rd.Read())
+            {
+                appvalue = Convert.ToString(_rd["APPROVERVALUE"]);
+            }
+            else
+            {
+                appvalue = "";
+            }
+
+            if (appvalue == "HR_STA_PAY")
+            {
+                //update salary 
+
+                string updateSalarySQL = "UPDATE STATUS_SALARY SET PAYROLL_CURRENT = '" + txtSalaryCurrent.Text + "', " +
+                    "PAYROLL_NEW = '" + txtSalaryNew.Text + "' WHERE REQUESTID = '" + reqID + "'";
+                _db.GetExecuteNonQuery(updateSalarySQL);
+
+
+                string updatePerformance = "UPDATE STATUS_BONUSES SET " +
+                                        "PAYROLL_CURRENT = '" + txtPerformanceCurrent.Text + "', " +
+                                        "PAYROLL_NEW = '" + txtPerformanceNew.Text + "' " +
+                                        "WHERE REQUESTID = '" + reqID + "' " +
+                                        "AND BONUSID = '1'";
+                _db.GetExecuteNonQuery(updatePerformance);
+
+                string updatePersonal = "UPDATE STATUS_BONUSES SET " +
+                                        "PAYROLL_CURRENT = '" + txtPersonalCurrent.Text + "', " +
+                                        "PAYROLL_NEW = '" + txtPersonalNew.Text + "' " +
+                                        "WHERE REQUESTID = '" + reqID + "' " +
+                                        "AND BONUSID = '2'";
+                _db.GetExecuteNonQuery(updatePersonal);
+
+                string updateForklift = "UPDATE STATUS_BONUSES SET " +
+                                        "PAYROLL_CURRENT = '" + txtForkliftCurrent.Text + "', " +
+                                        "PAYROLL_NEW = '" + txtForkliftNew.Text + "' " +
+                                        "WHERE REQUESTID = '" + reqID + "' " +
+                                        "AND BONUSID = '3'";
+                _db.GetExecuteNonQuery(updateForklift);
+            }
+
+            if (appvalue == "HR_MAN")
+            {
+                string updateSalaryManSQL = "UPDATE STATUS_SALARY SET HR_MGR_CONFIRM = '" + txtSalaryHR.Text + "'  " +
+                    "WHERE REQUESTID = '" + reqID + "'";
+                _db.GetExecuteNonQuery(updateSalaryManSQL);
+
+                string updatePerformanceMan = "UPDATE STATUS_BONUSES SET " +
+                                        "HR_MGR_CONFIRM = '" + txtPerformanceHR.Text + "' " +
+                                        "WHERE REQUESTID = '" + reqID + "' " +
+                                        "AND BONUSID = '1'";
+                _db.GetExecuteNonQuery(updatePerformanceMan);
+
+                string updatePersonalMan = "UPDATE STATUS_BONUSES SET " +
+                                        "HR_MGR_CONFIRM = '" + txtPersonalHR.Text + "' " +
+                                        "WHERE REQUESTID = '" + reqID + "' " +
+                                        "AND BONUSID = '2'";
+                _db.GetExecuteNonQuery(updatePersonalMan);
+
+                string updateForkliftMan = "UPDATE STATUS_BONUSES SET " +
+                                        "HR_MGR_CONFIRM = '" + txtForkliftHR.Text + "' " +
+                                        "WHERE REQUESTID = '" + reqID + "' " +
+                                        "AND BONUSID = '3'";
+                _db.GetExecuteNonQuery(updateForkliftMan);
+            }
+
+        }
+        private void PopulateEmplAppv(string transno)
+        {
+
+            /*string sql = "SELECT A.APPROVERDESC DESCR, B.NAME APPROVEDBY, A.RESULT RESULT, " +
+                         "TO_CHAR(A.DATESIGNED,'dd.MM.YYYY') DATESIGNED, A.REMARKS REMARKS " +
+                         "FROM APPROVALTRANSACTION A, LIB_USERS B WHERE  A.REQID = '" + transno + "' " +
+                         "AND A.ACTUALAPPROVER = B.USERID ORDER BY A.APPSEQ ASC";*/
+
+            string sql = "SELECT A.APPROVERDESC APPROVERDESC, B.NAME NAME_A, A.RESULT RESULT, " +
+                "TO_CHAR(A.DATESIGNED,'dd.MM.YYYY') DATESIGNED, A.REMARKS REMARKS " +
+                "FROM APPROVALTRANSACTION A, LIB_USERS B WHERE A.APPEMPLID = B.USERID " +
+                "AND REQID='" + transno + "' " +
+                "ORDER BY APPSEQ ASC";
+
+            DataTable _dt = _db.GetTable(sql);
+            gridEmplAppvFlow.DataSource = _dt;
+            gridEmplAppvFlow.DataBind();
+
+        }
+        protected void GridMultEmployees_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                string appv = e.Row.Cells[4].Text;
+                  RadioButtonList rbl = e.Row.FindControl("rd") as RadioButtonList;
+                   if(rbl != null)
+                   {
+                       switch (appv)
+                       {
+                           case "Approved":
+                               rbl.SelectedValue = "A";
+                               break;
+                           case "Rejected":
+                               rbl.SelectedValue = "R";
+                               e.Row.Cells[0].Enabled = false;
+                               e.Row.Cells[1].Enabled = false;
+                               e.Row.Cells[2].Enabled = false;
+                               e.Row.Cells[3].Enabled = false;
+                               e.Row.Cells[4].Enabled = false;
+                               break;
+                           default:
+                               break;
+                       }
+
+                       
+                       
+                   }
+            }
+        }
+
+        //populate gridview with approvers for multiple employee
+        private void PopulateApproverForMult(string reqID)
+        {
+            string sql = "SELECT MIN(TRANSID) TRANSID FROM STATUS_CHANGE WHERE REQUESTID = '" + reqID + "'";
+            OleDbDataReader _rd = _db.GetDataReader(sql);
+            if (_rd.Read())
+            {
+                string transno = Convert.ToString(_rd["TRANSID"]);
+
+                string sqlAppv = "SELECT A.REQID REQID, A.APPROVERDESC APPROVERDESC, A.APPEMPLID EMPLID, " +
+                    "A.ACTUALAPPROVER ACTUALAPPROVER, B.NAME_A NAME_A, A.DATESIGNED DATESIGNED " +
+                    "FROM APPROVALTRANSACTION A, PS.PS_SUB_WCZ_AT_VW_A B " +
+                    "WHERE A.APPEMPLID = B.EMPLID AND A.REQID = '" + transno + "'  ORDER BY APPSEQ ASC";
+                DataTable _dt = _db.GetTable(sqlAppv);
+                gridMultiApprover.DataSource = _dt;
+                gridMultiApprover.DataBind();
+            }
+        }
+
+        private void ViewWithAmountBoxes(string reqID)
+        {
+            string Appflowid;
+            string sqlAFFHide = "SELECT APFLOWID FROM STATUS_CHANGE WHERE REQUESTID = '" + reqID + "'";
+            OleDbDataReader _rdApp = _db.GetDataReader(sqlAFFHide);
+            if (_rdApp.Read())
+            {
+                Appflowid = Convert.ToString(_rdApp["APFLOWID"]);
+            }
+            else
+            {
+                Appflowid = "";
+            }
+
+            if (Appflowid == "AF005" || Appflowid == "AF006" || Appflowid == "AF005")
+            {
+                pnlUpdateSalary.Visible = false;
+            }
+            PopulateAmountBoxes(reqID);
+            //enable & disable payroll box 
+            string sqlCurrAppv = "SELECT APPSEQ, APPROVERVALUE FROM APPROVALTRANSACTION " +
+                               "WHERE APPEMPLID = '" + _accnt.GetUserSessID() + "' AND " +
+                               "REQID = '" + hiddenTransID.Value + "'";
+
+            OleDbDataReader _rd = _db.GetDataReader(sqlCurrAppv);
+            string appvalue;
+            if (_rd.Read())
+            {
+                appvalue = Convert.ToString(_rd["APPROVERVALUE"]);
+            }
+            else
+            {
+                appvalue = "";
+            }
+
+            switch (appvalue)
+            {
+                case "HR_STA_PAY":
+                    //enable
+                    txtSalaryCurrent.Enabled = true;
+                    txtSalaryNew.Enabled = true;
+                    txtPersonalCurrent.Enabled = true;
+                    txtPersonalNew.Enabled = true;
+                    txtPerformanceCurrent.Enabled = true;
+                    txtPerformanceNew.Enabled = true;
+                    txtForkliftCurrent.Enabled = true;
+                    txtForkliftNew.Enabled = true;
+
+                    //disable
+                    txtSalaryHR.Enabled = false;
+                    txtPersonalHR.Enabled = false;
+                    txtPerformanceHR.Enabled = false;
+                    txtForkliftHR.Enabled = false;
+
+                    break;
+                case "HR_MAN":
+                    //enable
+                    txtSalaryCurrent.Enabled = false;
+                    txtSalaryNew.Enabled = false;
+                    txtPersonalCurrent.Enabled = false;
+                    txtPersonalNew.Enabled = false;
+                    txtPerformanceCurrent.Enabled = false;
+                    txtPerformanceNew.Enabled = false;
+                    txtForkliftCurrent.Enabled = false;
+                    txtForkliftNew.Enabled = false;
+
+                    //disable
+                    txtSalaryHR.Enabled = true;
+                    txtPersonalHR.Enabled = true;
+                    txtPerformanceHR.Enabled = true;
+                    txtForkliftHR.Enabled = true;
+                    break;
+
+                case "MAN":
+                    //enable
+                    txtSalaryCurrent.Enabled = false;
+                    txtSalaryNew.Enabled = false;
+                    txtPersonalCurrent.Enabled = false;
+                    txtPersonalNew.Enabled = false;
+                    txtPerformanceCurrent.Enabled = false;
+                    txtPerformanceNew.Enabled = false;
+                    txtForkliftCurrent.Enabled = false;
+                    txtForkliftNew.Enabled = false;
+
+                    //disable
+                    txtSalaryHR.Enabled = false;
+                    txtPersonalHR.Enabled = false;
+                    txtPerformanceHR.Enabled = false;
+                    txtForkliftHR.Enabled = false;
+                    break;
+
+                case "HR_STA_NDE":
+                    //enable
+                    txtSalaryCurrent.Enabled = false;
+                    txtSalaryNew.Enabled = false;
+                    txtPersonalCurrent.Enabled = false;
+                    txtPersonalNew.Enabled = false;
+                    txtPerformanceCurrent.Enabled = false;
+                    txtPerformanceNew.Enabled = false;
+                    txtForkliftCurrent.Enabled = false;
+                    txtForkliftNew.Enabled = false;
+
+                    //disable
+                    txtSalaryHR.Enabled = false;
+                    txtPersonalHR.Enabled = false;
+                    txtPerformanceHR.Enabled = false;
+                    txtForkliftHR.Enabled = false;
+                    break;
+
+                case "PM":
+                    //enable
+                    txtSalaryCurrent.Enabled = false;
+                    txtSalaryNew.Enabled = false;
+                    txtPersonalCurrent.Enabled = false;
+                    txtPersonalNew.Enabled = false;
+                    txtPerformanceCurrent.Enabled = false;
+                    txtPerformanceNew.Enabled = false;
+                    txtForkliftCurrent.Enabled = false;
+                    txtForkliftNew.Enabled = false;
+
+                    //disable
+                    txtSalaryHR.Enabled = false;
+                    txtPersonalHR.Enabled = false;
+                    txtPerformanceHR.Enabled = false;
+                    txtForkliftHR.Enabled = false;
+                    break;
+
+                case "GM":
+                    //enable
+                    txtSalaryCurrent.Enabled = false;
+                    txtSalaryNew.Enabled = false;
+                    txtPersonalCurrent.Enabled = false;
+                    txtPersonalNew.Enabled = false;
+                    txtPerformanceCurrent.Enabled = false;
+                    txtPerformanceNew.Enabled = false;
+                    txtForkliftCurrent.Enabled = false;
+                    txtForkliftNew.Enabled = false;
+
+                    //disable
+                    txtSalaryHR.Enabled = false;
+                    txtPersonalHR.Enabled = false;
+                    txtPerformanceHR.Enabled = false;
+                    txtForkliftHR.Enabled = false;
+                    break;
+
+
+                default:
+                    //enable
+                    txtSalaryCurrent.Enabled = false;
+                    txtSalaryNew.Enabled = false;
+                    txtPersonalCurrent.Enabled = false;
+                    txtPersonalNew.Enabled = false;
+                    txtPerformanceCurrent.Enabled = false;
+                    txtPerformanceNew.Enabled = false;
+                    txtForkliftCurrent.Enabled = false;
+                    txtForkliftNew.Enabled = false;
+
+                    //disable
+                    txtSalaryHR.Enabled = false;
+                    txtPersonalHR.Enabled = false;
+                    txtPerformanceHR.Enabled = false;
+                    txtForkliftHR.Enabled = false;
+                    break;
+            }
+        }
+
+        private void PopulateAmountBoxes(string reqID)
+        {
+            string sqlSalary = "SELECT PAYROLL_CURRENT, PAYROLL_NEW, HR_MGR_CONFIRM FROM " +
+                                "STATUS_SALARY WHERE REQUESTID='" + reqID + "' ";
+
+            OleDbDataReader _rd = _db.GetDataReader(sqlSalary);
+            if (_rd.Read())
+            {
+                txtSalaryCurrent.Text = Convert.ToString(_rd["PAYROLL_CURRENT"]);
+                if (txtSalaryCurrent.Text == "") txtSalaryCurrent.Text = "0.00";
+                txtSalaryNew.Text = Convert.ToString(_rd["PAYROLL_NEW"]);
+                if (txtSalaryNew.Text == "") txtSalaryNew.Text = "0.00";
+                txtSalaryHR.Text = Convert.ToString(_rd["HR_MGR_CONFIRM"]);
+                if (txtSalaryHR.Text == "") txtSalaryHR.Text = "0.00";
+            }
+
+            //PERFORMANCE BONUS QUERY
+            string sqlPerformanceSQL = "SELECT PAYROLL_CURRENT, PAYROLL_NEW, HR_MGR_CONFIRM " +
+                                "FROM STATUS_BONUSES " +
+                                "WHERE REQUESTID = '" + reqID + "'" +
+                                "AND BONUSID = '1'";
+            OleDbDataReader _PerfRD = _db.GetDataReader(sqlPerformanceSQL);
+            if (_PerfRD.Read())
+            {
+                txtPerformanceCurrent.Text = Convert.ToString(_PerfRD["PAYROLL_CURRENT"]);
+                if (txtPerformanceCurrent.Text == "") txtPerformanceCurrent.Text = "0.00";
+                txtPerformanceNew.Text = Convert.ToString(_PerfRD["PAYROLL_NEW"]);
+                if (txtPerformanceNew.Text == "") txtPerformanceNew.Text = "0.00";
+                txtPerformanceHR.Text = Convert.ToString(_PerfRD["HR_MGR_CONFIRM"]);
+                if (txtPerformanceHR.Text == "") txtPerformanceHR.Text = "0.00";
+            }
+
+
+            //PERSONAL BONUS QUERY
+            string sqlPersonalSQL = "SELECT PAYROLL_CURRENT, PAYROLL_NEW, HR_MGR_CONFIRM " +
+                                "FROM STATUS_BONUSES " +
+                                "WHERE REQUESTID = '" + reqID + "'" +
+                                "AND BONUSID = '2'";
+
+            OleDbDataReader _PersRD = _db.GetDataReader(sqlPersonalSQL);
+            if (_PersRD.Read())
+            {
+                txtPersonalCurrent.Text = Convert.ToString(_PersRD["PAYROLL_CURRENT"]);
+                if (txtPersonalCurrent.Text == "") txtPersonalCurrent.Text = "0.00";
+                txtPersonalNew.Text = Convert.ToString(_PersRD["PAYROLL_NEW"]);
+                if (txtPersonalNew.Text == "") txtPersonalNew.Text = "0.00";
+                txtPersonalHR.Text = Convert.ToString(_PersRD["HR_MGR_CONFIRM"]);
+                if (txtPersonalHR.Text == "") txtPersonalHR.Text = "0.00";
+            }
+
+            //FORKLIFT BONUS
+
+            string sqlForkliftSQL = "SELECT PAYROLL_CURRENT, PAYROLL_NEW, HR_MGR_CONFIRM " +
+                                "FROM STATUS_BONUSES " +
+                                "WHERE REQUESTID = '" + reqID + "'" +
+                                "AND BONUSID = '3'";
+            OleDbDataReader _Forkrd = _db.GetDataReader(sqlForkliftSQL);
+            if (_Forkrd.Read())
+            {
+                txtForkliftCurrent.Text = Convert.ToString(_Forkrd["PAYROLL_CURRENT"]);
+                if (txtForkliftCurrent.Text == "") txtForkliftCurrent.Text = "0.00";
+                txtForkliftNew.Text = Convert.ToString(_Forkrd["PAYROLL_NEW"]);
+                if (txtForkliftNew.Text == "") txtForkliftNew.Text = "0.00";
+                txtForkliftHR.Text = Convert.ToString(_Forkrd["HR_MGR_CONFIRM"]);
+                if (txtForkliftHR.Text == "") txtForkliftHR.Text = "0.00";
+            }
+
+        }
+        //show panel updates
+        private void ShowUpdateWorkShift(string transno)
+        {
+
+            if (ShowReviewerToApprover(_accnt.GetUserSessID(), transno) == true)
+            {
+                pnlReviewerUpdate.Visible = true;
+
+                string sql = "SELECT APPEMPLID FROM APPROVALTRANSACTION WHERE APPROVERVALUE = 'HR_STA_REV' AND REQID = '" + transno + "'";
+                OleDbDataReader _rd = _db.GetDataReader(sql);
+
+                if (_rd.HasRows == true)
+                {
+                    if (_rd.Read())
+                    {
+
+                        string reviewer = Convert.ToString(_rd["APPEMPLID"]);
+
+                        //example record output: C1109001, C1107048
+                        //split employee id 
+                        string[] lines = Regex.Split(reviewer, ",");
+                        //create an array object
+                        ArrayList ar = new ArrayList();
+                        foreach (string line in lines)
+                        {
+                            ar.Add('"' + line + '"');
+                        }
+                        bool has = ar.Contains(_accnt.GetUserSessID()); // .NET 3.5
+
+
+
+                        if (reviewer == _accnt.GetUserSessID())
+                        {
+                            pnlReviewerUpdate.Visible = true;
+                            txtReviewerWorkShift.Enabled = true;
+                        }
+                        else
+                        {
+                            txtReviewerWorkShift.Enabled = false;
+                        }
+                    }
+                }
+                else
+                {
+                    txtReviewerWorkShift.Enabled = false;
+                }
+
+            }
+            else
+            {
+                pnlReviewerUpdate.Visible = false;
+            }
+
+        }
+        //show reviewer textbox if approver
+        private bool ShowReviewerToApprover(string userid, string transno)
+        {
+            string sql = "SELECT COUNT(APPEMPLID) FROM APPROVALTRANSACTION WHERE APPEMPLID = '" + userid +
+                "' AND REQID = '" + transno + "'";
+
+            int count = _db.GetExecuteScalar(sql);
+            if (count == 0)
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+
+        }
+        private void EnableButtonForApprover(string reqNo)
+        {
+
+            string sqlTrans = "SELECT TRANSID FROM STATUS_CHANGE WHERE REQUESTID = '" + reqNo + "' AND ROWNUM >= 1";
+            OleDbDataReader _rdTrans = _db.GetDataReader(sqlTrans);
+            string transNO;
+            if (_rdTrans.Read())
+            {
+                transNO = Convert.ToString(_rdTrans["TRANSID"]);
+            }
+            else
+            {
+                transNO = "";
+            }
+            string CurrentApprov = _appv.GetCurrentApprover(transNO);
+
+            if (_accnt.GetUserSessID() == CurrentApprov)
+            {
+                string sql = "SELECT APPSTATUS FROM STATUS_CHANGE WHERE TRANSID = '" + transNO + "'";
+                OleDbDataReader _rd = _db.GetDataReader(sql);
+
+                string status;
+                if (_rd.Read())
+                {
+                    status = Convert.ToString(_rd["APPSTATUS"]);
+                }
+                else
+                {
+                    status = "";
+                }
+
+                if (status == "Rejected")
+                {
+                    BtnSubmit.Enabled = false;
+                }
+                else
+                {
+                    BtnSubmit.Enabled = true;
+                }
+
+            }
+            else
+            {
+                BtnSubmit.Enabled = false;
+            } 
+
+        }
+        private void ShowUpdateAmount(string transno, string reqID)
+        {
+            if (ShowAmountToApprover(_accnt.GetUserSessID(), transno) == true)
+            {
+                pnlUpdateSalary.Visible = true;
+                ViewWithAmountBoxes(reqID);
+            }
+        }
+
+        private bool ShowAmountToApprover(string userid, string transno)
+        {
+            string sql = "SELECT COUNT(APPEMPLID) FROM APPROVALTRANSACTION WHERE APPEMPLID = '" + userid +
+               "' AND REQID = '" + transno + "' AND APPROVERVALUE != 'HR_STA_REV'";
+
+            int count = _db.GetExecuteScalar(sql);
+            if (count == 0)
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        protected void OnApprovedCheckedChanged(object sender, EventArgs e)
+        {
+            if (chkApproveRemarks.Checked)
+            {
+                txtApproveRemarks.Visible = true;
+            }
+            else
+            {
+                txtApproveRemarks.Visible = false;
+            }
+        }
+        protected void OnRejectCheckedChanged(object sender, EventArgs e)
+        {
+            if (chkRejectRemarks.Checked)
+            {
+                txtRejectRemarks.Visible = true;
+            }
+            else
+            {
+                txtRejectRemarks.Visible = false;
+            }
+        }
+
+
+        protected void RdAll_OnSelectedChanged(object sender, EventArgs e)
+        {
+
+            var listControl = (ListControl)sender;
+            var row = (GridViewRow)listControl.NamingContainer;
+            var item = listControl.SelectedItem;
+
+            foreach (GridViewRow gvrow in gridMultEmployees.Rows)
+            {
+                string appv;
+                string transno = (string)gridMultEmployees.DataKeys[gvrow.RowIndex].Value;
+
+                RadioButtonList rblAnswer = (RadioButtonList)gvrow.FindControl("rd");
+                if (item.Value == "A")
+                { 
+                    rblAnswer.Items[0].Selected = true;
+                    chkApproveRemarks.Visible = true;
+                    chkRejectRemarks.Visible = false;
+                }
+                if (item.Value == "R")
+                {
+                    rblAnswer.Items[1].Selected = true;
+                    chkApproveRemarks.Visible = false;
+                    chkRejectRemarks.Visible = true;
+                }
+            }
+        }
+
+        protected void GridMultiApprover_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                e.Row.Cells[3].Text = _ps.GetName(e.Row.Cells[3].Text);
+            }
+        }
+
+        private void MailPIC(string reqID)
+        {
+            string transNo;
+            string reqSql = "SELECT MIN(TRANSID) TRANSID FROM STATUS_CHANGE WHERE REQUESTID = '" + reqID + "'";
+            OleDbDataReader rd = _db.GetDataReader(reqSql);
+            if (rd.Read())
+            {
+                transNo = Convert.ToString(rd["TRANSID"]);
+            }
+            else
+            {
+                transNo = "";
+            }
+           
+           
+            string sqlCurrent = "SELECT  MIN(APPSEQ) APPSEQ FROM APPROVALTRANSACTION WHERE REQID = '" + transNo + "' " +
+                "AND RESULT = 'W'";
+
+            OleDbDataReader _rd = _db.GetDataReader(sqlCurrent);
+            int currentAppv;
+            if (_rd.Read())
+            {
+                try
+                {
+                    currentAppv = Convert.ToInt32(_rd["APPSEQ"]);
+                }
+                catch (Exception ex)
+                {
+                    currentAppv = 0;
+                }
+
+
+                if (currentAppv == 0)
+                {
+                    string sqlSalaryFlag = "SELECT REQUESTID, SALARY_FLAG, PRINT_SALARY_FLAG, PAYROLL_PIC, HR_PIC FROM STATUS_CHANGE WHERE TRANSID='" + transNo + "'";
+                    OleDbDataReader _rdSalFlag = _db.GetDataReader(sqlSalaryFlag);
+                    if (_rdSalFlag.Read())
+                    {
+                        string requestID = Convert.ToString(_rdSalFlag["REQUESTID"]);
+                        string salary_flag = Convert.ToString(_rdSalFlag["SALARY_FLAG"]);
+                        string print_salary_flag = Convert.ToString(_rdSalFlag["PRINT_SALARY_FLAG"]);
+                        string payroll = Convert.ToString(_rdSalFlag["PAYROLL_PIC"]);
+                        string hr = Convert.ToString(_rdSalFlag["HR_PIC"]);
+                         if (salary_flag == "1" && print_salary_flag != "9")
+                        {
+                            if (_misc.IsEmailNotificationTest("Notify_Payroll", "Payroll", "") == false)
+                            {
+
+
+                                string mail_type = "Notify_Payroll";
+                                string sender_ = "noreply@wistron.com ";
+
+                                string recipient = _ps.GetEmplEmailAdrress(payroll);
+                                string recipient_name = _ps.GetEmplFirstName(payroll);
+                                string cc = "rhea_prokop@wistron.com; martin_husar@wistron.com";
+                                string subject = "EHR: Status Change - Payroll PIC";
+                                string parameters = "Request Link: <a href='http://ehr.qas.wcz.wistron/Views/Status/RQ12.aspx?id=" + requestID + "'>" + requestID + "</a>";
+
+                                Cls_Email.sendmail(mail_type, sender_, recipient, cc, subject, parameters, "", recipient_name);
+                            }
+                        } 
+
+                        if (salary_flag == "0" || (salary_flag == "1" && print_salary_flag == "9"))
+                        {
+                            string countRec = "SELECT COUNT(APPSTATUS)  FROM STATUS_CHANGE " +
+              " WHERE REQUESTID = '" + reqID + "'";
+                            string countRejected = "SELECT COUNT(APPSTATUS)  FROM STATUS_CHANGE " +
+                                " WHERE APPSTATUS='Rejected' And REQUESTID = '" + reqID + "'";
+                            int Rec = _db.GetExecuteScalar(countRec);
+                            int Rejected = _db.GetExecuteScalar(countRejected);
+                            if (Rec != Rejected)
+                            {
+                                //mail hr
+                                if (_misc.IsEmailNotificationTest("Notify_HR", "HR", "") == false)
+                                { 
+                                    string mail_type = "Notify_HR";
+                                    string sender_ = "noreply@wistron.com ";
+
+                                    string recipient = _ps.GetEmplEmailAdrress(hr);
+                                    string recipient_name = _ps.GetEmplFirstName(hr);
+                                    string cc = "rhea_prokop@wistron.com; martin_husar@wistron.com";
+                                    string subject = "EHR: Status Change - HR PIC";
+                                    string parameters = "Request Link: <a href='http://ehr.qas.wcz.wistron/Views/Status/RQ12.aspx?id=" + requestID + "'>" + requestID + "</a>";
+
+                                    Cls_Email.sendmail(mail_type, sender_, recipient, cc, subject, parameters, "", recipient_name);
+                                }
+                            }
+                            
+                        }
+                    }
+                }
+                else
+                {
+                }
+            }
+        }
+    }
+}

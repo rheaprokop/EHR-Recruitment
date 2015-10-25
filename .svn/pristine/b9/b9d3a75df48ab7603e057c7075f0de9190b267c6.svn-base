@@ -1,0 +1,91 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model; 
+
+namespace EHR.Views.Shared
+{
+    public partial class Site : System.Web.UI.MasterPage
+    {
+        PSModel _ps = new PSModel();
+        AccountModel _accnt = new AccountModel();
+        DBModel _db = new DBModel();
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            
+            string UserID = (string)(Session["UserID"]);
+            _accnt.ValidateUser(UserID, Page.Response);
+            
+            
+            lblEmployeeID.Text = UserID;
+            lblFirstName.Text = _ps.GetName(UserID);
+            int r = lblFirstName.Text.IndexOf(" ");
+
+              
+            
+              if (Page.IsPostBack == false)
+             {
+                 pnlError.Visible = false;
+             }
+
+             if (IsITAdmin() == false)
+             {
+                 panel_manage.Visible = false;
+             }
+              
+
+            try
+            {
+                lblFirstName.Text = lblFirstName.Text.Substring(0, r);
+            }
+            catch (Exception ex)
+            {
+            }
+           
+
+        }
+
+        protected void LinkSignOut_Click(object sender, EventArgs e)
+        {
+            //Check iIf the cookies with name PBLOGIN2 exist on user's machine
+            if ((Request.Cookies["PBLOGIN2"] != null))
+            {
+                //Expire the cookie
+                Response.Cookies["PBLOGIN2"].Expires = DateTime.Now.AddDays(-30);
+            }
+            Session["UserID"] = "";
+            lblFirstName.Text = "";
+            lblEmployeeID.Text = "";
+            Response.Redirect("~/Views/Account/");
+            
+        }
+
+        bool IsITAdmin()
+        {
+            try
+            {
+                string userid = Session["UserID"].ToString();
+                string strSql = "select * from lib_group where userid='" + userid + "' and groupname='IT ADMIN'";
+                DataTable dt = _db.GetTable(strSql);
+                if (dt.Rows.Count != 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        
+    }
+}

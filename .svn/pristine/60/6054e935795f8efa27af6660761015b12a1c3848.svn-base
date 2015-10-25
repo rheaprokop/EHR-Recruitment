@@ -1,0 +1,418 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Collections;
+using System.Data;
+using System.Data.OleDb;
+using System.Web;
+using System.Web.Mail;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Text;
+using EHR.Model;
+
+
+namespace EHR
+{
+    public partial class Training : System.Web.UI.Page
+    {
+        ObjectsOleDB myObjs = new ObjectsOleDB();
+        QueryOleDB myQry = new QueryOleDB();
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            GetDateHeader();
+            
+            if (Page.IsPostBack == false)
+            {
+                GetAction();
+            }
+
+            if(IsPostBack)
+                GetData();
+                LoadReports(GetTodayDate(), gridToday);
+                LoadReports(GetSecondDay(), gridSecondDay);
+                LoadReports(GetThirdDay(), gridThirdDay);
+                LoadReports(GetFourthDay(), gridFourthDay);
+                LoadReports(GetFifthDay(), gridFifthDay);
+        }
+
+        private void LoadReports(string Qry, GridView grid)
+        {
+            DataTable myDT = myObjs.GetTable(Qry);
+            grid.DataSource = myDT;
+            grid.DataBind();
+
+
+        }  
+
+        private void GetDateHeader()
+        {
+            DateTime date = DateTime.Today;
+            lblTodayDate.Text = String.Format("{0:dddd, MMMM d, yyyy}", date).ToUpper();
+            lblSecondDay.Text = String.Format("{0:dddd, MMMM d, yyyy}", date.AddDays(1)).ToUpper();
+            lblThirdDay.Text = String.Format("{0:dddd, MMMM d, yyyy}", date.AddDays(2)).ToUpper();
+            lblFourthDay.Text = String.Format("{0:dddd, MMMM d, yyyy}", date.AddDays(3)).ToUpper();
+            lblFifthDay.Text = String.Format("{0:dddd, MMMM d, yyyy}", date.AddDays(4)).ToUpper();
+        }
+
+        private void GetAction()
+        {
+            string a = Request.QueryString["action"];
+            string id = Request.QueryString["candidate"];
+            switch (a)
+            {
+                case "1":
+                    Candidate_OnBoard(id);
+                   // DeductFromRequest(GetRequestID(id));
+                    EmailToPIC(id);
+                    Response.Redirect("~/Recruitment/Training.aspx?action=view");
+                    break;
+                case "2":
+                    myObjs.GetConn();
+                    DidNotAttend(id);
+                    DidNotComeOnBoard(id);
+                    break;
+
+            }
+        }
+
+        private void Candidate_OnBoard(string id)
+        {
+            string OracleQry = "Update CANDIDATES set HIRINGSTATUS = 'On Board' where CANDIDATEID = '" + id + "'";
+            myObjs.GetConn();
+            OleDbCommand Cmd = new OleDbCommand(OracleQry, myObjs.MyConn);
+            Cmd.ExecuteNonQuery();
+
+            EmailToPIC(id);
+        }
+
+        private string GetRequestID(string candidate)
+        {
+            string requestID;
+            string Oracle = "SELECT OFFERFORREQUESTID From CANDIDATES WHERE CANDIDATEID = '" + candidate + "'";
+            OleDbCommand Cmd = new OleDbCommand(Oracle, myObjs.MyConn);
+            OleDbDataReader myRD = Cmd.ExecuteReader();
+            if (myRD.Read())
+            {
+                requestID = Convert.ToString(myRD["OFFERFORREQUESTID"]);
+            }
+            else
+            {
+                requestID = "No RequestID Found";
+            }
+
+            return requestID;
+        }
+
+        private void DeductFromRequest(string requestID)
+        {
+            int hired;
+
+            string OraQry = "Select HIRED From REQUESTS Where REQUESTID = '" + requestID + "' ";
+            OleDbCommand myCmd = new OleDbCommand(OraQry, myObjs.MyConn);
+            OleDbDataReader myRD = myCmd.ExecuteReader();
+            if (myRD.Read())
+            {
+                hired = Convert.ToInt32(myRD["HIRED"]);
+            }
+            else
+            {
+                hired = 0;
+            }
+
+            if (hired == 0)
+            {
+                hired = 0;
+            }
+            else
+            {
+                hired = hired + 1;
+            }
+
+            string OraUpdate = "Update REQUESTS SET HIRED = '" + hired + "' where " +
+                            "REQUESTID = '" + requestID + "'";
+            OleDbCommand myCMDUp = new OleDbCommand(OraUpdate, myObjs.MyConn);
+            myCMDUp.ExecuteNonQuery();
+
+        }
+
+        string GetTodayDate()
+        {
+            string sql = "select EMPLID, CANDIDATEID,  LASTNAME|| ', '|| FIRSTNAME FULLNAME,  EMAILADDRESS AS EMAIL, TO_CHAR(OFFERONBOARDDATE,'HH24:MI') as OnBOARDTIME from CANDIDATES where TO_CHAR(OFFERONBOARDDATE,'MM/dd/yyyy') = TO_CHAR(sysdate,'MM/dd/yyyy') AND HIRINGSTATUS = 'Accepted'";
+            return sql;
+        }
+
+
+        string GetSecondDay()
+        {
+            string sql = "select EMPLID, CANDIDATEID,  LASTNAME|| ', '|| FIRSTNAME FULLNAME,  EMAILADDRESS AS EMAIL, TO_CHAR(OFFERONBOARDDATE,'HH24:MI') as OnBOARDTIME from CANDIDATES where TO_CHAR(OFFERONBOARDDATE,'MM/dd/yyyy') = TO_CHAR(sysdate + 1,'MM/dd/yyyy') AND HIRINGSTATUS = 'Accepted'";
+            return sql;
+        }
+
+        string GetThirdDay()
+        {
+            string sql = "select EMPLID, CANDIDATEID,  LASTNAME|| ', '|| FIRSTNAME FULLNAME,  EMAILADDRESS AS EMAIL, TO_CHAR(OFFERONBOARDDATE,'HH24:MI') as OnBOARDTIME from CANDIDATES where TO_CHAR(OFFERONBOARDDATE,'MM/dd/yyyy') = TO_CHAR(sysdate + 2,'MM/dd/yyyy') AND HIRINGSTATUS = 'Accepted'";
+            return sql;
+        }
+
+        string GetFourthDay()
+        {
+            string sql = "select EMPLID, CANDIDATEID,  LASTNAME|| ', '|| FIRSTNAME FULLNAME,  EMAILADDRESS AS EMAIL, TO_CHAR(OFFERONBOARDDATE,'HH24:MI') as OnBOARDTIME from CANDIDATES where TO_CHAR(OFFERONBOARDDATE,'MM/dd/yyyy') = TO_CHAR(sysdate + 3,'MM/dd/yyyy') AND HIRINGSTATUS = 'Accepted'";
+            return sql;
+        }
+
+
+        string GetFifthDay()
+        {
+            string sql = "select EMPLID, CANDIDATEID,  LASTNAME|| ', '|| FIRSTNAME FULLNAME,  EMAILADDRESS AS EMAIL, TO_CHAR(OFFERONBOARDDATE,'HH24:MI') as OnBOARDTIME from CANDIDATES where TO_CHAR(OFFERONBOARDDATE,'MM/dd/yyyy') = TO_CHAR(sysdate + 4,'MM/dd/yyyy') AND HIRINGSTATUS = 'Accepted'";
+            return sql;
+        }
+
+        private void DidNotAttend(string id)
+        {
+            string sql = "Update CANDIDATES set HIRINGSTATUS = 'Did Not Attend' Where CANDIDATEID='" + id + "'";
+            OleDbCommand myCMD = new OleDbCommand(sql, myObjs.MyConn);
+            myCMD.ExecuteNonQuery();
+        }
+
+
+
+        // FOR TODAY'S GRID CHECKBOXESS
+        private void GetData()
+        {
+            ArrayList arr;
+            if (ViewState["SelectedRecords"] != null)
+                arr = (ArrayList)ViewState["SelectedRecords"];
+            else
+                arr = new ArrayList();
+            CheckBox chkAll = (CheckBox)gridToday.HeaderRow
+                                .Cells[0].FindControl("chkAll");
+            for (int i = 0; i < gridToday.Rows.Count; i++)
+            {
+                if (chkAll.Checked)
+                {
+                    if (!arr.Contains(gridToday.DataKeys[i].Value))
+                    {
+                        arr.Add(gridToday.DataKeys[i].Value);
+                    }
+                }
+                else
+                {
+                    CheckBox chk = (CheckBox)gridToday.Rows[i]
+                                       .Cells[0].FindControl("chk");
+                    if (chk.Checked)
+                    {
+                        if (!arr.Contains(gridToday.DataKeys[i].Value))
+                        {
+                            arr.Add(gridToday.DataKeys[i].Value);
+                        }
+                    }
+                    else
+                    {
+                        if (arr.Contains(gridToday.DataKeys[i].Value))
+                        {
+                            arr.Remove(gridToday.DataKeys[i].Value);
+                        }
+                    }
+                }
+            }
+            ViewState["SelectedRecords"] = arr;
+        }
+
+
+        private void SetData()
+        {
+            int currentCount = 0;
+            CheckBox chkAll = (CheckBox)gridToday.HeaderRow
+                                    .Cells[0].FindControl("chkAll");
+            chkAll.Checked = true;
+            ArrayList arr = (ArrayList)ViewState["SelectedRecords"];
+            for (int i = 0; i < gridToday.Rows.Count; i++)
+            {
+                CheckBox chk = (CheckBox)gridToday.Rows[i]
+                                .Cells[0].FindControl("chk");
+                if (chk != null)
+                {
+                    chk.Checked = arr.Contains(gridToday.DataKeys[i].Value);
+                    if (!chk.Checked)
+                        chkAll.Checked = false;
+                    else
+                        currentCount++;
+                }
+            }
+            hfCount.Value = (arr.Count - currentCount).ToString();
+        }
+
+
+        protected void btnAttendance_Click(object sender, EventArgs e)
+        {
+            int count = 0;
+            SetData();
+            gridToday.AllowPaging = false;
+            gridToday.DataBind();
+            ArrayList arr = (ArrayList)ViewState["SelectedRecords"];
+            count = arr.Count;
+            for (int i = 0; i < gridToday.Rows.Count; i++)
+            {
+                if (arr.Contains(gridToday.DataKeys[i].Value))
+                {
+                    DeleteRecord(gridToday.DataKeys[i].Value.ToString());
+                    arr.Remove(gridToday.DataKeys[i].Value);
+                }
+            }
+            ViewState["SelectedRecords"] = arr;
+            hfCount.Value = "0";
+            gridToday.AllowPaging = true;
+            LoadReports(GetTodayDate(), gridToday);
+            ShowMessage(count);
+        }
+
+        protected void OnPaging(object sender, GridViewPageEventArgs e)
+        {
+            gridToday.PageIndex = e.NewPageIndex;
+            gridToday.DataBind();
+            SetData();
+        }
+
+        private void DeleteRecord(string candidateID)
+        {
+            myObjs.GetConn();
+            // string query = "delete from Requests " +
+            //                "where RequestID=:RequestID";
+
+           /* string query = "Update REQUESTS set DELETED = '1' where RequestID=:RequestID";
+            OleDbCommand cmd = new OleDbCommand(query, myObjs.MyConn);
+            cmd.Parameters.AddWithValue("':RequestID'", RequestID);
+
+            cmd.ExecuteNonQuery();
+            myObjs.MyConn.Close();
+            * */
+
+            Candidate_OnBoard(candidateID);
+        }
+
+
+        private void ShowMessage(int count)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("<script type = 'text/javascript'>");
+            sb.Append("alert('");
+            sb.Append(count.ToString());
+            sb.Append(" employee(s) onboard.');");
+            sb.Append("</script>");
+            ClientScript.RegisterStartupScript(this.GetType(),
+                            "script", sb.ToString());
+        }
+
+        private void DidNotComeOnBoard(string candidateID)
+        {
+            myObjs.GetConn();
+            string GetRequestQry = "Select INITCAP(LASTNAME)|| ', '|| INITCAP(FIRSTNAME) FULLNAME, EMPLID, " +
+                "OFFERFORREQUESTID, OFFERPOSITION, OFFERONBOARDDATE, OFFERDEPT " +
+                "From CANDIDATES Where CANDIDATEID = '" + candidateID + "'";
+
+            //get requestid
+            OleDbCommand myCMD = new OleDbCommand(GetRequestQry, myObjs.MyConn);
+            OleDbDataReader myRD = myCMD.ExecuteReader();
+            if (myRD.Read())
+            {
+                string fullname = Convert.ToString(myRD["FULLNAME"]);
+                string requestID = Convert.ToString(myRD["OFFERFORREQUESTID"]);
+                string position = Convert.ToString(myRD["OFFERPOSITION"]);
+                string onboarddate = Convert.ToString(myRD["OFFERONBOARDDATE"]);
+                string emplid = Convert.ToString(myRD["EMPLID"]);
+                string deptid = Convert.ToString(myRD["OFFERDEPT"]);
+
+                string txtBody = "Please be informed that CANDIDATE: " + candidateID + " DID NOT attend training.<br />" +
+                    "Please see information below: <br />" +
+                    "Name: " + fullname + "<br />" +
+                    "Employee ID: " + emplid + "<br />" +
+                    "Department: " + deptid + "<br />" +
+                    "Position: " + myQry.GetJob_Code(position) + "<br /><br />" +
+                    "EHR";
+
+                //mail requestor 
+                string subjectForRequestor = "(Requestor) On Board Information for : " + emplid;
+                MailToPIC(myQry.GetEmplEmailAddress(myQry.GetRequestor(requestID)), txtBody, subjectForRequestor);
+
+            }
+
+        }
+
+
+        private void EmailToPIC(string candidateID) // requestor, dept manager and ps encoder
+        {
+            myObjs.GetConn();
+            string GetRequestQry = "Select INITCAP(LASTNAME)|| ', '|| INITCAP(FIRSTNAME) FULLNAME, EMPLID, " + 
+                "OFFERFORREQUESTID, OFFERPOSITION, OFFERONBOARDDATE, OFFERDEPT " +
+                "From CANDIDATES Where CANDIDATEID = '" + candidateID + "'";
+
+            //get requestid
+            OleDbCommand myCMD = new OleDbCommand(GetRequestQry, myObjs.MyConn);
+            OleDbDataReader myRD = myCMD.ExecuteReader();
+            if (myRD.Read())
+            {
+                string fullname = Convert.ToString(myRD["FULLNAME"]);
+                string requestID = Convert.ToString(myRD["OFFERFORREQUESTID"]);
+                string position = Convert.ToString(myRD["OFFERPOSITION"]);
+                string onboarddate = Convert.ToString(myRD["OFFERONBOARDDATE"]);
+                string emplid = Convert.ToString(myRD["EMPLID"]);
+                string deptid = Convert.ToString(myRD["OFFERDEPT"]);
+
+                string txtBody = "Please be informed that CANDIDATE: " + candidateID + " has attended the training.<br />" +
+                    "Please see information below: <br />" +
+                    "Name: " + fullname + "<br />" +
+                    "Employee ID: " + emplid + "<br />" +
+                    "Department: " + deptid + "<br />" +
+                    "Position: " + myQry.GetJob_Code(position) + "<br /><br />" +
+                    "EHR";
+                
+                //mail requestor 
+                string subjectForRequestor = "(Requestor) On Board Information for : " + emplid;
+                MailToPIC(myQry.GetEmplEmailAddress(myQry.GetRequestor(requestID)), txtBody, subjectForRequestor);
+
+                //mail to ps encoder
+                string psencoder;
+                string PSQry = "Select PSENCODER From REQUESTS where REQUESTID = '" + requestID + "'";
+                OleDbCommand mycmd = new OleDbCommand(PSQry, myObjs.MyConn);
+                OleDbDataReader myrd = mycmd.ExecuteReader();
+                if (myrd.Read())
+                {
+                    psencoder = Convert.ToString(myrd["PSENCODER"]);
+                }
+                else
+                {
+                    psencoder = "";
+                }
+                string subjectForEncoder = "(PS Encoder) On Board Information for : " + emplid;
+                MailToPIC(myQry.GetEmplEmailAddress(psencoder), txtBody, subjectForEncoder);
+
+            }
+        }
+
+        private void MailToPIC(string pic, string txt, string subject)
+        {
+            try
+            {
+                MailMessage objMail = new MailMessage();
+                objMail.From = "EHR <Rhea_Prokop@wistron.com>";
+                objMail.To = pic;
+                objMail.Subject = subject;
+                objMail.BodyFormat = MailFormat.Html;
+                objMail.Body = txt;
+                SmtpMail.SmtpServer = "wczmail.wistron.com";
+                SmtpMail.Send(objMail);
+            }
+            catch (Exception e)
+            {
+                MailMessage objMail = new MailMessage();
+                objMail.From = "EHR <Rhea_Prokop@wistron.com>";
+                objMail.To = "EHR <Rhea_Prokop@wistron.com>";
+                objMail.Subject = "Email not delivered for training information";
+                objMail.BodyFormat = MailFormat.Html;
+                objMail.Body = "Error sending Email: " + e.Message;
+                SmtpMail.SmtpServer = "wczmail.wistron.com";
+                SmtpMail.Send(objMail);
+            }
+        }
+    }
+}

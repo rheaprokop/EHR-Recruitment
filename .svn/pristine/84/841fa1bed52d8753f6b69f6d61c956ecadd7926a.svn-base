@@ -1,0 +1,83 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.Configuration;
+using System.Web;
+
+namespace EHR.Model
+{
+    public class ObjectsOleDB : ObjectsOleVars
+    {
+        string connStr = ConfigurationManager.ConnectionStrings["conn"].ConnectionString;
+        string conv2 = ConfigurationManager.ConnectionStrings["conv2"].ConnectionString;
+       
+        public void GetConn()
+        {
+
+            if (MyConn.State == ConnectionState.Open) MyConn.Close();
+            MyConn.ConnectionString = connStr;
+            MyConn.Open();
+        }
+
+        public void GetConv2()
+        {
+            if (MyConn.State == ConnectionState.Open) MyConn.Close();
+            MyConn.ConnectionString = conv2;
+            MyConn.Open();
+        }
+
+        public DataTable GetTable(string OracleQry)
+        {
+            string connStr = ConfigurationManager.ConnectionStrings["conn"].ConnectionString;
+            if (MyConn.State == ConnectionState.Open) MyConn.Close();
+            MyConn.ConnectionString = connStr;
+            MyConn.Open();
+            MyAdapter.SelectCommand = new OleDbCommand(OracleQry, MyConn);
+            DataTable dt = new DataTable();
+            MyAdapter.Fill(dt);
+            return dt;
+        }
+
+        public OleDbDataReader MyReader(string OracleQry)
+        {
+            GetConn();
+            //MyAdapter.SelectCommand = new OleDbCommand(OracleQry, MyConn);
+            MyCommand.Connection = MyConn;
+            MyCommand.CommandText = OracleQry;
+            OleDbDataReader myReader = MyCommand.ExecuteReader();
+            return myReader;
+        }
+
+        public DataSet GetTableset(string OracleQry, string tbl) 
+        {
+            GetConn();
+            MyAdapter.SelectCommand = new OleDbCommand(OracleQry, MyConn);
+            DataSet mySet = new DataSet();
+            MyAdapter.Fill(mySet, tbl);
+            return mySet;
+
+        }
+
+        public void GetExecuteNonQuery(string OracleQry)
+        {
+            GetConn();
+            MyCommand.Connection = MyConn;
+            MyCommand.CommandText = OracleQry;
+            MyCommand.ExecuteNonQuery();
+            MyConn.Close();
+
+
+        }
+
+        public void GetExecuteScalar(string OracleQry)
+        {
+            GetConn();
+            MyCommand.Connection = MyConn;
+            MyCommand.CommandText = OracleQry;
+            MyCommand.ExecuteScalar();
+            MyConn.Close();
+
+        }
+    }
+}

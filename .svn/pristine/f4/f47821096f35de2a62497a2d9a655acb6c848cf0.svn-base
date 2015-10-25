@@ -1,0 +1,707 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Collections;
+using System.Data;
+using System.Data.OleDb;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model;
+using EHR.Recruitment;
+using System.Web.Mail; 
+namespace EHR.Recruitment
+{
+    public partial class ViewCandidate : System.Web.UI.Page
+    {
+        ObjectsOleDB myObjs = new ObjectsOleDB();
+        QueryOleDB myQry = new QueryOleDB();
+        ObjectsMisc myMisc = new ObjectsMisc(); 
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            string candidateID = Request.QueryString["candidate"];
+            string a = Request.QueryString["action"];
+            string RequestID = (string)(Session["RequestID"]);
+            IsSession();
+            lblCandidateTitle.Text = "VIEWING CANDIDATE: " + candidateID;
+             
+            LoadLinks(candidateID);
+            DisabledInterviewButtons();
+            GetAcceptanceInfo(candidateID);
+
+             if (Page.IsPostBack == false)
+             {
+                 OfferDetails(candidateID);
+                 pnlError.Visible = false;
+                 GetCandidate(candidateID);
+                 GetAction(a);
+                
+             }
+        }
+
+
+      /*  private void HasInterview(string id)
+        {
+            string OracleQry = "Select count(CANDIDATEID) as COUNT from CANDIDATEINTDETAILS where CANDIDATEID='" + id + "'";
+            myObjs.GetConn();
+            OleDbCommand mycm = new OleDbCommand(OracleQry, myObjs.MyConn);
+            OleDbDataReader myrd = mycm.ExecuteReader();
+            if (myrd.Read())
+            {
+                int count = Convert.ToInt32(myrd["COUNT"]);
+
+                if (count == 0)
+                {
+                    btnInterviewDetails.Visible = false;
+                }
+                else
+                {
+                    btnInterviewDetails.Visible = true;
+                }
+            } 
+            myObjs.MyConn.Close();
+        }
+        */
+        private void DisableControls()
+        {   
+            pnlCreateCandDesign.Visible = false;
+           
+            pnlCandidateInterview.Visible = false;
+            pnlHire.Visible = false;
+            
+        }
+
+        private string LoadHireStat(string id) //unused
+        {
+            string HIRING;
+            string stat = "Select HIRINGSTATUS From CANDIDATES Where CANDIDATEID='" + id + "'";
+            OleDbCommand mcd = new OleDbCommand(stat, myObjs.MyConn);
+            OleDbDataReader mrd = mcd.ExecuteReader();
+            if (mrd.Read())
+            {
+                HIRING = Convert.ToString(mrd["HIRINGSTATUS"]);
+            }
+            else
+            {
+                HIRING = "";
+            }
+            return HIRING;
+        }
+
+        private void DisabledInterviewButtons()
+        {
+            myObjs.GetConn();
+            string status;
+            string candidateID = Request.QueryString["candidate"];
+            string OracleQry = "Select HIRINGSTATUS From CANDIDATES Where CANDIDATEID='" + candidateID + "'";
+            OleDbCommand myCmd = new OleDbCommand(OracleQry, myObjs.MyConn);
+            OleDbDataReader myRD = myCmd.ExecuteReader();
+            if (myRD.Read())
+            {
+                status = Convert.ToString(myRD["HIRINGSTATUS"]);
+
+            }
+            else
+            {
+                status = "In File";
+            }
+
+            switch (status)
+            {
+                case "In File":
+                    pnlCandidateAcceptance.Visible = false;  
+                    btnBackToProfile.Enabled = false;
+                    btnInvite.Enabled = true;
+                    btnAddDetails.Enabled = false;
+                    btnViewPastInterviews.Enabled = false;
+                    btnSendOffer.Enabled = false; 
+                    break;
+                case "For Interview":
+                    pnlCandidateAcceptance.Visible = false; 
+                    btnBackToProfile.Enabled = true;
+                    btnInvite.Enabled = true;
+                    btnAddDetails.Enabled = true;
+                    btnViewPastInterviews.Enabled = false;
+                    btnSendOffer.Enabled = false; 
+                    break;
+                case "Interviewed":
+                    pnlCandidateAcceptance.Visible = false;  
+                    btnBackToProfile.Enabled = true;
+                    btnInvite.Enabled = true;
+                    btnAddDetails.Enabled = false;
+                    btnViewPastInterviews.Enabled = true;
+                    btnSendOffer.Enabled = true; 
+                    break;
+                case "Acceptance Letter Sent":
+                    pnlCandidateAcceptance.Visible = true; 
+                    break;
+                case "Accepted":
+                    ddlOfferSent.SelectedValue = "Yes";
+                    ddlOfferSent.Enabled = false;
+                    btnAccepted.Enabled = false;
+                    btnBackToProfile.Enabled = false;
+                    btnInvite.Enabled = false;
+                    btnAddDetails.Enabled = false;
+                    btnViewPastInterviews.Enabled = false;
+                    btnSendOffer.Enabled = false;
+                    pnlCandidateAcceptance.Enabled = false; 
+                    break;
+                case "On Board":
+                    ddlOfferSent.SelectedValue = "Yes";
+                    ddlOfferSent.Enabled = false;
+                    btnAccepted.Enabled = false;
+                    btnBackToProfile.Enabled = true;
+                    btnInvite.Enabled = false;
+                    btnAddDetails.Enabled = false;
+                    btnViewPastInterviews.Enabled = false;
+                    btnSendOffer.Enabled = false;
+                    pnlCandidateAcceptance.Enabled = false; 
+                    break;
+                case "In PS":
+                    btnBackToProfile.Enabled = false;
+                    btnInvite.Enabled = false;
+                    btnAddDetails.Enabled = false;
+                    btnViewPastInterviews.Enabled = false;
+                    btnSendOffer.Enabled = false;
+                    pnlCandidateAcceptance.Enabled = false; 
+                    break;
+                case "Did Not Accept":
+                    ddlOfferSent.SelectedValue = "No";
+                    btnBackToProfile.Enabled = false;
+                    btnInvite.Enabled = true;
+                    btnAddDetails.Enabled = false;
+                    btnViewPastInterviews.Enabled = false;
+                    btnSendOffer.Enabled = false;
+                    pnlCandidateAcceptance.Enabled = false;
+                    break;
+                case "Did Not Attend":
+                    btnBackToProfile.Enabled = false;
+                    btnInvite.Enabled = true;
+                    btnAddDetails.Enabled = false;
+                    btnViewPastInterviews.Enabled = false;
+                    btnSendOffer.Enabled = false;
+                    pnlCandidateAcceptance.Enabled = false; 
+                    break;
+                default:
+                    pnlCandidateAcceptance.Enabled = false; 
+                    break;
+            }
+
+        }
+
+        private void LoadLinks(string id)
+        { 
+         
+        }
+
+        
+        private void OfferDetails(string id)
+        {
+            string OracleQry = "Select OFFERSENT, HIRINGSTATUS From CANDIDATES Where CANDIDATEID = '" + id + "'";
+            OleDbCommand myCMd = new OleDbCommand(OracleQry, myObjs.MyConn);
+            OleDbDataReader myRD = myCMd.ExecuteReader();
+
+            if (myRD.Read())
+            {
+                string OfferSent = Convert.ToString(myRD["OFFERSENT"]);
+                string HiringStatus = Convert.ToString(myRD["HIRINGSTATUS"]);
+                /*if (OfferSent == "YES" && HiringStatus != "In PS")
+                {
+                    pnlCandidateAcceptance.Visible = true;
+                }
+                else
+                {
+                    pnlCandidateAcceptance.Visible = false;
+                }*/
+            }
+            else
+            {
+                pnlCandidateAcceptance.Visible = false;
+            }
+
+        }
+
+        
+
+        private void GetAction(string a)
+        {
+            string candiddate = Request.QueryString["candidate"];
+            DisableControls();
+            switch (a)
+            { 
+                case "view":
+                    pnlCreateCandDesign.Visible = true;
+
+                    btnBackToProfile.Enabled = false;
+                    btnViewPastInterviews.Enabled = true;
+                    break;
+                case "interview": // add interview details
+                    btnAddDetails.Enabled = false;
+                    pnlCreateCandDesign.Enabled = false;
+                    pnlInterviewDetailList.Enabled = false;
+                    
+                   // LoadToJobsExists();
+                    btnAddDetails.Visible = false;
+                    break;
+                case "list": // view all interviews
+                   // pnlInterviewDetailList.Visible = true;
+                   // LoadInterviewDetails(candiddate); 
+                    //LoadDataInterview();
+                    Response.Redirect("~/Views/Recruitment/InterviewDetails.aspx?candidate=" + candiddate);
+                    break;
+                case "send": 
+                    pnlInterviewDetailList.Visible = false;
+                    pnlCandidateInterview.Visible = true;
+                    btnInvite.Enabled = false;
+                    btnBackToProfile.Enabled = true;
+                    break;
+                case "hire":
+                    pnlHire.Visible = true;
+                    break;
+
+                case "details":
+                    break;
+                
+            }
+        }
+
+
+
+         
+        private void GetCandidate(string id)
+        {
+            string docPath = @"C:\EHR\Recruitment\docs\resumes\";
+            string OracleQry = "Select FIRSTNAME, LASTNAME, TITLE, STREET, CITY, COUNTRY, " +
+                               "POSTCODE, CONTACT, EMAILADDRESS, CVCZ, CVEN, RECORDEDDATE, " +
+                               "TO_CHAR(BIRTHDATE,'dd.MM.YYYY') AS BIRTHDATE, HIRINGSTATUS , SEX, GRADUATE, FIELD, LANGUAGE1, SKILL1, LANGUAGE2, SKILL2, " +
+                               "EXPERIENCE, EXPERTISE, CURRENTEMPL, CURRENTPOSI, DRIVING, ISCAR, ISFORKLIFT, OFFERSENT, BIRTHNUMBER, REMARKS, ISDRIVEOTHERS " +
+                               "from CANDIDATES where CANDIDATEID = '" + id + "' ";
+
+
+            myObjs.GetConn();
+            OleDbCommand myCmd = new OleDbCommand(OracleQry, myObjs.MyConn);
+            OleDbDataReader myRd = myCmd.ExecuteReader();
+
+            if (myRd.Read())
+            {
+                lblCandidateID.Text = id; 
+
+                lblCandidateID.Text = id;
+                
+                lblAcademitTitle.Text = Convert.ToString(myRd["TITLE"]);
+                lblFirstName.Text = Convert.ToString(myRd["FIRSTNAME"]);
+                lblLastName.Text = Convert.ToString(myRd["LASTNAME"]);
+                string Name = lblFirstName.Text + " " + lblLastName.Text;
+                lblStreet.Text = Convert.ToString(myRd["STREET"]);
+                lblCity.Text = Convert.ToString(myRd["CITY"]);
+                lblCountry.Text = Convert.ToString(myRd["COUNTRY"]);
+                lblPostCode.Text = Convert.ToString(myRd["POSTCODE"]);
+                lblContactNumber.Text = Convert.ToString(myRd["CONTACT"]);
+                lblContactNumber.Text = "(+420) " + lblContactNumber.Text;
+                lblEmailAddress.Text = Convert.ToString(myRd["EMAILADDRESS"]);
+                string status = Convert.ToString(myRd["HIRINGSTATUS"]);
+                lblStatus.Text = status;
+                lblCandidateTitle.Text = Name + " (Status: " + status + ")";
+                switch (lblStatus.Text)
+                {
+                    case "C":
+                        lblStatus.Text = "Cohabited";
+                        break;
+                    case "D":
+                        lblStatus.Text = "Divorced";
+                        break;
+                    case "E":
+                        lblStatus.Text = "Separated";
+                        break;
+                    case "M":
+                        lblStatus.Text = "Married";
+                        break;
+                    case "S":
+                        lblStatus.Text = "Single";
+                        break;
+                    case "W":
+                        lblStatus.Text = "Widowed";
+                        break;
+                    case "L":
+                        lblStatus.Text = "Married With Children";
+                        break;
+                }
+
+
+                lblBirthdate.Text = Convert.ToString(myRd["BIRTHDATE"]);
+                
+
+                string grad = Convert.ToString(myRd["GRADUATE"]);
+
+                /*<asp:ListItem Value="A">Ph.D</asp:ListItem>
+                               <asp:ListItem Value="B">Master</asp:ListItem>                                  
+                               <asp:ListItem Value="C">Bachelor</asp:ListItem>
+                               <asp:ListItem Value="D">Technician</asp:ListItem>
+                              <asp:ListItem Value="F">Junior High School</asp:ListItem>
+                              <asp:ListItem Value="G">Elementary</asp:ListItem>
+                              <asp:ListItem Value="E">Senior High School</asp:ListItem>
+                              <asp:ListItem Value="H">Illiterate</asp:ListItem>
+                              <asp:ListItem Value="I">Others</asp:ListItem>
+                 */
+                switch (grad)
+                {
+                    case "A":
+                        lblGraduate.Text = "Ph.D";
+                        break;
+                    case "B":
+                        lblGraduate.Text = "Master";
+                        break;
+                    case "C":
+                        lblGraduate.Text = "Bachelor";
+                        break;
+                    case "D":
+                        lblGraduate.Text = "Technician";
+                        break;
+                    case "F":
+                        lblGraduate.Text = "Junior High School";
+                        break; 
+                    case "G":
+                        lblGraduate.Text = "Elementary";
+                        break;
+                    case "E":
+                        lblGraduate.Text = "Senior High School";
+                        break;
+                    case "H":
+                        lblGraduate.Text = "Illiterate";
+                        break;
+                    case "I":
+                        lblGraduate.Text = "Others";
+                        break;
+                }
+                           
+
+
+                lblField.Text = Convert.ToString(myRd["FIELD"]);
+                lblLanguage1.Text = Convert.ToString(myRd["LANGUAGE1"]);
+                lblSkill1.Text = Convert.ToString(myRd["SKILL1"]);
+                lblLanguage2.Text = Convert.ToString(myRd["LANGUAGE2"]);
+                lblSkill2.Text = Convert.ToString(myRd["SKILL2"]);
+                lblSex.Text = Convert.ToString(myRd["SEX"]);
+                if (lblSex.Text == "M")
+                {
+                    lblSex.Text = "Male";
+                }
+
+                if (lblSex.Text == "F")
+                {
+                    lblSex.Text = "Female";
+                }
+
+                lblExperience.Text = Convert.ToString(myRd["EXPERIENCE"]);
+                lblExpertise.Text = Convert.ToString(myRd["EXPERIENCE"]);
+                lblCurrentEmpl.Text = Convert.ToString(myRd["CURRENTEMPL"]);
+                lblCurrentPosi.Text = Convert.ToString(myRd["CURRENTPOSI"]);
+                lblDrivingLicense.Text = Convert.ToString(myRd["DRIVING"]);
+                if (lblDrivingLicense.Text == "Yes")
+                {
+                    lblVehicleChk.Visible = true;
+                    lblIsCar.Text = Convert.ToString(myRd["ISCAR"]);
+                    lblIsForkLift.Text = Convert.ToString(myRd["ISFORKLIFT"]);
+                }
+                else
+                {
+                    lblVehicleChk.Visible = false;
+                    lblIsCar.Text = "";
+                    lblIsForkLift.Text = "";
+                }
+
+                
+                string fileCVCZ = Convert.ToString(myRd["CVCZ"]);
+                string fileCVEN = Convert.ToString(myRd["CVEN"]);
+                lblBirthNumber.Text = Convert.ToString(myRd["BIRTHNUMBER"]);
+
+                //GET RESUMES FILENAME
+                string CVcz = Convert.ToString(myRd["CVCZ"]);
+                string CVen = Convert.ToString(myRd["CVEN"]);
+
+                if (CVcz == "")
+                {
+                    linkIsCVCZ.Text = "No Resume Uploaded";
+                }
+                else  
+                {
+                    linkIsCVCZ.NavigateUrl = "http://ehr.qas.wcz.wistron/Recruitment/docs/resumes/" + CVcz;
+                    linkIsCVCZ.Text = "View Resume in CZ";
+                }
+
+                if (CVen == "")
+                {
+                    linkIsCVEN.Text = "No Resume Uploaded";
+                }
+                else
+                { 
+                    linkIsCVEN.NavigateUrl = "http://ehr.qas.wcz.wistron/Recruitment/docs/resumes/" + CVen;
+                    linkIsCVEN.Text = "View Resume in EN";
+                }
+                lblRemarks.Text =  Convert.ToString(myRd["REMARKS"]);
+                lblIsOthers.Text = Convert.ToString(myRd["ISDRIVEOTHERS"]);
+
+            }
+             
+        }
+  
+
+        protected void SavedInterview(object sender, EventArgs e)
+        {
+        }
+
+        protected void BtnAddClick(object sender, EventArgs e)
+        {
+            
+        }
+
+        protected void BtnRemoveClick(object sender, EventArgs e)
+        {
+            
+        }
+     
+        private void LoadInterviewDetails(string candidateID)
+        {
+            
+            string OracleQry = "Select CANDIDATEID, INTERVIEWDATE, REQUESTID, POSIONBOARDDATE, " +
+                "SALARYEXP, SUITABLEFORDEPT, INTERVIEWEDBY " + 
+            "from CANDIDATEINTDETAILS where CANDIDATEID = '" + candidateID + "'";
+ 
+                DataTable myDT = myObjs.GetTable(OracleQry);
+                gridCandidatesInterviewDetails.DataSource = myDT;
+                gridCandidatesInterviewDetails.DataBind();
+                if (myDT.Rows.Count == 0)
+                {
+                    pnlError.Visible = true;
+                    lblError.Text = "No Record Found. Would you like to add a new Interview details?" ;
+                }
+                else
+                {
+                    pnlError.Visible = false;
+                }
+        }
+        
+        
+        protected void ViewCandidate_Click(object sender, EventArgs e)
+        {
+            string candidate = Request.QueryString["candidate"];
+            Session["candidateID"] = candidate;
+
+            Response.Redirect("~/Views/Recruitment/ViewCandidate.aspx?action=view&candidate=" + candidate);
+        }
+
+        protected void ViewInterviews_Click(object sender, EventArgs e)
+        {
+            string candidate = Request.QueryString["candidate"];
+            Session["candidateID"] = candidate;
+
+            Response.Redirect("~/Views/Recruitment/ViewCandidate.aspx?action=list&candidate=" + candidate);
+        }
+        protected void InterviewCandidate_Click(object sender, EventArgs e)
+        {
+            string candidate = Request.QueryString["candidate"];
+            Session["candidateID"] = candidate;
+
+            Response.Redirect("~/Views/Recruitment/ViewCandidate.aspx?action=send&candidate=" + candidate);
+        }
+
+        protected void InterviewDetails_Click(object sencer, EventArgs e)
+        {
+            string candidate = Request.QueryString["candidate"];
+
+           // Response.Redirect("~/Recruitment/ViewCandidate.aspx?action=interview&candidate=" + candidate);
+            Response.Redirect("~/Views/Recruitment/AddDetails.aspx?candidate=" + candidate);
+        }
+
+        protected void HireCandidate_Click(object sencer, EventArgs e)
+        {
+            string candidate = Request.QueryString["candidate"];
+
+            Response.Redirect("~/Views/Recruitment/ViewCandidate.aspx?action=hire&candidate=" + candidate);
+        }
+
+
+        protected void BtnAcceptedOffer_Click(object sender, EventArgs e)
+        {
+             
+
+            string filter = ddlOfferSent.SelectedValue;
+            string candidateName = lblFirstName.Text + " " + lblLastName.Text;
+            string CandidateID = Request.QueryString["candidate"];
+            string GetRequestQry = "Select OFFERFORREQUESTID, OFFERPOSITION, OFFERONBOARDDATE From CANDIDATES Where CANDIDATEID = '" + CandidateID + "'";
+            
+            //get requestid
+            OleDbCommand myCMD = new OleDbCommand(GetRequestQry, myObjs.MyConn);
+            OleDbDataReader myRD = myCMD.ExecuteReader();
+            myRD.Read();
+            string requestID = Convert.ToString(myRD["OFFERFORREQUESTID"]);
+            string position = Convert.ToString(myRD["OFFERPOSITION"]);
+            string onboarddate = Convert.ToString(myRD["OFFERONBOARDDATE"]);
+
+            //get trainer, dept assistant
+            string RequestQry = "Select REQUESTOR, HRTRAINER, DEPTASSISTANT From REQUESTS Where REQUESTID = '" + requestID + "'";
+            OleDbCommand myCmReq = new OleDbCommand(RequestQry, myObjs.MyConn);
+            OleDbDataReader myRDReq = myCmReq.ExecuteReader();
+            myRDReq.Read();
+            string requestor = Convert.ToString(myRDReq["REQUESTOR"]);
+            string trainer = Convert.ToString(myRDReq["HRTRAINER"]);
+            string deptAssist = Convert.ToString(myRDReq["DEPTASSISTANT"]);
+            string deptAssistName;
+            if (deptAssist == "0")
+            {
+                 deptAssistName = "No Department Assistant Assign.";
+            }
+            else
+            {
+                deptAssistName = myQry.GetFullName(deptAssist);
+            }
+            string emailRequestor = myQry.GetEmplEmailAddress(requestor);
+            string emailTrainor = myQry.GetEmplEmailAddress(myQry.GetTrainer(requestID));
+            //string emailDeptManager = myQry.GetEmplEmailAddress(myQry.GetManager(requestID));
+            switch (filter)
+            {
+                case "Yes":
+                    string txtBody = "<br /> " +
+                          "Please be informed, that candidate " + candidateName + " <br />" +
+                          "was accepted for position " + myQry.GetJob_Code(position) + ".<br /><br />" +
+
+                          "Trainer and assistant will be informed in advance.<br />" +
+                          "On board date: " + onboarddate + "<br />" +
+                          "Trainer: " + myQry.GetFullName(trainer) + " <br />" +
+                          "Assistant: " + deptAssistName + " <br />";
+                       
+                    
+                       string subject = "Candidate for " + requestID + " was acceppted." ;
+
+                       myQry.EmailBodyGeneral(emailRequestor, subject, txtBody);
+                       myQry.EmailBodyGeneral(emailTrainor, subject, myQry.InformationToTrainer(CandidateID));
+                       
+
+                    string UpdateCandProfile = "Update CANDIDATES Set HIRINGSTATUS='Accepted', " +
+                            "OFFERACCEPTED = 'Yes' " + 
+                            "Where CANDIDATEID='" + CandidateID + "'";
+                            OleDbCommand myCMDUpdate = new OleDbCommand(UpdateCandProfile, myObjs.MyConn);
+                            myCMDUpdate.ExecuteNonQuery();
+                            CreateEmployeeID(CandidateID);
+                            Response.Redirect("~/Views/Recruitment/Candidate.aspx?action=view");
+                    break;
+                case "No":
+                    string UpdateCandProfileNo = "Update CANDIDATES Set HIRINGSTATUS='Did Not Accept', " +
+                            "OFFERACCEPTED = 'No' " +
+                            "Where CANDIDATEID='" + CandidateID + "'";
+                    OleDbCommand myCMDUpdateNo = new OleDbCommand(UpdateCandProfileNo, myObjs.MyConn);
+                    myCMDUpdateNo.ExecuteNonQuery();
+                    break;
+                default:
+                    break;
+
+                    
+            }
+        }
+
+        private void CreateEmployeeID(string id)
+        {
+            string LastEmplid;
+            string EmplID;
+
+            string GetEmployee = "Select EMPLID from CANDIDATES WHERE EMPLID = (Select max(EMPLID) from CANDIDATES)";
+            OleDbCommand mycmd = new OleDbCommand(GetEmployee, myObjs.MyConn);
+            OleDbDataReader myrd = mycmd.ExecuteReader();
+            if (myrd.Read())
+            {
+                LastEmplid = Convert.ToString(myrd["EMPLID"]);
+            }
+            else
+            {
+                LastEmplid = "";
+            }
+
+            if (LastEmplid != "")
+            {
+                EmplID = myMisc.GenerateEmployeeID();
+            }
+            else
+            {
+                EmplID = myMisc.FirstEmplID();
+            }
+
+            string UpdateEmplID = "Update CANDIDATES set EMPLID='" + EmplID + "' where CANDIDATEID='" + id + "'";
+            OleDbCommand mycmdUpdate = new OleDbCommand(UpdateEmplID, myObjs.MyConn);
+            mycmdUpdate.ExecuteNonQuery(); 
+        }
+
+
+        private void IsSession()
+        {
+            myObjs.GetConn();
+            string UserID = (string)(Session["UserID"]);
+            if (UserID == null)
+            {
+                string currentURL = HttpContext.Current.Request.Url.AbsoluteUri;
+                Session["uri"] = currentURL;
+                Response.Redirect("~/Account/");
+            }
+            else
+            {
+                 
+                GetAccessRole(UserID);
+
+            }
+            myObjs.MyConn.Close();
+        }
+
+        private void GetAccessRole(string EmplID)
+        {
+
+            switch (myQry.RoleAccess(EmplID))
+            {
+                case "1": // Dev  
+                    break;
+                case "2": // IT Support  
+                    break;
+                case "3": // HR Reviewer  
+                    break;
+                case "4": // HR Trainer  
+                    pnlCandidateButton.Visible = false;
+                    break;
+                case "5": // HR Recruiter  
+                    break;
+                case "6": // PS ENCODER  
+                    break;
+                case "7": // Requestor  
+                    break;
+                case "8": // Approver  
+                    break;
+                default:
+                    break;
+
+            }
+        }
+
+        private void GetAcceptanceInfo(string candidate)
+        {
+            string OracleQry = "Select EMPLID, OFFERPOSITION, OFFERONBOARDDATE, " + 
+                "OFFERDEPT From CANDIDATES Where CANDIDATEID = '" + candidate + "'";
+
+            OleDbCommand mycmd = new OleDbCommand(OracleQry, myObjs.MyConn);
+            OleDbDataReader myrd = mycmd.ExecuteReader();
+
+            if (myrd.Read())
+            {
+                string emplid = Convert.ToString(myrd["EMPLID"]);
+                if (emplid == "")
+                {
+                    lblEmplID.Text = "No ID given yet.";
+                }
+                else
+                {
+                   lblEmplID.Text =  Convert.ToString(myrd["EMPLID"]);
+                }
+                lblPosition.Text = myQry.GetJob_Code(Convert.ToString(myrd["OFFERPOSITION"]));
+                lblOnBoardDate.Text = Convert.ToString(myrd["OFFERONBOARDDATE"]);
+                lblOfferDepartment.Text = Convert.ToString(myrd["OFFERDEPT"]);
+            } 
+            
+        }
+    }
+}

@@ -1,0 +1,258 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model;
+
+namespace EHR.Views.Recruitment
+{
+    public partial class Main : System.Web.UI.Page
+    {
+        ObjectsOleDB myObjs = new ObjectsOleDB();
+        QueryOleDB myQueries = new QueryOleDB();
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            
+            IsSession();
+            LoadActivities();
+
+        }
+
+
+        private void RequesterRequestQry(string EmplID)
+        {
+            myQueries.GetConn();
+            string roleAcc;
+            string OracleQry = "";
+            string OracleQryQ = "Select ROLE From DBUSERS Where EMPLID = '" + EmplID + "'";
+            OleDbCommand mycmd = new OleDbCommand(OracleQryQ, myQueries.MyConn);
+            OleDbDataReader myrd = mycmd.ExecuteReader();
+
+            if (myrd.Read())
+            {
+
+                roleAcc = Convert.ToString(myrd["ROLE"]);
+
+
+                switch (roleAcc)
+                {
+                    case "1": // Dev
+                        
+                        OracleQry = "SELECT REQUESTS.REQUESTID, REQUESTS.REQUESTOR, PS.PS_SUB_WCZ_AT_VW_A.NAME_A as Name, " +
+                         "REQUESTS.DEPTCODE, REQUESTS.HIRED, REQUESTS.REQUIREDPERSON, APPROVALFLOW.FLOW, REQUESTS.RESULT  " +
+                         "from REQUESTS INNER JOIN APPROVALFLOW " +
+                         "ON REQUESTS.STATUS = APPROVALFLOW.FLOWID JOIN PS.PS_SUB_WCZ_AT_VW_A " +
+                         "ON REQUESTS.REQUESTOR = PS_SUB_WCZ_AT_VW_A.EMPLID  ORDER BY REQUESTID DESC ";
+                         GetDataOnGrid(OracleQry, gridRecentRequest);
+                        break;
+                    case "2": // IT Support
+                        OracleQry = "SELECT REQUESTS.REQUESTID, REQUESTS.REQUESTOR, PS.PS_SUB_WCZ_AT_VW_A.NAME_A as Name, " +
+                             "REQUESTS.DEPTCODE, REQUESTS.HIRED, REQUESTS.REQUIREDPERSON, APPROVALFLOW.FLOW, REQUESTS.RESULT  " +
+                             "from REQUESTS INNER JOIN APPROVALFLOW " +
+                             "ON REQUESTS.STATUS = APPROVALFLOW.FLOWID JOIN PS.PS_SUB_WCZ_AT_VW_A " +
+                             "ON REQUESTS.REQUESTOR = PS_SUB_WCZ_AT_VW_A.EMPLID  ORDER BY REQUESTID DESC ";
+                        GetDataOnGrid(OracleQry, gridRecentRequest);
+                        break;
+                    case "3": // HR Reviewer
+                        OracleQry = "SELECT REQUESTS.REQUESTID, REQUESTS.REQUESTOR, PS.PS_SUB_WCZ_AT_VW_A.NAME_A as Name, " +
+                             "REQUESTS.DEPTCODE, REQUESTS.HIRED, REQUESTS.REQUIREDPERSON, APPROVALFLOW.FLOW, REQUESTS.RESULT  " +
+                             "from REQUESTS INNER JOIN APPROVALFLOW " +
+                             "ON REQUESTS.STATUS = APPROVALFLOW.FLOWID JOIN PS.PS_SUB_WCZ_AT_VW_A " +
+                             "ON REQUESTS.REQUESTOR = PS_SUB_WCZ_AT_VW_A.EMPLID " + 
+                             "Where RESULT='Waiting For Review' ORDER BY REQUESTID DESC ";
+                        GetDataOnGrid(OracleQry, gridRecentRequest);
+                        break;
+                    case "4": // HR Trainer
+                        gridRecentRequest.Visible = false;
+                        OracleQry = "select CANDIDATEID,  INITCAP(LASTNAME)|| ', '|| INITCAP(FIRSTNAME) FULLNAME,  EMAILADDRESS AS EMAIL, TO_CHAR(OFFERONBOARDDATE,'HH24:MI') as OnBOARDTIME from CANDIDATES where TO_CHAR(OFFERONBOARDDATE,'MM/dd/yyyy') = TO_CHAR(sysdate,'MM/dd/yyyy') AND HIRINGSTATUS = 'Accepted'";
+                        GetDataOnGrid(OracleQry, gridRecentCandidates);
+                        break;
+                    case "5": // HR Recruiter
+                         OracleQry = "SELECT REQUESTS.REQUESTID, REQUESTS.REQUESTOR, PS.PS_SUB_WCZ_AT_VW_A.NAME_A as Name, " +
+                              "REQUESTS.DEPTCODE, REQUESTS.HIRED, REQUESTS.REQUIREDPERSON, APPROVALFLOW.FLOW, REQUESTS.RESULT AS STATUS " +
+                              "from REQUESTS INNER JOIN APPROVALFLOW " +
+                              "ON REQUESTS.STATUS = APPROVALFLOW.FLOWID JOIN PS.PS_SUB_WCZ_AT_VW_A " +
+                              "ON REQUESTS.REQUESTOR = PS_SUB_WCZ_AT_VW_A.EMPLID  ORDER BY REQUESTID DESC ";
+                         GetDataOnGrid(OracleQry, gridRecentRequest);
+                        break;
+                    case "6": // PS ENCODER
+                        gridRecentRequest.Visible = false;
+                        OracleQry = "select EMPLID, CANDIDATEID,  INITCAP(LASTNAME)|| ', '|| INITCAP(FIRSTNAME) FULLNAME, " + 
+                                    "OFFERDEPT, OFFERPOSITION, " +
+                                    "TO_CHAR(OFFERONBOARDDATE,'MM/dd/yyyy') as BOARDTIME " +
+                                    "from CANDIDATES Where HIRINGSTATUS = 'On Board'";
+                        GetDataOnGrid(OracleQry, gridPSEncoder);
+                        break;
+                    case "7": // Requestor
+                        gridRecentCandidates.Visible = false;
+                        OracleQry = "SELECT REQUESTS.REQUESTID, REQUESTS.REQUESTOR, PS.PS_SUB_WCZ_AT_VW_A.NAME_A as Name, " +
+                               "REQUESTS.DEPTCODE, REQUESTS.HIRED, REQUESTS.REQUIREDPERSON, APPROVALFLOW.FLOW, REQUESTS.RESULT  " +
+                               "from REQUESTS INNER JOIN APPROVALFLOW " +
+                               "ON REQUESTS.STATUS = APPROVALFLOW.FLOWID JOIN PS.PS_SUB_WCZ_AT_VW_A " +
+                               "ON REQUESTS.REQUESTOR = PS_SUB_WCZ_AT_VW_A.EMPLID  " +
+                               "Where REQUESTOR = '" + EmplID  + "' ORDER BY REQUESTID DESC ";
+
+                        GetDataOnGrid(OracleQry, gridRecentRequest);
+                        break;
+                    case "8": // Approver
+                        gridRecentCandidates.Visible = false;
+                        OracleQry = "SELECT REQUESTS.REQUESTID, REQUESTS.REQUESTOR, PS.PS_SUB_WCZ_AT_VW_A.NAME_A as Name, " +
+                                              "REQUESTS.DEPTCODE, REQUESTS.HIRED, REQUESTS.REQUIREDPERSON, APPROVALFLOW.FLOW, REQUESTS.RESULT  " +
+                                              "from REQUESTS INNER JOIN APPROVALFLOW " +
+                                              "ON REQUESTS.STATUS = APPROVALFLOW.FLOWID JOIN PS.PS_SUB_WCZ_AT_VW_A " +
+                                              "ON REQUESTS.REQUESTOR = PS_SUB_WCZ_AT_VW_A.EMPLID  " +
+                                              "Where REQUESTOR = '" + EmplID + "' ORDER BY REQUESTID DESC ";
+
+                        GetDataOnGrid(OracleQry, gridRecentRequest);
+                        break;
+                    default:
+                        gridRecentCandidates.Visible = false;
+                        OracleQry = "SELECT REQUESTS.REQUESTID, REQUESTS.REQUESTOR, PS.PS_SUB_WCZ_AT_VW_A.NAME_A as Name, " +
+                               "REQUESTS.DEPTCODE, REQUESTS.HIRED, REQUESTS.REQUIREDPERSON, APPROVALFLOW.FLOW, REQUESTS.RESULT  " +
+                               "from REQUESTS INNER JOIN APPROVALFLOW " +
+                               "ON REQUESTS.STATUS = APPROVALFLOW.FLOWID JOIN PS.PS_SUB_WCZ_AT_VW_A " +
+                               "ON REQUESTS.REQUESTOR = PS_SUB_WCZ_AT_VW_A.EMPLID  " +
+                               "Where REQUESTOR = '" + EmplID + "' ORDER BY REQUESTID DESC ";
+                        GetDataOnGrid(OracleQry, gridRecentRequest);
+                        break;
+
+                }
+ 
+            }
+        }
+
+
+        protected void GetDataOnGrid(string qry, GridView grd)
+        {
+            DataTable myDT = myObjs.GetTable(qry);
+            grd.DataSource = myDT;
+            grd.DataBind();
+
+            
+        }
+  
+
+        private void LoadActivities()
+        {
+            string UserID = (string)(Session["UserID"]);
+            string OraQry = "select ACTIVITYDESC from activities " + 
+                    "where rownum <= 8 AND " + 
+                    "EMPLID = '" + UserID + "' " + 
+                    "order by ACTIVITYID DESC";
+            DataTable myDt = myObjs.GetTable(OraQry);
+            rptActivities.DataSource = myDt;
+            rptActivities.DataBind();
+        }
+
+
+        private void IsSession()
+        {
+            myObjs.GetConn();
+            string UserID = (string)(Session["UserID"]);
+            if (UserID == null)
+            {
+                string currentURL = HttpContext.Current.Request.Url.AbsoluteUri;
+                Session["uri"] = currentURL;
+                Response.Redirect("~/Account/Default.aspx?s=0");
+            }
+            else
+            {
+                GetRoleAccess(UserID);
+                RequesterRequestQry(UserID);
+            }
+            myObjs.MyConn.Close();
+        }
+
+        //hide buttons so and so
+        private void GetRoleAccess(string EmplID)
+        {
+            myQueries.GetConn();
+            string roleAcc;
+            string OracleQry = "Select ROLE From DBUSERS Where EMPLID = '" + EmplID + "'";
+            OleDbCommand mycmd = new OleDbCommand(OracleQry, myQueries.MyConn);
+            OleDbDataReader myrd = mycmd.ExecuteReader();
+
+            if (myrd.Read())
+            {
+
+                roleAcc = Convert.ToString(myrd["ROLE"]);
+
+
+                switch (roleAcc)
+                {
+                    case "1": // Dev 
+                         
+                        //pnl all button 
+                        pnlFullAdmin.Visible = true;
+                        pnlRequestor.Visible = false;
+                        pnlReviewer.Visible = false;
+                        break;
+                    case "2": // IT Support 
+                        //pnl all button 
+                        pnlFullAdmin.Visible = true;
+                        pnlRequestor.Visible = false;
+                        pnlReviewer.Visible = false;
+                       break;
+                    case "3": // HR Reviewer 
+                       //pnl all button 
+                       pnlFullAdmin.Visible = false;
+                       pnlRequestor.Visible = false;
+                       pnlReviewer.Visible = true;
+                         break;
+                    case "4": // HR Trainer 
+                         //pnl all button 
+                         pnlFullAdmin.Visible = false;
+                         pnlRequestor.Visible = true;
+                         pnlReviewer.Visible = false;
+                         break;
+                    case "5": // HR Recruiter  
+                        pnlFullAdmin.Visible = true;
+                         pnlRequestor.Visible = false;
+                         pnlReviewer.Visible = false;
+                         break;
+                    case "6": // PS ENCODER               
+                         pnlFullAdmin.Visible = false;
+                         pnlRequestor.Visible = true;
+                         pnlReviewer.Visible = false;
+                         break;
+                    case "7": // Requestor 
+
+                         pnlFullAdmin.Visible = false;
+                         pnlRequestor.Visible = true;
+                         pnlReviewer.Visible = false;
+                         break;
+                    case "8": // Approver
+ 
+                         pnlFullAdmin.Visible = false;
+                         pnlRequestor.Visible = true;
+                         pnlReviewer.Visible = false;
+                         break;
+                    default: 
+                        pnlFullAdmin.Visible = false;
+                        pnlRequestor.Visible = true;
+                        pnlReviewer.Visible = false;
+                        break;
+
+
+                }
+            }
+        }
+
+
+        protected void GridRecentRequest_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                string status = e.Row.Cells[7].Text;
+                if (status == "Approved")
+                {
+                    e.Row.Cells[7].Text = "Recruitment";
+                    
+                }
+            }
+        }
+    }
+}

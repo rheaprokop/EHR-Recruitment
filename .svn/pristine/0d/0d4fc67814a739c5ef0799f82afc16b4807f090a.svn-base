@@ -1,0 +1,146 @@
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Views/Shared/Site.Master" AutoEventWireup="true" CodeBehind="InterviewDetails.aspx.cs" Inherits="EHR.Recruitment.InterviewDetails1" %>
+<asp:Content ID="head" ContentPlaceHolderID="head" runat="server">
+</asp:Content>
+<asp:Content ID="top" ContentPlaceHolderID="TopContent" runat="server">
+ </asp:Content>
+<asp:Content ID="left" ContentPlaceHolderID="LeftContent" runat="server"> 
+<asp:Panel runat="server" ID="pnlRequestManager">
+<li><span style="padding-left: 30px;"><a href="AllRequests.aspx">Request Manager</span></a></li>
+</asp:Panel>
+<asp:Panel runat="server" ID="pnlCandidateManager">
+<li><span style="padding-left: 30px;"><a href="Candidate.aspx?action=view">Candidate Manager</span></a></li> 
+</asp:Panel>
+</asp:Content>
+<asp:Content ID="main" ContentPlaceHolderID="mainContent" runat="server">
+ <asp:Panel ID="pnlMainPage" runat="server" CssClass="pnlWelcome" style="margin-top: 5px;">
+  <div class="header">
+  
+   <asp:Label ID="lblCandidateTitle" Text="CANDIDATE INTERVIEW PROFILE" runat="server" CssClass="logotext"></asp:Label>
+  
+ <div style="float: right; margin-top: -15px;" class="ui-buttonset">
+ <asp:HyperLink runat="server" NavigateUrl="~/Recruitment/Candidate.aspx?action=view"   ID="btnViewAll" Text="View All Candidates" CssClass="ui-button ui-button-text-only ui-widget ui-state-default ui-corner" style="font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left; padding-right: 20px; padding-left: 20px;" />
+ <asp:HyperLink  runat="server" NavigateUrl="~/Recruitment/Candidate.aspx?action=create" ID="btnAssign" Text="Create Profile" CssClass="ui-button ui-button-text-only ui-widget ui-state-default ui-corner" style="font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left;  padding-right: 20px; padding-left: 20px;" />
+
+ </div>
+</div> 
+ </asp:Panel>  
+ <!--INSERT CANDIDATE PROFILE HERE -->
+ <asp:Panel runat="server" ID="pnlButtons" style="margin-top: 10px;">
+       <table style="width: 100%; " > 
+        <tr>
+        
+        <td align="right">
+        
+        <asp:HiddenField runat="server" ID="hiddenCandID" />
+        <div class="ui-buttonset">
+                                    <asp:Button ID="btnInvite" runat="server"  Text="INVITE FOR INTERVIEW"   Enabled="false"  CausesValidation="false"
+                     CssClass="ui-button ui-button-text-only ui-widget ui-state-default" style="font-family: BebasNeue; font-size: 16px; letter-spacing: 1px;  padding-right: 20px; padding-left: 20px;" />
+            
+                    <asp:Button ID="btnAddDetails" runat="server"  Text="ADD INTERVIEW DETAILS" Enabled="false"  CausesValidation="false"
+                     CssClass="ui-button ui-button-text-only ui-widget ui-state-default" style="font-family: BebasNeue; font-size: 16px; letter-spacing: 1px;  padding-right: 20px; padding-left: 20px;" />
+                                     
+                    <asp:Button ID="btnViewPastInterviews" runat="server"  Text="PAST INTERVIEWS" Enabled="false"   CausesValidation="false"
+                     CssClass="ui-button ui-button-text-only ui-widget ui-state-default" style="font-family: BebasNeue; font-size: 16px; letter-spacing: 1px;  padding-right: 20px; padding-left: 20px;" />
+                     
+                     <asp:Button ID="btnSendOffer" runat="server"  Text="SEND OFFER LETTER" Enabled="false"   CausesValidation="false"
+                     CssClass="ui-button ui-button-text-only ui-widget ui-state-default" style="font-family: BebasNeue; font-size: 16px; letter-spacing: 1px;  padding-right: 20px; padding-left: 20px;" />  
+                    
+
+                 <asp:Button ID="btnBackToProfile" runat="server"  Text="Back To Candidate Profile" OnClick="ViewCandidate_Click"   CausesValidation="false"
+                     CssClass="ui-button ui-button-text-only ui-widget ui-state-default" style="font-family: BebasNeue; font-size: 16px; letter-spacing: 1px;  padding-right: 20px; padding-left: 20px;" />
+
+    </div>
+    </td></tr> 
+    </table>
+    </asp:Panel>
+<table style="width: 1000px; margin-top: 20px;"> 
+<tr><td > 
+    <asp:Panel runat="server" ID="pnlNoRecord"   Width="300px" Height="30px"  CssClass="pnlErrorMsg">
+    <asp:Label runat="server" ID="lblError" Text="No Record Found." CssClass="lblErrorMsg"></asp:Label>
+    </asp:Panel>
+<asp:Repeater runat="server" ID="rptIntDetails">
+<ItemTemplate>
+            <table style="width: 100%; margin-top: 20px; margin-left: 15px;" class="zebra">
+                 <thead>
+                    <tr>
+                        <th colspan="4" align="left" style="padding: 10px; font-weight: normal;">CANDIDATE INFORMATION</th>
+                    </tr>
+                </thead> 
+            
+                <tbody>  
+                     <tr>
+                         <td class="form-label" style="width: 200px;" >Candidate Name: </td>
+                         <td>
+                        <asp:Label runat="server" ID="lblCandidateName" Text='<%# Eval("FULLNAME") %>'></asp:Label>
+                         </td>
+                         <td class="form-label"  style="width: 200px;">Interview Date:</td> 
+                        <td> <asp:Label runat="server" ID="lblInterviewDate" Text='<%# Eval("INTERVIEWDATE") %>'></asp:Label>
+                        </td>
+                     </tr>  
+                       <tr>
+                         <td class="form-label" style="width: 200px;" >Interviewed By: </td>
+                         <td>
+                        <asp:Label runat="server" ID="lblInterviewedBy" Text='<%# Eval("INTERVIEWEDBY") %>'></asp:Label>
+                         </td>
+                         <td class="form-label"  style="width: 200px;">On Board Date:</td> 
+                        <td> <asp:Label runat="server" ID="lblOnBoardDate" Text='<%# Eval("POSIONBOARDDATE") %>'></asp:Label>
+                        </td>
+                     </tr> 
+                       <tr>
+                         <td class="form-label" style="width: 200px;" >Salary Expectation: </td>
+                         <td>
+                        <asp:Label runat="server" ID="lblSalary" Text='<%# Eval("SALARYEXP") %>'></asp:Label>
+                         </td>
+                         <td class="form-label"  style="width: 200px;">Interview For Request ID:</td> 
+                        <td><asp:Label runat="server" ID="lblRequestID" style="display: inline;"  Text='<%# Eval("REQUESTID") %>'></asp:Label>
+                        </td>
+                     </tr>    
+                       <tr>
+                         <td  colspan="4"class="form-label" style="width: 200px;" >Remarks: </td>
+                          
+                     </tr>   
+                       <tr>
+                         <td  colspan="4"class="form-label" style="width: 200px; padding: 50px;" >
+                         <asp:Label runat="server" ID="lblRemarks" Text='<%# Eval("REMARKS") %>'></asp:Label>
+                         </td>
+                          
+                     </tr>                                                                                                              
+                    </table> 
+</ItemTemplate>
+</asp:Repeater>                    
+</td></tr> 
+
+</table>
+
+
+<asp:GridView ID="gridAllJobs" runat="server" AutoGenerateColumns = "false"  CssClass="grid-zebra" 
+ AllowPaging ="false"    
+ DataKeyNames = "CandidateJobsID" PageSize = "10" GridLines="None">
+     
+       <Columns>  
+            <asp:TemplateField>
+        <HeaderTemplate>
+            <asp:CheckBox ID="chkAll" runat="server" Enabled="true" Visible="false"
+             />Delete
+        </HeaderTemplate>
+        <ItemTemplate>
+            <asp:CheckBox ID="chk" runat="server"
+             />
+        </ItemTemplate> 
+    </asp:TemplateField>
+    
+      <asp:BoundField ItemStyle-Width = "250px" DataField = "POSITION"
+       HeaderText = "POSITION"/> 
+      <asp:BoundField ItemStyle-Width = "250px" DataField = "FAMILY"
+       HeaderText = "JOB FAMILY"/>      
+      <asp:BoundField ItemStyle-Width = "250px" DataField = "FUNCTION"
+       HeaderText = "FUNCTION DESCRIPTION"/>     
+      <asp:BoundField ItemStyle-Width = "250px" DataField = "PS"
+       HeaderText = "PS DESCRIPTION"/>      
+      <asp:BoundField ItemStyle-Width = "250px" DataField = "TITLE"
+       HeaderText = "JOB TITLE"/>                 
+     </Columns> 
+</asp:GridView> 
+</asp:Panel>
+ 
+</asp:Content>

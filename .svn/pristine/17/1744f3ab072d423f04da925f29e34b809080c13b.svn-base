@@ -1,0 +1,700 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Data;
+using System.Data.OleDb;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model;
+
+namespace EHR.Views.Recruitment
+{
+    public partial class Request : System.Web.UI.Page
+    {  
+  
+        QueryOleDB myQueries  = new QueryOleDB();
+        ObjectsOleDB MyObjsDB = new ObjectsOleDB();
+        ObjectsMisc myMisc    = new ObjectsMisc();
+        ApprovalModel myAppv = new ApprovalModel();
+        PSModel _ps = new PSModel(); 
+
+        string RequesterName;
+        string DeptID;
+        string FirstName;
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            string UserID = (string)(Session["UserID"]);
+            
+            IsSession();
+            Run(UserID);
+            if (IsPostBack)
+            {
+                
+            }
+           
+        }
+
+        
+
+        private void Run(string EmplID)
+        {
+            
+            LoadData(EmplID);
+            GetPanel();
+            if (Page.IsPostBack == false)
+            {
+                calOnBoardDate.Visible = false;
+                pnlErrorBelow.Visible = false;
+                pnlError.Visible = false;
+            }
+            else
+            {
+               
+            }
+
+        }
+
+        private void GetPanel()
+        {
+            string page = Request.QueryString["form"];
+            switch (page)
+            {
+                case "create":
+                    pnlCreate.Visible = true; 
+                    pnlEditRequest.Visible = false;
+                    break;
+                case "view":
+                    string id = Request.QueryString["id"];
+                    if (id != null)
+                    { 
+                        pnlViewingRequest.Visible = true;
+                        pnlCreate.Visible = false; 
+                        pnlEditRequest.Visible = false;
+                    }
+                    else
+                    { 
+                        pnlCreate.Visible = false; 
+                        pnlEditRequest.Visible = false;
+                    }
+                   
+                    break;
+                case "find": 
+                    pnlCreate.Visible = false;
+                    pnlEditRequest.Visible = false;
+                    break;
+                case "edit":
+                    pnlEditRequest.Visible = true; 
+                    pnlCreate.Visible = false; 
+                    break;
+                default:                   
+                    pnlCreate.Visible = false; 
+                    pnlEditRequest.Visible = false;
+                    break;
+
+            }
+        }
+
+        protected void ddlRequestType_SelectIndexChanged(object sender, EventArgs e)
+        {
+            string _filterValueRep = ddlRequestType.SelectedValue;
+            PnlMainForm.Visible = true;
+            switch (_filterValueRep)
+            {
+                case "Increase":
+
+                    ddlIfIncrease.Visible = true;
+                    lblIncrease.Visible = true;
+
+                    ddlReplacement.Visible = false;
+                    lblReplacement.Visible = false;
+                    txtReplacementTo.Visible = false;
+                    lblReplacementTo.Visible = false;
+
+                    ddlReplacement.SelectedValue = "";
+                    txtReplacementTo.Text = ""; 
+
+
+                    break;
+                case "Replacement":
+
+                    ddlReplacement.Visible = true;
+                    lblReplacement.Visible = true;
+                    txtReplacementTo.Visible = true;
+                    lblReplacementTo.Visible = true;
+
+                    ddlIfIncrease.Visible = false;
+                    lblIncrease.Visible = false;
+                    ddlIfIncrease.SelectedValue = ""; 
+                    break;
+                default:
+
+                    ddlIfIncrease.Visible = false;
+                    lblIncrease.Visible = false; 
+                    ddlReplacement.Visible = false;
+                    lblReplacement.Visible = false;
+                    txtReplacementTo.Visible = false;
+                    lblReplacementTo.Visible = false;
+
+                    ddlIfIncrease.SelectedValue = "";
+                    ddlReplacement.SelectedValue = "";
+                    txtReplacementTo.Text = ""; 
+                    break;
+            }
+        }
+
+        protected void ddlIsAgencySelected_SelectIndexChanged(object sender, EventArgs e)
+        {
+            string _filterVal = ddlIsAgencySelected.SelectedValue;
+            /* "" = no option selected
+              0  = non agency reqiest
+              1  =  agency;*/
+
+            if (_filterVal == "")
+            {
+                PnlMainForm.Visible = false;
+
+            }
+            else
+            {
+                PnlMainForm.Visible = true;
+                switch (_filterVal)
+                {
+                    case "0":
+                        string IsNotAgency = "IsNotAgency";
+                        LoadAgencyControls(IsNotAgency);
+                        break;
+                    case "1":
+                        string IsAgency = "IsAgency";
+                        LoadAgencyControls(IsAgency);
+                        
+                        break;
+                    default:
+                        LoadAgencyControls("");
+                        break;
+                }
+            }
+        }
+
+        private void LoadAgencyControls(string IsAgencyRequest)
+        {
+            switch (IsAgencyRequest)
+            {
+                case "IsNotAgency":
+                    AllNonAgencyCtrl(true);
+                    AllAgencyCtrol(false);
+                    break;
+                case "IsAgency":
+                    AllAgencyCtrol(true);
+                    AllNonAgencyCtrl(false);
+                    break;
+                default:
+                    AllNonAgencyCtrl(false);
+                    break;
+
+            }
+        }
+
+        private void AllNonAgencyCtrl(bool a)
+        {
+            lblIntendedBoardDate.Visible = a;
+            lblIntendedBoardDateAskterisk.Visible = a;
+            txtOnBoardDate.Visible = a;
+            pnlRequisitionType.Visible = a;
+            pnlEducationInfo.Visible = a;
+            lblNoteExperience.Visible = a;
+            txtNoteExperience.Visible = a;  
+            reqtxtOnBoardDate.Enabled = a;
+            btnCalOnBoardDate.Visible = a;
+        }
+
+
+        private void AllAgencyCtrol(bool a)
+        {
+            lblLengthEmplDate.Visible = a;
+            lblLengthEmplDateAskterisk.Visible = a;
+            txtLengthDate.Visible = a;
+            reqLengthDate.Visible = a;
+            txtOtherRequirements.Visible = a;
+            lblOtherRequirements.Visible = a;
+            
+             
+        }
+
+        private void HideControls()
+        {
+                PnlMainForm.Visible = false;  
+                ddlIfIncrease.Visible = false;
+                lblIncrease.Visible = false; 
+                ddlReplacement.Visible = false;
+                lblReplacement.Visible = false;
+                lblReplacementTo.Visible = false;
+                txtReplacementTo.Visible = false;
+                lblReplacement.Visible = false;
+                lblReplacementTo.Visible = false;
+                txtReplacementTo.Visible = false; 
+                pnlViewingRequest.Visible = false;
+                 
+             
+        }
+
+        private void HideEmplTypeOnly()
+        {
+            ddlIfIncrease.Visible = false;
+            lblIncrease.Visible = false;
+
+            ddlReplacement.Visible = false;
+            lblReplacement.Visible = false;
+            lblReplacementTo.Visible = false;
+            txtReplacementTo.Visible = false;
+            lblReplacement.Visible = false;
+            lblReplacementTo.Visible = false;
+            txtReplacementTo.Visible = false;
+        }
+
+        // DATA LOADING
+        private void LoadData(string EmplID)
+        {
+            if (Page.IsPostBack == true)
+            {
+                
+                
+            }
+            else
+            {
+                LoadEmployeeData(EmplID);
+                HideControls();
+                LoadJobFamily();
+                 
+               
+            }
+        }
+
+        private void LoadEmployeeData(string EmplID)
+        { 
+
+            myQueries.GetEmployeeName(EmplID, out RequesterName, out DeptID, out FirstName);
+            string OracleQry = myQueries.GetDeptID();
+            DataTable myDT = myQueries.GetTable(OracleQry);
+            ddlDepartment.DataSource = myDT;
+            ddlDepartment.DataTextField = "DeptID";
+            ddlDepartment.DataValueField = "DeptID";
+            ddlDepartment.DataBind();
+             
+            //ddlDepartment.SelectedValue = DeptID;
+            ddlDepartment.Items.Insert(0, new ListItem("-- Select Department --", "")); 
+            txtRequestorName.Text = RequesterName;
+            txtRequestorDeptID.Text = DeptID;
+
+            //Load Departments
+           
+            MyObjsDB.MyConn.Close();
+        }
+         
+
+ 
+
+        private void LoadJobFamily()
+        {
+
+            DataTable myDT = myQueries.GetTable(myQueries.GetJobFamily());
+            ddlJobFamily.DataSource = myDT;
+            ddlJobFamily.DataTextField = "JOB_FAMILY_DESC";
+            ddlJobFamily.DataValueField = "JOB_FAMILY";
+            ddlJobFamily.DataBind();
+            ddlJobFamily.Items.Insert(0, new ListItem("-- Select One --", "0"));
+        }
+
+
+
+        protected void ddlJobFamily_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            PnlMainForm.Visible = true;
+            string JobFamily = ddlJobFamily.SelectedValue.ToString();
+            DataTable myDT = myQueries.GetTable(myQueries.GetJobDesc(JobFamily));
+            ddlJobDescription.DataSource = myDT;
+            ddlJobDescription.DataTextField = "JOB_FUNC_DESC";
+            ddlJobDescription.DataValueField = "JOB_FUNC_DESC";
+            ddlJobDescription.DataBind();
+ 
+            
+            DataTable myDTJobTitle = myQueries.GetTable(myQueries.GetJobBusiTitle(JobFamily));
+            ddlBusiTitle.DataSource = myDTJobTitle;
+            ddlBusiTitle.DataTextField = "JOB_BUSI_TITLE";
+            ddlBusiTitle.DataValueField = "JOB_CODE";
+            ddlBusiTitle.DataBind();
+            ddlBusiTitle.Items.Insert(0, new ListItem("-- Select One --", "0"));
+            MyObjsDB.MyConn.Close();
+        }
+
+        protected void ddlJobDescription_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+
+        }
+
+       
+        protected void ddlEducation_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            PnlMainForm.Visible = true;
+            string _filterValue = ddlEducation.SelectedValue;
+
+            if (_filterValue == "University")
+            {
+                txtMajorIn.Enabled = true;
+            }
+            else
+            {
+                txtMajorIn.Enabled = false;
+            }
+        }
+
+        private void IfCheckDays()
+        {
+
+            chkDays.Items[0].Value = "0";
+            chkDays.Items[1].Value = "0";
+            chkDays.Items[2].Value = "0";
+            chkDays.Items[3].Value = "0";
+            chkDays.Items[4].Value = "0";
+            chkDays.Items[5].Value = "0";
+            chkDays.Items[6].Value = "0";
+
+            if (chkDays.Items[0].Selected)
+            { 
+                chkDays.Items[0].Value = "1";
+               
+            }
+            if (chkDays.Items[1].Selected)
+            {
+                chkDays.Items[1].Value = "1";
+            }
+            if (chkDays.Items[2].Selected)
+            {
+                chkDays.Items[2].Value = "1";
+            }
+            if (chkDays.Items[3].Selected)
+            {
+                chkDays.Items[3].Value = "1";
+            }
+            if (chkDays.Items[4].Selected)
+            {
+                chkDays.Items[4].Value = "1";
+            }
+            if (chkDays.Items[5].Selected)
+            {
+                chkDays.Items[5].Value = "1";
+            }
+            if (chkDays.Items[6].Selected)
+            {
+                chkDays.Items[6].Value = "1";
+            }
+ 
+        }
+    
+      
+ 
+
+        //SUBMIT BUTTONS
+
+
+        protected void IsSave(object sender, EventArgs e)
+        {
+            string UserID = (string)(Session["UserID"]);
+            string RequestID = myMisc.CreateRequestID();
+
+            string OracleQry = "Insert Into REQUESTS (REQUESTDATETIME, REQUESTID, REQUESTOR, REQUESTORDEPTID, ISAGENCY, SITE, PLANT, DEPTCODE, " +
+                               "REQUIREDPERSON, ONBOARDDATE, LENGTHDATE_ISA, TYPE_NONA, IFINCREASE_NONA, IFREPLACEMENT_NONA, " +
+                               "ISREPLAMENTTO_NONA, EMPLOYEECAT, CONTRACTTYPE_NONA, JOBFAMILY, JOBDESCRIPTION_NONA, MAXIMUMSALARY, " +
+                               "WORKINGPLACE, WORKINGTIME, WEEKENDS, NOTEWORKTIME, NOTEMANPOWER, LANGUAGE1, LEVEL1, LANGUAGE2, LEVEL2, " +
+                               "EDUCATION_NONA, MAJOR_NONA, REQUIREDWORKEXP, NOTEOTHER, NOTEREQUIREMENT_ISA, " +
+                               "ISMON, ISTUE, ISWED, ISTHU, ISFRI, ISSAT, ISSUN, NOTEWORKEXP_NONA, JOBBUSITITLE, FROMTIME, TOTIME, RESULT)" +
+                               "Values (:RequestDate, :RequestID, :Requestor, :RequestorDeptID, :IsAgency, :Site, :Plant, :DeptCode, " +
+                               ":RequiredPerson, to_date(:OnBoardDate,'MM/dd/yyyy'), :LengthDateIsA, :TypeNonA, :IfIncrease_NonA, :IfReplacement_NonA, " +
+                               ":IsReplacementTo_NonA, :EmployeeCat, :ContractType, :JobFamily, :JobDescription, :MaximumSalary, " +
+                               ":WorkingPlace, :WorkTime, :Weekends, :NoteWorkTime, :NoteManPower, :Language1, :Level1, :Language2, :Level2, " +
+                               ":Education, :MajorIn, :RequiredWorkExp, :OtherRemarks, :OtherRequirements, " +
+                               ":IsMon, :IsTue, :IsWed, :IsThu, :IsFri, :IsSat, :IsSun, :NoteWorkExp, :JobBusiTitle, :FromTime, :ToTime, 'Approval Process')";
+
+    
+            
+            DateTime RequestDate = DateTime.Now;
+            MyObjsDB.GetConn();
+            OleDbCommand MyCommand = new OleDbCommand(OracleQry, MyObjsDB.MyConn);
+            MyCommand.Parameters.AddWithValue("':RequestDate'", RequestDate);
+            MyCommand.Parameters.AddWithValue("':RequestID'", RequestID);
+            MyCommand.Parameters.AddWithValue("':Requestor'", UserID);
+            MyCommand.Parameters.AddWithValue("':RequestorDeptID'", txtRequestorDeptID.Text);
+            MyCommand.Parameters.AddWithValue("':IsAgency'", ddlIsAgencySelected.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':Site'", txtSite.Text);
+            MyCommand.Parameters.AddWithValue("':Plant'", ddlPlant.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':DeptCode'", ddlDepartment.SelectedValue.ToString()); 
+            MyCommand.Parameters.AddWithValue("':RequiredPerson'", txtNoOfPerson.Text);
+            MyCommand.Parameters.AddWithValue("':OnBoardDate'", txtOnBoardDate.Text);
+            MyCommand.Parameters.AddWithValue("':LengthDateIsA'", txtLengthDate.Text);
+            MyCommand.Parameters.AddWithValue("':TypeNonA'", ddlRequestType.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':IfIncrease_NonA'", ddlIfIncrease.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':IfReplacement_NonA'", ddlReplacement.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':IsReplacementTo_NonA'", txtReplacementTo.Text); 
+            MyCommand.Parameters.AddWithValue("':EmployeeCat'", ddlEmployeeCategory.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':ContractType'", ddlContractType.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':JobFamily'", ddlJobFamily.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':JobDescription'", ddlBusiTitle.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':MaximumSalary'", txtMaximumSalary.Text);
+            MyCommand.Parameters.AddWithValue("':WorkingPlace'", ddlWorkPlace.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':WorkTime'",ddlWorkTime.SelectedValue.ToString());;
+            MyCommand.Parameters.AddWithValue("':Weekends'", ddlWeekends.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':NoteWorkTime'", txtNoteWorkTime.Text);
+            MyCommand.Parameters.AddWithValue("':NoteManpower'", txtNoteManpower.Text);
+            MyCommand.Parameters.AddWithValue("':Language1'", ddlLanguage1.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':Level1'", ddlLanguageLvl1.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':Language2'", ddlLanguage2.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':Level2'", ddlLanguageLvl2.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':Education'", ddlEducation.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':MajorIn'", txtMajorIn.Text);
+            MyCommand.Parameters.AddWithValue("':RequiredWorkExp'", txtRequiredWorkExp.Text); 
+            MyCommand.Parameters.AddWithValue("':OtherRemarks'", txtRemarks.Text);
+            MyCommand.Parameters.AddWithValue("':OtherRequirements'", txtOtherRequirements.Text);
+            IfCheckDays();
+            MyCommand.Parameters.AddWithValue("':IsMon'", chkDays.Items[0].Value);
+            MyCommand.Parameters.AddWithValue("':IsTue'", chkDays.Items[1].Value);
+            MyCommand.Parameters.AddWithValue("':IsWed'", chkDays.Items[2].Value);
+            MyCommand.Parameters.AddWithValue("':IsThu'", chkDays.Items[3].Value);
+            MyCommand.Parameters.AddWithValue("':IsFri'", chkDays.Items[4].Value);
+            MyCommand.Parameters.AddWithValue("':IsSat'", chkDays.Items[5].Value);
+            MyCommand.Parameters.AddWithValue("':IsSun'", chkDays.Items[6].Value);
+            MyCommand.Parameters.AddWithValue("':NoteWorkExp'", txtNoteExperience.Text);
+            MyCommand.Parameters.AddWithValue("':JobBusiTitle'", ddlBusiTitle.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':FromTime'", ddlFromTime.SelectedValue.ToString());
+            MyCommand.Parameters.AddWithValue("':ToTime'", ddlToTime.SelectedValue.ToString());
+
+
+
+            Validate();
+            if (Page.IsValid)
+            {
+                MyCommand.ExecuteNonQuery();
+                 
+                string OraGetSS = "Select deptid From ps.ps_sub_wczorg_vw_a WHERE DEPTID = '" + ddlDepartment.SelectedValue + "'";
+                OleDbCommand myCommand = new OleDbCommand(OraGetSS, MyObjsDB.MyConn);
+                //int count = Convert.ToInt32(myCommand.ExecuteScalar());
+                OleDbDataReader myRDCmd = myCommand.ExecuteReader();
+                myRDCmd.Read();
+                string deptid = Convert.ToString(myRDCmd["deptid"]);
+                deptid = deptid.Substring(0, 3);
+
+                if (deptid == "" || deptid != "MD0" )
+                {
+                    string Upd = "Update REQUESTS Set ISSITESUPPORT = 'NO' Where REQUESTID = '" + RequestID + "'";
+                    OleDbCommand myUpdCmd = new OleDbCommand(Upd, MyObjsDB.MyConn);
+                    myUpdCmd.ExecuteNonQuery();
+                }
+                else
+                {
+                    string Upd = "Update REQUESTS Set ISSITESUPPORT = 'YES' Where REQUESTID = '" + RequestID + "'";
+                    OleDbCommand myUpdCmd = new OleDbCommand(Upd, MyObjsDB.MyConn);
+                    myUpdCmd.ExecuteNonQuery();
+                }
+
+
+                
+                string txtActivity = "Requested A New Employee. RequestID: " + RequestID;
+
+                //myQueries.InsertActivityDesc(txtActivity, UserID);
+
+                //get approval if non-agency
+                //myAppv.GetApprovalNonAgency(RequestID, UserID);
+                string isagency = ddlIsAgencySelected.SelectedValue.ToString();
+                MyObjsDB.GetConn();
+                //myAppv.GetApproval(RequestID, UserID, GetFlowID(isagency, RequestID));
+
+                //// two lines are important for approval flow
+                //myMisc.ApprovalFlow(ddlDepartment.SelectedValue.ToString(), ddlIsAgencySelected.SelectedValue, RequestID);
+                //myMisc.GetNextApprovalStep(RequestID);
+                if(isagency == "0")
+                {
+                    isagency = "AF002";
+                }
+                else if (isagency == "1")
+                {
+                    isagency = "AF002";
+                }
+                myAppv.GetApproval(RequestID, UserID, isagency, _ps.GetEmplDepartment(UserID));
+                Response.Redirect("~/Views/Recruitment/MyRequests.aspx?result=0");
+                
+            }
+            else
+            {
+                myMisc.ShowMessage("Error Creating Form", this.Page);
+                lblValidation.Text = "There is an error in you form. Please fill up the necessary fields.";
+                pnlError.Visible = true;
+                pnlErrorBelow.Visible = true;
+                lblError.Text = "There is an error in you form. Please fill up the necessary fields.";
+            }
+             
+        }
+
+        private string GetFlowID(string isAgency, string requestID)
+        {
+            string flowid;
+            string ISSITESUPPORT;
+            
+            string OraGetSS = "Select ISSITESUPPORT From REQUESTS Where REQUESTID = '" + requestID + "'";
+            OleDbCommand myCMDSS = new OleDbCommand(OraGetSS, MyObjsDB.MyConn);
+            MyObjsDB.GetConn();
+            OleDbDataReader myRDSS = myCMDSS.ExecuteReader();
+            if (myRDSS.Read())
+            {
+                ISSITESUPPORT = Convert.ToString(myRDSS["ISSITESUPPORT"]);
+            }
+            else
+            {
+                ISSITESUPPORT = "";
+            }
+
+            switch (isAgency)
+            {
+                case "0":
+                    if (ISSITESUPPORT == "YES")
+                    {
+                        flowid = "AF004";
+                    }
+                    else
+                    {
+                        flowid = "AF002";
+                    }
+                    break;
+                case "1":
+                    flowid = "AF003";
+                    break;
+                default:
+                    flowid = "";
+                    break;
+
+            }
+
+            return flowid;
+        }
+        
+        protected void IsCancel(object sender, EventArgs e)
+        {
+        }
+
+        protected void IsSaveAnother(object sender, EventArgs e)
+        {
+            
+        } 
+
+      
+
+        
+
+        protected void GridFindRequest_PageIndexChanging(object sender, EventArgs e)
+        {
+        }
+
+        //CALENDAR MANI..
+        protected void ViewOnBoardCal_OnClick(object sender, ImageClickEventArgs e)
+        {
+            
+
+            if (calOnBoardDate.Visible == false)
+            {
+                calOnBoardDate.Visible = true;
+            }
+            else
+            {
+                calOnBoardDate.Visible = false;
+
+            }
+            
+        }
+
+        protected void CalOnBoardDate_Selection_Change(object sender, EventArgs e)
+        {
+            foreach (DateTime day in calOnBoardDate.SelectedDates)
+            {
+                txtOnBoardDate.Text = "";
+                txtOnBoardDate.Text += day.Date.ToString("MM/dd/yyyy");
+                calOnBoardDate.Visible = false;
+            }
+        }
+
+        private void IsSession()
+        {
+            MyObjsDB.GetConn();
+            string UserID = (string)(Session["UserID"]);
+            if (UserID == null)
+            {
+                string currentURL = HttpContext.Current.Request.Url.AbsoluteUri;
+                Session["uri"] = currentURL;
+                Response.Redirect("~/Account/Default.aspx?s=0");
+            }
+            else
+            {
+                GetAccessRole(UserID);
+            }
+            MyObjsDB.MyConn.Close();
+        }
+
+        private void GetAccessRole(string EmplID)
+        {
+
+            switch (myQueries.RoleAccess(EmplID))
+            {
+                case "1": // Dev 
+                    btnViewAllRequest.Visible = true;
+                    pnlRequestManager.Visible = true;
+                    pnlCandidateManager.Visible = true;
+                    break;
+                case "2": // IT Support 
+                    btnViewAllRequest.Visible = true;
+                    pnlRequestManager.Visible = true;
+                    pnlCandidateManager.Visible = true;
+                    break;
+                case "3": // HR Reviewer 
+                    btnViewAllRequest.Visible = true;
+                    pnlRequestManager.Visible = true;
+                    pnlCandidateManager.Visible = false;
+                    break;
+                case "4": // HR Trainer 
+                    btnViewAllRequest.Visible = false;
+                    pnlRequestManager.Visible = false;
+                    pnlCandidateManager.Visible = false;
+                    break;
+                case "5": // HR Recruiter 
+                    btnViewAllRequest.Visible = true;
+                    pnlRequestManager.Visible = true;
+                    pnlCandidateManager.Visible = true;
+                    break;
+                case "6": // PS ENCODER 
+                    btnViewAllRequest.Visible = false;
+                    pnlRequestManager.Visible = false;
+                    pnlCandidateManager.Visible = false;
+                    break;
+                case "7": // Requestor 
+                    btnViewAllRequest.Visible = false;
+                    pnlRequestManager.Visible = false;
+                    pnlCandidateManager.Visible = false;
+                    break;
+                case "8": // Approver 
+                    btnViewAllRequest.Visible = false;
+                    pnlRequestManager.Visible = false;
+                    pnlCandidateManager.Visible = false;
+                    break;
+                default:
+                    btnViewAllRequest.Visible = false;
+                    pnlRequestManager.Visible = false;
+                    pnlCandidateManager.Visible = false;
+                    break;
+
+            }
+        }
+          
+    }
+
+
+   
+   
+}

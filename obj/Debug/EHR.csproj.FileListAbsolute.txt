@@ -1,0 +1,7 @@
+D:\Projects\EHR-Recruitment\bin\EHR.dll
+D:\Projects\EHR-Recruitment\bin\EHR.pdb
+D:\Projects\EHR-Recruitment\bin\AjaxControlToolkit.dll
+D:\Projects\EHR-Recruitment\bin\ehr_email.dll
+D:\Projects\EHR-Recruitment\obj\Debug\ResolveAssemblyReference.cache
+D:\Projects\EHR-Recruitment\obj\Debug\EHR.dll
+D:\Projects\EHR-Recruitment\obj\Debug\EHR.pdb

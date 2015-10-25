@@ -1,0 +1,640 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model;
+using System.Data.OleDb;
+using System.Data;
+using ehr_email;
+
+namespace EHR.Views.Status
+{
+    public partial class RQ11 : System.Web.UI.Page
+    {
+        DBModel _db = new DBModel();
+        PSModel _ps = new PSModel();
+        AccountModel _acc = new AccountModel();
+        MiscModel _mis = new MiscModel();
+        
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            pnlDialog.Visible = false;
+            string requestID = Request.QueryString["id"];
+
+            OleDbDataReader dr = _db.GetDataReader("SELECT PAYROLL_PIC FROM STATUS_CHANGE WHERE REQUESTID = '" + requestID + "'");
+            string userid = _acc.GetUserSessID();
+            string PAYROLL_PIC = "";
+            if (dr.Read()) PAYROLL_PIC = Convert.ToString(dr["PAYROLL_PIC"]);
+            if (userid != PAYROLL_PIC)
+            {
+                _mis.GetMsgBox("24", pnlDialog, lblErrorMsg);
+                return;
+                //Response.Redirect("/Views/Home/");
+            }
+
+            ViewRequest(requestID);
+        }
+
+        protected void Print_Click(object sender, EventArgs e)
+        {
+            for (int i = 0; i < gridMultEmployees.Rows.Count; i++)
+            {
+                string employeeID = gridMultEmployees.Rows[i].Cells[0].Text;
+                string employeeName = gridMultEmployees.Rows[i].Cells[1].Text;
+                CreatePrintPage(employeeID, employeeName, i);
+
+                string javascript = "<script language=JavaScript>printPartOfPage('divPrint');</script>";
+                this.ClientScript.RegisterStartupScript(this.GetType(), "PrintWindowScript", javascript);
+            }
+            pnlPrintConfirm.Visible = true;
+        }
+
+        protected void PrintConfirm_Click(object sender, EventArgs e)
+        {
+            pnlPrintConfirm.Visible = false;
+            InsertIntoSTATUS_PRINT();  // Insert data into STATUS_PRINT
+            UpdatePRINT_SALARY_FLAG(); // Update PRINT_SALARY_FLAG and STATUS in STATUS_TABLE
+            SendNotificationToHR();    // Send Email notification to HR
+        }
+
+        protected void PrintReject_Click(object sender, EventArgs e)
+        {
+            pnlPrintConfirm.Visible = false;
+            // TODO: Show dialog to user to try print again later
+        }
+
+        protected void Exit_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("/Views/Home/");
+        }
+
+        protected void GridMultEmployees_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                //Employee ID Name
+                string emplid = e.Row.Cells[1].Text;
+                e.Row.Cells[1].Text = _ps.GetName(emplid);
+            }
+        }
+
+        private void PopulateApproverForMult(string reqID)
+        {
+            string sql = "SELECT MIN(TRANSID) TRANSID FROM STATUS_CHANGE WHERE REQUESTID = '" + reqID + "'";
+            OleDbDataReader _rd = _db.GetDataReader(sql);
+            if (_rd.Read())
+            {
+                string transno = Convert.ToString(_rd["TRANSID"]);
+
+                string sqlAppv = "SELECT A.REQID REQID, A.APPROVERDESC APPROVERDESC, A.APPEMPLID EMPLID, " +
+                    "A.ACTUALAPPROVER, B.NAME_A NAME_A, A.DATESIGNED DATESIGNED " +
+                    "FROM APPROVALTRANSACTION A, PS.PS_SUB_WCZ_AT_VW_A B " +
+                    "WHERE A.APPEMPLID = B.EMPLID AND A.REQID = '" + transno + "'  ORDER BY APPSEQ ASC";
+                DataTable _dt = _db.GetTable(sqlAppv);
+                gridMultiApprover.DataSource = _dt;
+                gridMultiApprover.DataBind();
+            }
+        }      
+
+        // Populate gridview with employees to be changed
+        private void PopulateMultEmployees(string reqID)
+        {
+            string sql = "SELECT DISTINCT(A.EMPLID) EMPLID, B.NAME NAME_A, B.DEPTID DEPTID, A.STATUS STATUS, " +
+                         "A.REMARKS REMARKS, A.TRANSID TRANSID FROM STATUS_CHANGE A, LIB_USERS B, APPROVALTRANSACTION C " +
+                         "WHERE A.REQUESTID='" + reqID + "' AND A.EMPLID = B.USERID AND A.TRANSID = C.REQID";
+
+            DataTable _dt = _db.GetTable(sql);
+            gridMultEmployees.DataSource = _dt;
+            gridMultEmployees.DataBind();
+        }
+
+        private void ViewRequest(string requestID)
+        {
+            string sql = "SELECT REQUESTID, TRANSID, APFLOWID, REQUESTORID, " +
+                        "REQUESTORDEPTID, TO_CHAR(REQDATE,'YYYY/MM/dd') AS REQDATE, EMPLID, CURRDEPT, " +
+                        "NEWDEPT, CURRPOSI, NEWPOSI, CURREMPLCAT, NEWEMPLCAT, CSHIFTTYPE, " +
+                        "CSHIFTTYPETIME, CSHIFTTYPEFROM, CSHIFTTYPETO, ISMONDAY, " +
+                        "ISTUESDAY, ISWEDNESDAY, ISTHURSDAY, ISFRIDAY, ISSATURDAY, ISSUNDAY, " +
+                        "CWORKSHIFTDETAILS, TSHIFTTYPE, APPSTATUS, REVIEWERSHIFTUPDATE FROM " +
+                        "STATUS_CHANGE WHERE ROWNUM = 1 AND REQUESTID = '" + requestID + "'";
+
+            OleDbDataReader rd = _db.GetDataReader(sql);
+            if (rd.Read())
+            {
+                txtRequestNo.Text = Convert.ToString(rd["REQUESTID"]);
+                lblRequestDate.Text = Convert.ToString(rd["REQDATE"]);
+                lblCurrentDeptID.Text = Convert.ToString(rd["CURRDEPT"]);
+                lblNewDeptID.Text = Convert.ToString(rd["NEWDEPT"]);
+                lblCurrentPosition.Text = Convert.ToString(rd["CURRPOSI"]);
+                lblNewPosition.Text = Convert.ToString(rd["NEWPOSI"]);
+                lblCurrentCategory.Text = Convert.ToString(rd["CURREMPLCAT"]);
+                lblNewCategory.Text = Convert.ToString(rd["NEWEMPLCAT"]);
+                lblWorkShiftTemporary.Text = Convert.ToString(rd["TSHIFTTYPE"]);
+                if (lblWorkShiftTemporary.Text == "Select Type")
+                {
+                    lblWorkShiftTemporary.Text = "";
+                }
+                if (lblNewCategory.Text == "Contracted")
+                {
+
+                    pnlWorkShiftContracted.Visible = true;
+                    pnlWorkShiftTemporary.Visible = false;
+                }
+                else if (lblNewCategory.Text == "Temporary")
+                {
+                    pnlWorkShiftContracted.Visible = false;
+                    pnlWorkShiftTemporary.Visible = true;
+                }
+                else if (lblNewCategory.Text == "Unchanged")
+                {
+                    pnlWorkShiftContracted.Visible = false;
+                    pnlWorkShiftTemporary.Visible = false;
+                }
+
+                lblWorkShiftType.Text = Convert.ToString(rd["CSHIFTTYPE"]);
+                if (lblWorkShiftType.Text == "Select Type") lblWorkShiftType.Text = "UNCHANGED";
+                lblWorkShiftTypeTime.Text = Convert.ToString(rd["CSHIFTTYPETIME"]);
+                if (lblWorkShiftTypeTime.Text == "Select Type") lblWorkShiftTypeTime.Text = "UNCHANGED";
+                lblTime.Text = Convert.ToString(rd["CSHIFTTYPEFROM"]) + " - " + Convert.ToString(rd["CSHIFTTYPETO"]) + ",";
+
+                if (Convert.ToString(rd["ISMONDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Monday&nbsp;&nbsp;";
+                }
+
+                if (Convert.ToString(rd["ISTUESDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Tuesday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISWEDNESDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Wednesday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISTHURSDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Thursday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISFRIDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Friday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISSATURDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Saturday&nbsp;&nbsp;";
+                }
+                if (Convert.ToString(rd["ISSUNDAY"]) == "True")
+                {
+                    lblDays.Text = lblDays.Text + "Sunday&nbsp;&nbsp;";
+                }
+
+                lblCWorkShiftDetails.Text = Convert.ToString(rd["CWORKSHIFTDETAILS"]);
+                if (lblCWorkShiftDetails.Text == "") lblCWorkShiftDetails.Text = "UNCHANGED";
+
+                string transno = Convert.ToString(rd["TRANSID"]);
+                hiddenTransID.Value = transno;
+
+                string appstatus = Convert.ToString(rd["APPSTATUS"]);
+
+
+                PopulateApproverForMult(txtRequestNo.Text); //populate approvers
+                PopulateMultEmployees(txtRequestNo.Text);
+            }
+
+            // Change of Salary
+            string salarySQL = "SELECT PAYROLL_CURRENT, HR_MGR_CONFIRM FROM STATUS_SALARY WHERE REQUESTID = '" + txtRequestNo.Text + "'";
+            OleDbDataReader salary_rd = _db.GetDataReader(salarySQL);
+            if (salary_rd.Read())
+            {
+
+                lblCurrentSalary.Text = Convert.ToString(salary_rd["PAYROLL_CURRENT"]) + " CZK";
+                lblNewSalary.Text = Convert.ToString(salary_rd["HR_MGR_CONFIRM"]) + " CZK";
+            }
+
+            // Change of Bonsuses
+            string bonusesCurrentSQL = "SELECT A.PAYROLL_CURRENT CURRENT_BONUSES, " +
+                  "B.BONUSDESCR  BONUSDESC FROM STATUS_BONUSES A, " +
+                  "STATUS_BONUSTYPES B WHERE A.BONUSID = B.BONUSID AND A.REQUESTID =  '" + txtRequestNo.Text + "'";
+            DataTable _dtCurrent = _db.GetTable(bonusesCurrentSQL);
+            rptCurrentBonuses.DataSource = _dtCurrent;
+            rptCurrentBonuses.DataBind();
+
+            string bonusesNewSQL = "SELECT A.HR_MGR_CONFIRM NEW_BONUSES, " +
+                  "B.BONUSDESCR  BONUSDESC FROM STATUS_BONUSES A, " +
+                  "STATUS_BONUSTYPES B WHERE A.BONUSID = B.BONUSID AND A.REQUESTID =  '" + txtRequestNo.Text + "'";
+            DataTable _dtNew = _db.GetTable(bonusesNewSQL);
+            rptNewBonuses.DataSource = _dtNew;
+            rptNewBonuses.DataBind();
+
+        }
+
+        public void CreatePrintPage(string emplid, string name, int iRow)
+        {
+            // Employee ID and Name, Request Date and ID
+            PrintPage.Controls.Add(new LiteralControl("<table style='font-family: tahoma; font-size: 10.0pt; font-weight: bold; width: 100%;border-top: solid 1px; border-bottom: solid 1px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<tr><td>"));
+            Label label1 = new Label();
+            label1.Text = "Employee ID: ";
+            PrintPage.Controls.Add(label1);
+            Label label2 = new Label();
+            label2.Text = emplid;
+            PrintPage.Controls.Add(label2);
+            PrintPage.Controls.Add(new LiteralControl("</td><td>"));
+            Label label3 = new Label();
+            label3.Text = "Request Date: ";
+            Label label4 = new Label();
+            label4.Text = lblRequestDate.Text;
+            PrintPage.Controls.Add(label4);
+            PrintPage.Controls.Add(new LiteralControl("</td></tr><td>"));
+            Label label5 = new Label();
+            label5.Text = "Employee Name: ";
+            PrintPage.Controls.Add(label5);
+            Label label6 = new Label();
+            label6.Text = name;
+            PrintPage.Controls.Add(label6);
+            PrintPage.Controls.Add(new LiteralControl("</td><td>"));
+            Label label7 = new Label();
+            label7.Text = "Request ID: ";
+            PrintPage.Controls.Add(label7);
+            Label label8 = new Label();
+            label8.Text = txtRequestNo.Text;
+            PrintPage.Controls.Add(label8);
+            PrintPage.Controls.Add(new LiteralControl("</td></tr></table><br/>"));
+
+            // Change of Department
+            PrintPage.Controls.Add(new LiteralControl("<table style='font-family: tahoma; font-size: 10.0pt; font-weight: bold; width: 100%;border-top: solid 1px; border-bottom: solid 1px; border-spacing: 0'>"));
+            PrintPage.Controls.Add(new LiteralControl("<tr><td style='width: 33%'>"));
+            Label label9 = new Label();
+            label9.Text = "Change of Department";
+            label9.Font.Italic = true;
+            PrintPage.Controls.Add(label9);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%'>"));
+            Label label10 = new Label();
+            label10.Text = "Current";
+            PrintPage.Controls.Add(label10);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%'>"));
+            Label label11 = new Label();
+            label11.Text = "New";
+            PrintPage.Controls.Add(label11);
+            PrintPage.Controls.Add(new LiteralControl("</td></tr>"));
+            PrintPage.Controls.Add(new LiteralControl("<tr style='background-color: #F2F2F2'>"));
+            PrintPage.Controls.Add(new LiteralControl("<td style='width: 33%; border-top: solid 1px'>"));
+            Label label12 = new Label();
+            label12.Text = "Department Code";
+            PrintPage.Controls.Add(label12);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%; border-top: solid 1px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<span style='width: 0px;'></span>"));
+            Label label13 = new Label();
+            label13.Text = lblCurrentDeptID.Text;
+            PrintPage.Controls.Add(label13);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%; border-top: solid 1px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<span style='width: 0px;'></span>"));
+            Label label14 = new Label();
+            label14.Text = lblNewDeptID.Text;
+            PrintPage.Controls.Add(label14);
+            PrintPage.Controls.Add(new LiteralControl("</td></tr></table><br/>"));
+
+            // Change of Position
+            PrintPage.Controls.Add(new LiteralControl("<table style='font-family: tahoma; font-size: 10.0pt; font-weight: bold; width: 100%;border-top: solid 1px; border-bottom: solid 1px; border-spacing: 0'>"));
+            PrintPage.Controls.Add(new LiteralControl("<tr><td style='width: 33%'>"));
+            Label label15 = new Label();
+            label15.Text = "Change of Position";
+            label15.Font.Italic = true;
+            PrintPage.Controls.Add(label15);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%'>"));
+            Label label16 = new Label();
+            label16.Text = "Current";
+            PrintPage.Controls.Add(label16);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%'>"));
+            Label label17 = new Label();
+            label17.Text = "New";
+            PrintPage.Controls.Add(label17);
+            PrintPage.Controls.Add(new LiteralControl("</td></tr>"));
+            PrintPage.Controls.Add(new LiteralControl("<tr style='background-color: #F2F2F2'>"));
+            PrintPage.Controls.Add(new LiteralControl("<td style='width: 33%; border-top: solid 1px'>"));
+            Label label18 = new Label();
+            label18.Text = "Position";
+            PrintPage.Controls.Add(label18);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%; border-top: solid 1px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<span style='width: 0px;'></span>"));
+            Label label19 = new Label();
+            label19.Text = lblCurrentPosition.Text;
+            PrintPage.Controls.Add(label19);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%; border-top: solid 1px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<span style='width: 0px;'></span>"));
+            Label label20 = new Label();
+            label20.Text = lblNewPosition.Text;
+            PrintPage.Controls.Add(label20);
+            PrintPage.Controls.Add(new LiteralControl("</td></tr></table><br/>"));
+
+            // Employee Category
+            PrintPage.Controls.Add(new LiteralControl("<table style='font-family: tahoma; font-size: 10.0pt; font-weight: bold; width: 100%;border-top: solid 1px; border-bottom: solid 1px; border-spacing: 0'>"));
+            PrintPage.Controls.Add(new LiteralControl("<tr><td style='width: 33%'>"));
+            Label label21 = new Label();
+            label21.Text = "Employee Category";
+            PrintPage.Controls.Add(label21);
+            label21.Font.Italic = true;
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%'>"));
+            Label label22 = new Label();
+            label22.Text = "Current";
+            PrintPage.Controls.Add(label22);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%'>"));
+            Label label23 = new Label();
+            label23.Text = "New";
+            PrintPage.Controls.Add(label23);
+            PrintPage.Controls.Add(new LiteralControl("</td></tr>"));
+            PrintPage.Controls.Add(new LiteralControl("<tr style='background-color: #F2F2F2'>"));
+            PrintPage.Controls.Add(new LiteralControl("<td style='width: 33%; border-top: solid 1px'>"));
+            Label label24 = new Label();
+            label24.Text = "Category";
+            PrintPage.Controls.Add(label24);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%; border-top: solid 1px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<span style='width: 0px;'></span>"));
+            Label label25 = new Label();
+            label25.Text = lblCurrentCategory.Text;
+            PrintPage.Controls.Add(label25);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%; border-top: solid 1px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<span style='width: 0px;'></span>"));
+            Label label26 = new Label();
+            label26.Text = lblNewCategory.Text;
+            PrintPage.Controls.Add(label26);
+            PrintPage.Controls.Add(new LiteralControl("</td></tr></table><br/>"));
+
+            // Workshift Change Details
+            Label label27 = new Label();
+            label27.Text = "Workshift Change Details";
+            label27.Font.Bold = true;
+            label27.Font.Italic = true;
+            label27.Style.Add("font-family", "Tahoma");
+            label27.Style.Add("font-size", "10pt");
+            PrintPage.Controls.Add(label27);
+            PrintPage.Controls.Add(new LiteralControl("<table style='font-family: tahoma; font-size: 10.0pt; font-weight: bold; width: 100%;border-spacing: 0'>"));
+            PrintPage.Controls.Add(new LiteralControl("<tr><td align='center' style='border-top: solid 1px; border-right: dotted 1px'>"));
+            Label label28 = new Label();
+            label28.Text = "Applicant Remarks";
+            PrintPage.Controls.Add(label28);
+            PrintPage.Controls.Add(new LiteralControl("</td><td align='center' style='border-top: solid 1px'>"));
+            Label label29 = new Label();
+            label29.Text = "HR Review Remarks";
+            PrintPage.Controls.Add(label29);
+            PrintPage.Controls.Add(new LiteralControl("</td></tr><tr bgcolor='#F2F2F2' style='height: 39px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<td align='center' style='border-top: solid 1px; border-bottom: solid 1px; border-right: dotted 1px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<span style='width: 0px;'></span>"));
+            Label applicantsRemarks = new Label();
+            applicantsRemarks.Text = lblCWorkShiftDetails.Text;
+            PrintPage.Controls.Add(applicantsRemarks);
+            PrintPage.Controls.Add(new LiteralControl("</td><td align='center' style='border-top: solid 1px; border-bottom: solid 1px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<span style='width: 0px;'></span>"));
+            Label reviewerRemarsk = new Label();
+            reviewerRemarsk.Text = lblCWorkshiftUpdate.Text;
+            PrintPage.Controls.Add(reviewerRemarsk);
+            PrintPage.Controls.Add(new LiteralControl("</td></tr></table><br/>"));
+
+            // Salary Change -- page-break-after:always
+            PrintPage.Controls.Add(new LiteralControl("<table style='font-family: tahoma; font-size: 10.0pt; font-weight: bold; width: 100%;border-spacing: 0; '>"));
+            PrintPage.Controls.Add(new LiteralControl("<tr><td style='width: 33%; border-top: solid 1px; border-right: dotted 1px'>"));
+            Label label30 = new Label();
+            label30.Text = "Salary Change";
+            label30.Font.Italic = true;
+            PrintPage.Controls.Add(label30);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%; border-top: solid 1px; border-right: dotted 1px'>"));
+            Label label31 = new Label();
+            label31.Text = "Current";
+            PrintPage.Controls.Add(label31);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%; border-top: solid 1px'>"));
+            Label label32 = new Label();
+            label32.Text = "New";
+            PrintPage.Controls.Add(label32);
+            PrintPage.Controls.Add(new LiteralControl("</td></tr><tr style='background-color: #F2F2F2'>"));
+            PrintPage.Controls.Add(new LiteralControl("<td style='width: 33%; border-top: solid 1px; border-right: dotted 1px'>"));
+            Label label33 = new Label();
+            label33.Text = "Basic Salary";
+            PrintPage.Controls.Add(label33);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%; border-top: solid 1px; border-right: dotted 1px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<span style='width: 0px;'></span>"));
+            Label currentSalary = new Label();
+            currentSalary.Text = lblCurrentSalary.Text;
+            PrintPage.Controls.Add(currentSalary);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%; border-top: solid 1px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<span style='width: 0px;'></span>"));
+            Label newSalary = new Label();
+            newSalary.Text = lblNewSalary.Text;
+            PrintPage.Controls.Add(newSalary);
+            PrintPage.Controls.Add(new LiteralControl("</td></tr><tr style='background-color: #F2F2F2'>"));
+            PrintPage.Controls.Add(new LiteralControl("<td style='width: 33%; border-top: solid 1px; border-right: dotted 1px'>"));
+            Label label34 = new Label();
+            label34.Text = "Performance Bonus";
+            PrintPage.Controls.Add(label34);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%; border-top: solid 1px; border-right: dotted 1px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<span style='width: 0px;'></span>"));
+            Label p_lblBonusCurrent_perf = new Label();
+            p_lblBonusCurrent_perf.Text = "";
+            PrintPage.Controls.Add(p_lblBonusCurrent_perf);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%; border-top: solid 1px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<span style='width: 0px;'></span>"));
+            Label p_lblBonusNew_perf = new Label();
+            p_lblBonusNew_perf.Text = "";
+            PrintPage.Controls.Add(p_lblBonusNew_perf);
+            PrintPage.Controls.Add(new LiteralControl("</td></tr><tr style='background-color: #F2F2F2'>"));
+            PrintPage.Controls.Add(new LiteralControl("<td style='width: 33%; border-top: solid 1px; border-right: dotted 1px'>"));
+            Label label35 = new Label();
+            label35.Text = "Personal Bonus";
+            PrintPage.Controls.Add(label35);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%; border-top: solid 1px; border-right: dotted 1px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<span style='width: 0px;'></span>"));
+            Label p_lblBonusCurrent_pers = new Label();
+            p_lblBonusCurrent_pers.Text = "";
+            PrintPage.Controls.Add(p_lblBonusCurrent_pers);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%; border-top: solid 1px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<span style='width: 0px;'></span>"));
+            Label p_lblBonusNew_pers = new Label();
+            p_lblBonusNew_pers.Text = "";
+            PrintPage.Controls.Add(p_lblBonusNew_pers);
+            PrintPage.Controls.Add(new LiteralControl("</td></tr><tr style='background-color: #F2F2F2'>"));
+            PrintPage.Controls.Add(new LiteralControl("<td style='width: 33%; border-top: solid 1px; border-bottom: solid 1px; border-right: dotted 1px'>"));
+            Label label36 = new Label();
+            label36.Text = "Forklift Bonus";
+            PrintPage.Controls.Add(label36);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%; border-top: solid 1px; border-bottom: solid 1px; border-right: dotted 1px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<span style='width: 0px;'></span>"));
+            Label p_lblBonusCurrent_fork = new Label();
+            p_lblBonusCurrent_fork.Text = "";
+            PrintPage.Controls.Add(p_lblBonusCurrent_fork);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width: 33%; border-top: solid 1px; border-bottom: solid 1px'>"));
+            PrintPage.Controls.Add(new LiteralControl("<span style='width: 0px;'></span>"));
+            Label p_lblBonusNew_fork = new Label();
+            p_lblBonusNew_fork.Text = "";
+            PrintPage.Controls.Add(p_lblBonusNew_fork);
+            PrintPage.Controls.Add(new LiteralControl("</td></tr></table><br/>"));
+
+            // Sign Off History
+            GridView gw = new GridView();
+            gw.Attributes.Add("ID", "gridMultiApprover");
+            gw.Attributes.Add("runat", "server");
+            gw.AutoGenerateColumns = false;
+            gw.Attributes.Add("DataKeyNames", "REQID");
+            gw.Attributes.Add("style", "float: left; width: 100%; margin-left: 0px; margin-right: 0px;");
+            //gw.Attributes.Add("OnRowDataBound", "GridMultEmployees_RowDataBound");
+            BoundField bf = null;
+            bf = new BoundField();
+            //bf.ItemStyle.Width
+            bf.DataField = "APPROVERDESC"; bf.HeaderText = "Approver";
+            gw.Columns.Add(bf);
+
+            bf = new BoundField();
+            bf.DataField = "ACTUALAPPROVER"; bf.HeaderText = "Approved by";
+            gw.Columns.Add(bf);
+
+            bf = new BoundField();
+            bf.DataField = "DATESIGNED"; bf.HeaderText = "Date/Time";
+            gw.Columns.Add(bf);
+            
+            TemplateField tf = new TemplateField();
+            tf.HeaderText = "Signature";
+            tf.ItemTemplate = new GridViewTemplate(DataControlRowType.DataRow, "");
+            gw.Columns.Add(tf);
+
+            bf = new BoundField();
+            bf.DataField = "REMARKS"; bf.HeaderText = "Comment";
+            gw.Columns.Add(bf);
+
+            string sql = "SELECT APPROVERDESC, ACTUALAPPROVER, DATESIGNED, REMARKS " +
+                "FROM APPROVALTRANSACTION " +
+                "WHERE REQID = '" + hiddenTransID.Value + "'  ORDER BY APPSEQ ASC";
+            DataTable _dt = _db.GetTable(sql);
+            for (int i = 0; i < _dt.Rows.Count; i++)
+            { // if null no need to put in the form
+                if (_dt.Rows[i]["ACTUALAPPROVER"].ToString() == "")
+                {
+                    _dt.Rows.Remove(_dt.Rows[i]);
+                }
+            }
+            gw.DataSource = _dt;
+            gw.DataBind();
+
+            // Adding signatures into the GridView
+            foreach (GridViewRow row in gw.Rows)
+            {
+                string emplID = row.Cells[1].Text;
+                row.Cells[1].Text = _ps.GetName(emplID);
+                
+                string url = "http://ehr.qas.wcz.wistron/Content/signatures/" + _ps.GetEmplIDFromName(row.Cells[1].Text) + ".JPG";
+                //Image image = (Image)row.Cells[3].FindControl("imgSignature");
+                //image.ImageUrl = url;
+                row.Cells[3].Controls.Add(new LiteralControl("<img src='" + url + "'/>"));
+            }
+            // Add GridView to PrintPage, jooooooooooooooooooooo!
+            PrintPage.Controls.Add(gw);
+
+
+            // Printed by & Effective date
+            PrintPage.Controls.Add(new LiteralControl("<table style='font-family: tahoma; font-size: 10.0pt; width: 100%"));
+            // avoid page break on the last page
+            // if last employee
+            if (iRow < gridMultEmployees.Rows.Count - 1)
+                PrintPage.Controls.Add(new LiteralControl(";page-break-after: always'>"));
+            else
+                PrintPage.Controls.Add(new LiteralControl("'>"));
+            PrintPage.Controls.Add(new LiteralControl("<tr><td style='width:70%'>"));
+            Label label75 = new Label();
+            label75.Text = "Printed by: ";
+            label75.Font.Bold = true;
+            PrintPage.Controls.Add(label75);
+            Label lblPrintedBy = new Label();
+            lblPrintedBy.Text = _acc.GetUserSessID();
+            PrintPage.Controls.Add(lblPrintedBy);
+            PrintPage.Controls.Add(new LiteralControl("</td><td style='width:30%'>"));
+            Label label76 = new Label();
+            label76.Text = "Date: ";
+            label76.Font.Bold = true;
+            PrintPage.Controls.Add(label76);
+            Label lblPrintDate = new Label();
+            lblPrintDate.Text = DateTime.Now.ToString("yyyy/MM/dd");
+            PrintPage.Controls.Add(lblPrintDate);
+            PrintPage.Controls.Add(new LiteralControl("</td></tr></table>"));
+        }
+
+        public void InsertIntoSTATUS_PRINT()
+        {
+            string requestID = txtRequestNo.Text;
+            string emplid = "batch request";
+            int salary_flag = 1;
+            string printDate = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"); ;
+            string printedBy = (string)(Session["UserID"]); ;
+
+            string insertStatus_Print = "INSERT INTO STATUS_PRINT(REQUESTID, EMPLID, SALARY_FLAG, PRINT_DATE, PRINTED_BY) "
+                                      + "VALUES('"
+                                      + requestID + "', '"
+                                      + emplid + "', "
+                                      + salary_flag + ", TO_DATE('"
+                                      + printDate + "', 'yyyy/MM/dd hh24:mi:ss'), '"
+                                      + printedBy + "')";
+            _db.GetExecuteNonQuery(insertStatus_Print);
+        }
+
+        public void UpdatePRINT_SALARY_FLAG()
+        {
+            string sqlUpdate = "UPDATE STATUS_CHANGE SET PRINT_SALARY_FLAG = 1, STATUS = 'HR Process' WHERE REQUESTID = '" + txtRequestNo.Text + "'";
+            _db.GetExecuteNonQuery(sqlUpdate);
+        }
+
+        public void SendNotificationToHR()
+        {
+            string mail_type = "Notify_HR";
+            string sender = "noreply@wistron.com ";
+            string recipient = "";
+            string recipient_name = "";
+            string cc = "Martin_Husar@wistron.com";
+            string subject = "EHR: Status Change - Print application";
+            string parameters = "Approval Link: <a href='http://ehr.qas.wcz.wistron/Views/Status/RQ11.aspx?id=" + txtRequestNo.Text + "'>Click To Print</a>";
+
+            string sqlSelectAPPEMPLID = "SELECT HR_PIC FROM STATUS_CHANGE WHERE REQUESTID = '" + txtRequestNo.Text + "'";
+            OleDbDataReader dr = _db.GetDataReader(sqlSelectAPPEMPLID);
+            if (dr.Read())
+            {
+                recipient = Convert.ToString(dr["HR_PIC"]);
+                recipient_name = _ps.GetName(recipient);
+                recipient = _ps.GetEmplEmailAdrress(recipient);
+            }
+
+            Cls_Email.sendmail(mail_type, sender, recipient, cc, subject, parameters, "", recipient_name);
+        }
+    }
+}
+
+
+public class GridViewTemplate : ITemplate
+{
+    private DataControlRowType templateType;
+    private string columnName;
+
+    public GridViewTemplate(DataControlRowType type, string colname)
+    {
+        templateType = type;
+        columnName = colname;
+    }
+
+    public void InstantiateIn(System.Web.UI.Control container)
+    {
+        switch (templateType)
+        {
+            case DataControlRowType.Header:
+                Label header = new Label();
+                header.Text = "Signature";
+                container.Controls.Add(header);
+                break;
+            case DataControlRowType.DataRow:
+                // NOT USED
+                Image image = new Image();
+                image.Attributes.Add("ID", "imgSignature");
+                image.Attributes.Add("runat", "server");
+                Label lbl = new Label();
+                lbl.Text = "";
+                container.Controls.Add(lbl);
+                break;
+            default:
+                break;
+        }
+    }
+}

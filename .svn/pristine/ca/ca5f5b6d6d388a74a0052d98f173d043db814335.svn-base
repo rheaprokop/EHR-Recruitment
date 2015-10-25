@@ -1,0 +1,269 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model;
+using System.Collections;
+using System.Text;
+using ehr_email;
+
+namespace EHR.Views.Status
+{
+    public partial class RQ12 : System.Web.UI.Page
+    {
+        DBModel _db = new DBModel();
+        MiscModel _misc = new MiscModel();
+        PSModel _ps = new PSModel();
+        AccountModel _accnt = new AccountModel(); 
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            pnlDialog.Visible = false;
+            if (Page.IsPostBack == false)
+            {
+                PopulateRequests(txtRequestFrmID.Text);
+                GetViewAction();
+               
+            } 
+            IsHRPIC(); 
+        }
+
+        private void GetViewAction()
+        {
+            string action = Request.QueryString["form"];
+            string id = Request.QueryString["id"];
+
+            
+ 
+
+            switch (action)
+            {
+               case "view":
+                     string countReq = "SELECT COUNT(REQUESTID) FROM STATUS_CHANGE WHERE REQUESTID = '" + id + "'";
+                     int count = _db.GetExecuteScalar(countReq);
+
+            if (count > 1)
+            {
+                string salary_flag;
+                string print_salary_flag = "";
+                string salaryFlag = "SELECT SALARY_FLAG, PRINT_SALARY_FLAG FROM STATUS_CHANGE WHERE REQUESTID = '" + id + "'";
+                OleDbDataReader _rd = _db.GetDataReader(salaryFlag);
+                if (_rd.Read())
+                {
+                    salary_flag = Convert.ToString(_rd["SALARY_FLAG"]);
+                    print_salary_flag = Convert.ToString(_rd["PRINT_SALARY_FLAG"]);
+                }
+                else
+                {
+                    salary_flag = "";
+                }
+
+                if (salary_flag == "1" && print_salary_flag != "9")
+                {
+                    Response.Redirect("~/Views/Status/RQ10.aspx?id=" + id);
+                }
+                else
+                {
+                    Response.Redirect("~/Views/Status/RQ11.aspx?id=" + id);
+                }
+            }
+            else
+            {
+                string salary_flag;
+                string print_salary_flag = "";
+                string salaryFlag = "SELECT SALARY_FLAG, PRINT_SALARY_FLAG FROM STATUS_CHANGE WHERE REQUESTID = '" + id + "'";
+                OleDbDataReader _rd = _db.GetDataReader(salaryFlag);
+                if (_rd.Read())
+                {
+                    salary_flag = Convert.ToString(_rd["SALARY_FLAG"]);
+                    print_salary_flag = Convert.ToString(_rd["PRINT_SALARY_FLAG"]);
+                }
+                else
+                {
+                    salary_flag = "";
+                }
+
+                if (salary_flag == "1" && print_salary_flag != "9")
+                {
+                    Response.Redirect("~/Views/Status/RQ08.aspx?id=" + id);
+                }
+                else
+                {
+                    Response.Redirect("~/Views/Status/RQ09.aspx?id=" + id);
+                }
+            }
+                    break;
+
+                case "close":
+                    try
+                    {
+                        UpdateRecord(id);
+                        
+                    }
+                    catch (Exception ex)
+                    {
+                    }
+                    finally
+                    {
+                        Response.Redirect("RQ12.aspx?form=success&id=" + id);
+                    }
+                    break;
+                case "success":
+                    try
+                    {
+                        //pnlDialog.Visible = true;
+                       // _misc.GetMsgBox("28", pnlDialog, lblErrorMsg);
+                        _db.GetConn();
+                        string requestID; 
+                        string getRequestSql = "SELECT REQUESTID FROM STATUS_CHANGE WHERE TRANSID = '" + id + "'";
+                        OleDbDataReader _rd = _db.GetDataReader(getRequestSql);
+                        if (_rd.Read())
+                        {
+                            requestID = Convert.ToString(_rd["REQUESTID"]);
+                        }
+                        else
+                        {
+                            requestID = "";
+                        }
+
+                        _misc.ShowMessage("Successfully Closed", this.Page);
+                        if (_misc.IsEmailNotificationTest("Notify_Close", "Close Application", requestID) == false)
+                        {
+                            string mail_type = "Notify_Close";
+                            string sender_ = "noreply@wistron.com ";
+
+                            string recipient = _ps.GetEmplEmailAdrress(_misc.GetRequestor(requestID, "STATUS_CHANGE"));
+                            string recipient_name_full = _ps.GetName(_misc.GetRequestor(requestID, "STATUS_CHANGE"));
+                            int r = recipient_name_full.IndexOf(" ");
+
+                            string recipient_name = recipient_name_full.Substring(0, r);
+                            string cc = "rhea_prokop@wistron.com; martin_husar@wistron.com";
+                            string subject = "EHR: Status Change - Closing Notification";
+                            string parameters = "Your Request ID: <a href='http://ehr.wcz.wistron/Views/Status/RQ03.aspx?id=" + requestID + "&RQ=012'>" + requestID + "</a>";
+
+                            Cls_Email.sendmail(mail_type, sender_, recipient, cc, subject, parameters, "", recipient_name);
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        string msg = ex.Message.ToString(); 
+                    }
+                    finally
+                    {
+                    }
+                    break;
+                default:
+                    break;
+                  
+            } 
+        }
+         
+        protected void IsFindRequest(object sender, EventArgs e)
+        {
+
+        }
+
+        private void PopulateRequests(string _filter)
+        {
+            string sql;
+            if (_filter == "")
+            {
+                sql = "SELECT REQUESTID, TRANSID, REQUESTORID, REQUESTORDEPTID, EMPLID, STATUS FROM STATUS_CHANGE " +
+                    "WHERE STATUS = 'For Closing' AND HR_PIC = '" + _accnt.GetUserSessID() + "' ORDER BY REQUESTID";
+            }
+            else
+            {
+                sql = "SELECT REQUESTID, TRANSID,  REQUESTORID, REQUESTORDEPTID, EMPLID, STATUS FROM STATUS_CHANGE " +
+                    "WHERE STATUS = 'For Closing' || REQUESTID LIKE '%" + txtRequestFrmID.Text + "%'  " +
+                    "|| TRANSID = '%" + txtRequestFrmID.Text + "%' || REQUESTORID LIKE '%" + txtRequestFrmID.Text + "%' " +
+                    "AND HR_PIC = '" + _accnt.GetUserSessID() + "' ORDER BY REQUESTID";
+            }
+            DataTable _dt = _db.GetTable(sql);
+
+            gridCloseRequest.DataSource = _dt;
+            gridCloseRequest.DataBind();
+        }
+
+         
+        protected void OnPaging(object sender, GridViewPageEventArgs e)
+        {
+            gridCloseRequest.PageIndex = e.NewPageIndex;
+            gridCloseRequest.DataBind();
+            PopulateRequests(txtRequestFrmID.Text);
+        }
+          
+
+        private void UpdateRecord(string transno)
+        {
+            string sql = "UPDATE STATUS_CHANGE SET STATUS = 'CLOSED', CLOSEDDATE = SYSDATE" + 
+                " WHERE TRANSID = '" + transno + "'";
+            _db.GetExecuteNonQuery(sql);
+        }
+
+        private void ShowMessage(int count)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("<script type = 'text/javascript'>");
+            sb.Append("alert('");
+            sb.Append(count.ToString());
+            sb.Append(" records deleted.');");
+            sb.Append("</script>");
+            ClientScript.RegisterStartupScript(this.GetType(),
+                            "script", sb.ToString());
+        } 
+
+        protected void BtnErrorClose_Click(object sender, EventArgs e)
+        {
+            pnlDialog.Visible = false;
+        }
+
+        protected void GridCloseRequest_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            /*if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                e.Row.Cells[5].Text = _ps.GetName(e.Row.Cells[5].Text);
+                e.Row.Cells[7].Text = _ps.GetName(e.Row.Cells[7].Text);
+            }*/
+
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                e.Row.Cells[7].Text = _ps.GetName(e.Row.Cells[7].Text);
+            }
+        }
+
+        
+
+        private void IsHRPIC()
+        {
+            string sql = "SELECT COUNT(HR_PIC) FROM STATUS_CHANGE " +
+                "WHERE HR_PIC = '" + _accnt.GetUserSessID() + "'";
+            int count = _db.GetExecuteScalar(sql);
+            if (count >= 1)
+            {
+                HRPrintPIC(_accnt.GetUserSessID());
+            }
+            else
+            {
+
+            }
+        }
+
+
+
+        private void HRPrintPIC(string user)
+        {
+            string sql = "SELECT DISTINCT(REQUESTID) REQUESTID, REQUESTORID, REQUESTORDEPTID, REQDATE " +
+                " FROM STATUS_CHANGE " +
+             "WHERE STATUS='HR Process' AND HR_PIC = '" + user + "'";
+            DataTable _dt = _db.GetTable(sql);
+            gridHRPIC.DataSource = _dt;
+            gridHRPIC.DataBind();
+        }
+
+
+     
+    }
+}

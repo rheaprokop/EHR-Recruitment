@@ -1,0 +1,914 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data;
+using EHR.Model;
+using System.Text.RegularExpressions;
+using System.Drawing;
+using AjaxControlToolkit;
+
+namespace EHR.Views.Termination
+{
+    public partial class Evaluation : System.Web.UI.Page
+    {
+        public DBModel dbcon = new DBModel();
+        public MiscModel msg = new MiscModel();
+        public PSModel psmodel = new PSModel();
+        public string strSQL;
+        public DataTable dt;
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (Page.IsPostBack == false)
+            {
+                fill_drpEmpID();
+            }
+            else
+            {
+                if (drpEmpID.Visible == false)
+                {
+                    for (int i = 0; i < lstEmpID.Items.Count; i++)
+                    {
+                        if (lstEmpID.Items[i].Selected)
+                        {
+                            string emplid = lstEmpID.Items[i].Value;
+                            strSQL = "SELECT * FROM PS.PS_SUB_WCZ_AT_VW_A WHERE EMPLID = '" + emplid + "'";
+                            dt = dbcon.GetTable(strSQL);
+
+                            string name = dt.Rows[0]["NAME_A"].ToString();
+                            string deptid = dt.Rows[0]["DEPTID"].ToString();
+                            string jobdescr = dt.Rows[0]["JOB_DESCR"].ToString();
+                            GenerateEvaluation(name, emplid, deptid,jobdescr);
+                        }
+                    }
+                    GenerateButtons("semi-annual");
+                }
+            }
+        }
+
+        protected void GetEmployeeCategory(object sender, EventArgs e)
+        {
+            
+        }
+
+        protected void imgbtnAdd_Click(object sender, ImageClickEventArgs e)
+        {
+            lstEmpID.Visible = true;
+            drpEmpID.Visible = false;
+        }
+
+        void fill_drpEmpID()
+        {
+            try
+            {
+                string userid = Session["UserID"].ToString() ;
+                strSQL = "SELECT INITCAP(emplid) || ' - ' || name_a, emplid,category FROM PS.PS_SUB_WCZ_AT_VW_A WHERE MANAGER_id='" + userid + "' OR DEPTID = (SELECT DEPTID FROM PS.PS_SUB_WCZ_AT_VW_A WHERE EMPLID='" + userid + "')";
+                dt = dbcon.GetTable(strSQL);
+                drpEmpID.DataSource = dt;
+                drpEmpID.DataTextField = dt.Columns[0].ToString();
+                drpEmpID.DataValueField = dt.Columns[1].ToString();
+                drpEmpID.DataBind();
+                drpEmpID.Items.Insert(0, "");
+
+                int ctr = 0;
+                for (int i = 0; i < dt.Rows.Count; i++)
+                {
+                    if (dt.Rows[i][2].ToString() == "FI" || dt.Rows[i][2].ToString() == "FD")
+                    {
+                        lstEmpID.Items.Insert(0, new ListItem(dt.Rows[i][0].ToString(),dt.Rows[i][1].ToString()));
+                        ctr = ctr + 1;
+                        if (ctr > 1)
+                        {
+                            imgbtnAdd.Visible = true;
+                        }
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                Response.Write(ex.Message);
+            }
+        }
+
+        protected void rblCust1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+           int totalCust = Convert.ToInt32(((rblCust1.SelectedValue == "") ? "0" : rblCust1.SelectedValue)) +
+                                Convert.ToInt32(((rblCust2.SelectedValue == "") ? "0" : rblCust2.SelectedValue)) +
+                                Convert.ToInt32(((rblCust3.SelectedValue == "") ? "0" : rblCust3.SelectedValue));
+           txttotalCust.Text = totalCust.ToString();
+        }
+
+        protected void rblCust2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalCust = Convert.ToInt32(((rblCust1.SelectedValue == "") ? "0" : rblCust1.SelectedValue)) +
+                                Convert.ToInt32(((rblCust2.SelectedValue == "") ? "0" : rblCust2.SelectedValue)) +
+                                Convert.ToInt32(((rblCust3.SelectedValue == "") ? "0" : rblCust3.SelectedValue));
+            txttotalCust.Text = totalCust.ToString();
+        }
+
+        protected void rblCust3_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalCust = Convert.ToInt32(((rblCust1.SelectedValue == "") ? "0" : rblCust1.SelectedValue)) +
+                                Convert.ToInt32(((rblCust2.SelectedValue == "") ? "0" : rblCust2.SelectedValue)) +
+                                Convert.ToInt32(((rblCust3.SelectedValue == "") ? "0" : rblCust3.SelectedValue));
+            txttotalCust.Text = totalCust.ToString();
+        }
+
+        protected void rblPro1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalPro = Convert.ToInt32(((rblPro1.SelectedValue == "") ? "0" : rblPro1.SelectedValue)) +
+                                Convert.ToInt32(((rblPro2.SelectedValue == "") ? "0" : rblPro2.SelectedValue)) +
+                                Convert.ToInt32(((rblPro3.SelectedValue == "") ? "0" : rblPro3.SelectedValue));
+            txttotalPro.Text = totalPro.ToString();
+        }
+
+        protected void rblPro2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalPro = Convert.ToInt32(((rblPro1.SelectedValue == "") ? "0" : rblPro1.SelectedValue)) +
+                                Convert.ToInt32(((rblPro2.SelectedValue == "") ? "0" : rblPro2.SelectedValue)) +
+                                Convert.ToInt32(((rblPro3.SelectedValue == "") ? "0" : rblPro3.SelectedValue));
+            txttotalPro.Text = totalPro.ToString();
+        }
+
+        protected void rblPro3_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalPro = Convert.ToInt32(((rblPro1.SelectedValue == "") ? "0" : rblPro1.SelectedValue)) +
+                                Convert.ToInt32(((rblPro2.SelectedValue == "") ? "0" : rblPro2.SelectedValue)) +
+                                Convert.ToInt32(((rblPro3.SelectedValue == "") ? "0" : rblPro3.SelectedValue));
+            txttotalPro.Text = totalPro.ToString();
+        }
+
+        protected void rblDis1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalDis = Convert.ToInt32(((rblDis1.SelectedValue == "") ? "0" : rblDis1.SelectedValue)) +
+                                Convert.ToInt32(((rblDis2.SelectedValue == "") ? "0" : rblDis2.SelectedValue)) +
+                                Convert.ToInt32(((rblDis3.SelectedValue == "") ? "0" : rblDis3.SelectedValue)) +
+                                Convert.ToInt32(((rblDis4.SelectedValue == "") ? "0" : rblDis4.SelectedValue)) +
+                                Convert.ToInt32(((rblDis5.SelectedValue == "") ? "0" : rblDis5.SelectedValue));
+            txttotalDis.Text = totalDis.ToString();
+        }
+
+        protected void rblDis2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalDis = Convert.ToInt32(((rblDis1.SelectedValue == "") ? "0" : rblDis1.SelectedValue)) +
+                                Convert.ToInt32(((rblDis2.SelectedValue == "") ? "0" : rblDis2.SelectedValue)) +
+                                Convert.ToInt32(((rblDis3.SelectedValue == "") ? "0" : rblDis3.SelectedValue)) +
+                                Convert.ToInt32(((rblDis4.SelectedValue == "") ? "0" : rblDis4.SelectedValue)) +
+                                Convert.ToInt32(((rblDis5.SelectedValue == "") ? "0" : rblDis5.SelectedValue));
+            txttotalDis.Text = totalDis.ToString();
+        }
+
+        protected void rblDis3_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalDis = Convert.ToInt32(((rblDis1.SelectedValue == "") ? "0" : rblDis1.SelectedValue)) +
+                                Convert.ToInt32(((rblDis2.SelectedValue == "") ? "0" : rblDis2.SelectedValue)) +
+                                Convert.ToInt32(((rblDis3.SelectedValue == "") ? "0" : rblDis3.SelectedValue)) +
+                                Convert.ToInt32(((rblDis4.SelectedValue == "") ? "0" : rblDis4.SelectedValue)) +
+                                Convert.ToInt32(((rblDis5.SelectedValue == "") ? "0" : rblDis5.SelectedValue));
+            txttotalDis.Text = totalDis.ToString();
+        }
+
+        protected void rblDis4_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalDis = Convert.ToInt32(((rblDis1.SelectedValue == "") ? "0" : rblDis1.SelectedValue)) +
+                                 Convert.ToInt32(((rblDis2.SelectedValue == "") ? "0" : rblDis2.SelectedValue)) +
+                                 Convert.ToInt32(((rblDis3.SelectedValue == "") ? "0" : rblDis3.SelectedValue)) +
+                                 Convert.ToInt32(((rblDis4.SelectedValue == "") ? "0" : rblDis4.SelectedValue)) +
+                                 Convert.ToInt32(((rblDis5.SelectedValue == "") ? "0" : rblDis5.SelectedValue));
+            txttotalDis.Text = totalDis.ToString();
+        }
+
+        protected void rblDis5_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalDis = Convert.ToInt32(((rblDis1.SelectedValue == "") ? "0" : rblDis1.SelectedValue)) +
+                                Convert.ToInt32(((rblDis2.SelectedValue == "") ? "0" : rblDis2.SelectedValue)) +
+                                Convert.ToInt32(((rblDis3.SelectedValue == "") ? "0" : rblDis3.SelectedValue)) +
+                                Convert.ToInt32(((rblDis4.SelectedValue == "") ? "0" : rblDis4.SelectedValue)) +
+                                Convert.ToInt32(((rblDis5.SelectedValue == "") ? "0" : rblDis5.SelectedValue));
+            txttotalDis.Text = totalDis.ToString();
+        }
+
+        protected void rblTW1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalTW = Convert.ToInt32(((rblTW1.SelectedValue == "") ? "0" : rblTW1.SelectedValue)) +
+                                Convert.ToInt32(((rblTW2.SelectedValue == "") ? "0" : rblTW2.SelectedValue)) +
+                                Convert.ToInt32(((rblTW3.SelectedValue == "") ? "0" : rblTW3.SelectedValue)) +
+                                Convert.ToInt32(((rblTW4.SelectedValue == "") ? "0" : rblTW4.SelectedValue)) +
+                                Convert.ToInt32(((rblTW5.SelectedValue == "") ? "0" : rblTW5.SelectedValue));
+            txttotalTW.Text = totalTW.ToString();
+        }
+
+        protected void rblTW2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalTW = Convert.ToInt32(((rblTW1.SelectedValue == "") ? "0" : rblTW1.SelectedValue)) +
+                                Convert.ToInt32(((rblTW2.SelectedValue == "") ? "0" : rblTW2.SelectedValue)) +
+                                Convert.ToInt32(((rblTW3.SelectedValue == "") ? "0" : rblTW3.SelectedValue)) +
+                                Convert.ToInt32(((rblTW4.SelectedValue == "") ? "0" : rblTW4.SelectedValue)) +
+                                Convert.ToInt32(((rblTW5.SelectedValue == "") ? "0" : rblTW5.SelectedValue));
+            txttotalTW.Text = totalTW.ToString();
+        }
+
+        protected void rblTW3_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalTW = Convert.ToInt32(((rblTW1.SelectedValue == "") ? "0" : rblTW1.SelectedValue)) +
+                                Convert.ToInt32(((rblTW2.SelectedValue == "") ? "0" : rblTW2.SelectedValue)) +
+                                Convert.ToInt32(((rblTW3.SelectedValue == "") ? "0" : rblTW3.SelectedValue)) +
+                                Convert.ToInt32(((rblTW4.SelectedValue == "") ? "0" : rblTW4.SelectedValue)) +
+                                Convert.ToInt32(((rblTW5.SelectedValue == "") ? "0" : rblTW5.SelectedValue));
+            txttotalTW.Text = totalTW.ToString();
+        }
+
+        protected void rblTW4_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalTW = Convert.ToInt32(((rblTW1.SelectedValue == "") ? "0" : rblTW1.SelectedValue)) +
+                                Convert.ToInt32(((rblTW2.SelectedValue == "") ? "0" : rblTW2.SelectedValue)) +
+                                Convert.ToInt32(((rblTW3.SelectedValue == "") ? "0" : rblTW3.SelectedValue)) +
+                                Convert.ToInt32(((rblTW4.SelectedValue == "") ? "0" : rblTW4.SelectedValue)) +
+                                Convert.ToInt32(((rblTW5.SelectedValue == "") ? "0" : rblTW5.SelectedValue));
+            txttotalTW.Text = totalTW.ToString();
+        }
+
+        protected void rblTW5_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalTW = Convert.ToInt32(((rblTW1.SelectedValue == "") ? "0" : rblTW1.SelectedValue)) +
+                                Convert.ToInt32(((rblTW2.SelectedValue == "") ? "0" : rblTW2.SelectedValue)) +
+                                Convert.ToInt32(((rblTW3.SelectedValue == "") ? "0" : rblTW3.SelectedValue)) +
+                                Convert.ToInt32(((rblTW4.SelectedValue == "") ? "0" : rblTW4.SelectedValue)) +
+                                Convert.ToInt32(((rblTW5.SelectedValue == "") ? "0" : rblTW5.SelectedValue));
+            txttotalTW.Text = totalTW.ToString();
+        }
+
+        protected void btnEvaluate_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (drpEmpID.Visible == true)
+                {
+                    if (drpEmpID.Text != "")
+                    {
+                        strSQL = "SELECT * FROM PS.PS_SUB_WCZ_AT_VW_A WHERE EMPLID='" + drpEmpID.SelectedItem.Value + "'";
+                        dt = dbcon.GetTable(strSQL);
+                        txtEmpName.Text = dt.Rows[0]["NAME_A"].ToString();
+                        txtEmpID.Text = dt.Rows[0]["EMPLID"].ToString();
+                        txtDepName.Text = dt.Rows[0]["DEPTID"].ToString();
+                        txtJob.Text = dt.Rows[0]["JOB_DESCR"].ToString();
+
+                        pnlSearch.Visible = false;
+                        pnlEmpInfo.Visible = true;
+                        if (dt.Rows[0]["CATEGORY"].ToString() == "IDL")
+                        {
+                            pnlIDL.Visible = true;
+                            if (checkPosition(Session["UserID"].ToString()) == 7 || checkPosition(Session["UserID"].ToString()) == 8)
+                            {
+                                drpEvalby.Items.Insert(0, new ListItem(Session["UserID"].ToString() + " - " + psmodel.GetName(Session["UserID"].ToString()), Session["UserID"].ToString()));
+                                drpEvalby.SelectedIndex = 0;
+                                drpEvalby.Enabled = false;
+                            }
+                            else
+                            {
+                                filldrpEval(Session["UserID"].ToString(), "IDL");
+                            }
+                        }
+                        else
+                        {
+                            pnlDL.Visible = true;
+                            if (checkPosition(Session["UserID"].ToString()) == 7 || checkPosition(Session["UserID"].ToString()) == 8)
+                            {
+                                drpEvalbyDL.Items.Insert(0, new ListItem(Session["UserID"].ToString() + " - " + psmodel.GetName(Session["UserID"].ToString()), Session["UserID"].ToString()));
+                                drpEvalbyDL.SelectedIndex = 0;
+                                drpEvalbyDL.Enabled = false;
+                            }
+                            else
+                            {
+                                filldrpEval(txtEmpID.Text, "DL");
+                            }
+                        }
+                        drpEmpID.Text = "";
+                    }
+                }
+                else
+                {
+                    Panel2.Visible = true;
+                    pnlSearch.Visible = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Response.Write(ex.Message);
+            }
+        }
+
+        void filldrpEval(string emplid, string category)
+        {
+            strSQL = "SELECT SUPERVISOR_ID,MANAGER_ID FROM PS.PS_SUB_WCZ_AT_VW_A WHERE EMPLID='" + emplid + "'";
+            dt = dbcon.GetTable(strSQL);
+            if (category == "IDL")
+            {
+                drpEvalby.Items.Insert(0, "");
+                drpEvalby.Items.Insert(1, new ListItem(dt.Rows[0][0].ToString() + " - " + psmodel.GetName(dt.Rows[0][0].ToString()), dt.Rows[0][0].ToString()));
+                drpEvalby.Items.Insert(2, new ListItem(dt.Rows[0][1].ToString() + " - " + psmodel.GetName(dt.Rows[0][1].ToString()), dt.Rows[0][1].ToString()));
+            }
+            else
+            {
+                drpEvalbyDL.Items.Insert(0, "");
+                drpEvalbyDL.Items.Insert(1, new ListItem(dt.Rows[0][0].ToString() + " - " + psmodel.GetName(dt.Rows[0][0].ToString()), dt.Rows[0][0].ToString()));
+                drpEvalbyDL.Items.Insert(2, new ListItem(dt.Rows[0][1].ToString() + " - " + psmodel.GetName(dt.Rows[0][1].ToString()), dt.Rows[0][1].ToString()));
+             }
+        }
+
+        protected void btnSaveSubmitIDL_Click(object sender, EventArgs e)
+        {
+            strSQL = "SELECT to_char(CONTRACT_EVALID_SEQ.NEXTVAL,'0000') FROM DUAL";
+            dt = dbcon.GetTable(strSQL);
+            DateTime d = DateTime.Today;
+            string seq = dt.Rows[0][0].ToString();
+            seq = seq.Trim();
+            string evalid = "EVAL" + d.ToString("yyyyMMdd") + seq;
+
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblCust1.Text + "','" + rblCust1.SelectedValue + "',sysdate,'" + drpEvalby.SelectedValue + "','" + txtRemarksIDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblCust2.Text + "','" + rblCust2.SelectedValue + "',sysdate,'" + drpEvalby.SelectedValue + "','" + txtRemarksIDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblCust3.Text + "','" + rblCust3.SelectedValue + "',sysdate,'" + drpEvalby.SelectedValue + "','" + txtRemarksIDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblPro1.Text + "','" + rblPro1.SelectedValue + "',sysdate,'" + drpEvalby.SelectedValue + "','" + txtRemarksIDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblPro2.Text + "','" + rblPro2.SelectedValue + "',sysdate,'" + drpEvalby.SelectedValue + "','" + txtRemarksIDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblPro3.Text + "','" + rblPro3.SelectedValue + "',sysdate,'" + drpEvalby.SelectedValue + "','" + txtRemarksIDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblDis1.Text + "','" + rblDis1.SelectedValue + "',sysdate,'" + drpEvalby.SelectedValue + "','" + txtRemarksIDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblDis2.Text + "','" + rblDis2.SelectedValue + "',sysdate,'" + drpEvalby.SelectedValue + "','" + txtRemarksIDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblDis3.Text + "','" + rblDis3.SelectedValue + "',sysdate,'" + drpEvalby.SelectedValue + "','" + txtRemarksIDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblDis4.Text + "','" + rblDis4.SelectedValue + "',sysdate,'" + drpEvalby.SelectedValue + "','" + txtRemarksIDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblDis5.Text + "','" + rblDis5.SelectedValue + "',sysdate,'" + drpEvalby.SelectedValue + "','" + txtRemarksIDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblTW1.Text + "','" + rblTW1.SelectedValue + "',sysdate,'" + drpEvalby.SelectedValue + "','" + txtRemarksIDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblTW2.Text + "','" + rblTW2.SelectedValue + "',sysdate,'" + drpEvalby.SelectedValue + "','" + txtRemarksIDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblTW3.Text + "','" + rblTW3.SelectedValue + "',sysdate,'" + drpEvalby.SelectedValue + "','" + txtRemarksIDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblTW4.Text + "','" + rblTW4.SelectedValue + "',sysdate,'" + drpEvalby.SelectedValue + "','" + txtRemarksIDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblTW5.Text + "','" + rblTW5.SelectedValue + "',sysdate,'" + drpEvalby.SelectedValue + "','" + txtRemarksIDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+
+            string myStringVariable = msg.GetMsgType("41");
+            ScriptManager.RegisterStartupScript(UpdatePanel1, UpdatePanel1.GetType(), "myalert", "alert('" + myStringVariable + "');", true);
+
+            //clear radiobuttonlist and emp info
+            rblCust1.ClearSelection();
+            rblCust2.ClearSelection();
+            rblCust3.ClearSelection();
+            rblPro1.ClearSelection();
+            rblPro2.ClearSelection();
+            rblPro3.ClearSelection();
+            rblDis1.ClearSelection();
+            rblDis2.ClearSelection();
+            rblDis3.ClearSelection();
+            rblDis4.ClearSelection();
+            rblDis5.ClearSelection();
+            rblTW1.ClearSelection();
+            rblTW2.ClearSelection();
+            rblTW3.ClearSelection();
+            rblTW4.ClearSelection();
+            rblTW5.ClearSelection();
+            txtDepName.Text="";
+            txtEmpID.Text="";
+            txtEmpName.Text="";
+            txtJob.Text="";
+
+            //hide evaluation form and show search form
+            pnlEmpInfo.Visible = false;
+            pnlIDL.Visible = false;
+            pnlSearch.Visible = true;
+        }
+
+        protected void rblAttendance_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalDL = Convert.ToInt32(((rblAttendance.SelectedValue == "") ? "0" : rblAttendance.SelectedValue)) +
+                                Convert.ToInt32(((rblQuality.SelectedValue == "") ? "0" : rblQuality.SelectedValue)) +
+                                Convert.ToInt32(((rblFlexibility.SelectedValue == "") ? "0" : rblFlexibility.SelectedValue)) +
+                                Convert.ToInt32(((rblDiscipline.SelectedValue == "") ? "0" : rblDiscipline.SelectedValue)) +
+                                Convert.ToInt32(((rblSense.SelectedValue == "") ? "0" : rblSense.SelectedValue));
+            txtTotalDL.Text = totalDL.ToString();
+        }
+
+        protected void rblQuality_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalDL = Convert.ToInt32(((rblAttendance.SelectedValue == "") ? "0" : rblAttendance.SelectedValue)) +
+                                            Convert.ToInt32(((rblQuality.SelectedValue == "") ? "0" : rblQuality.SelectedValue)) +
+                                            Convert.ToInt32(((rblFlexibility.SelectedValue == "") ? "0" : rblFlexibility.SelectedValue)) +
+                                            Convert.ToInt32(((rblDiscipline.SelectedValue == "") ? "0" : rblDiscipline.SelectedValue)) +
+                                            Convert.ToInt32(((rblSense.SelectedValue == "") ? "0" : rblSense.SelectedValue));
+            txtTotalDL.Text = totalDL.ToString();
+        }
+
+        protected void rblFlexibility_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalDL = Convert.ToInt32(((rblAttendance.SelectedValue == "") ? "0" : rblAttendance.SelectedValue)) +
+                                Convert.ToInt32(((rblQuality.SelectedValue == "") ? "0" : rblQuality.SelectedValue)) +
+                                Convert.ToInt32(((rblFlexibility.SelectedValue == "") ? "0" : rblFlexibility.SelectedValue)) +
+                                Convert.ToInt32(((rblDiscipline.SelectedValue == "") ? "0" : rblDiscipline.SelectedValue)) +
+                                Convert.ToInt32(((rblSense.SelectedValue == "") ? "0" : rblSense.SelectedValue));
+            txtTotalDL.Text = totalDL.ToString();
+        }
+
+        protected void rblDiscipline_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalDL = Convert.ToInt32(((rblAttendance.SelectedValue == "") ? "0" : rblAttendance.SelectedValue)) +
+                                Convert.ToInt32(((rblQuality.SelectedValue == "") ? "0" : rblQuality.SelectedValue)) +
+                                Convert.ToInt32(((rblFlexibility.SelectedValue == "") ? "0" : rblFlexibility.SelectedValue)) +
+                                Convert.ToInt32(((rblDiscipline.SelectedValue == "") ? "0" : rblDiscipline.SelectedValue)) +
+                                Convert.ToInt32(((rblSense.SelectedValue == "") ? "0" : rblSense.SelectedValue));
+            txtTotalDL.Text = totalDL.ToString();
+        }
+
+        protected void rblSense_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int totalDL = Convert.ToInt32(((rblAttendance.SelectedValue == "") ? "0" : rblAttendance.SelectedValue)) +
+                                Convert.ToInt32(((rblQuality.SelectedValue == "") ? "0" : rblQuality.SelectedValue)) +
+                                Convert.ToInt32(((rblFlexibility.SelectedValue == "") ? "0" : rblFlexibility.SelectedValue)) +
+                                Convert.ToInt32(((rblDiscipline.SelectedValue == "") ? "0" : rblDiscipline.SelectedValue)) +
+                                Convert.ToInt32(((rblSense.SelectedValue == "") ? "0" : rblSense.SelectedValue));
+            txtTotalDL.Text = totalDL.ToString();
+        }
+
+        int checkPosition(string emplid)
+        {
+            try
+            {
+                strSQL = "SELECT TREE_LEVEL_NUM FROM PS.PS_SUB_WCZORG_VW_A WHERE MANAGER_ID='" + emplid + "'";
+                dt = dbcon.GetTable(strSQL);
+                if (dt.Rows.Count > 0)
+                {
+                    return Convert.ToInt32(dt.Rows[0][0]);
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                Response.Write(ex.Message);
+                return 0;
+            }
+        }
+
+        protected void btnSaveSubmitDL_Click(object sender, EventArgs e)
+        {
+            strSQL = "SELECT to_char(CONTRACT_EVALID_SEQ.NEXTVAL,'0000') FROM DUAL";
+            dt = dbcon.GetTable(strSQL);
+            DateTime d = DateTime.Today;
+            string seq = dt.Rows[0][0].ToString();
+            seq = seq.Trim();
+            string evalid = "EVAL" + d.ToString("yyyyMMdd") + seq;
+
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblAttendance.Text + "','" + rblAttendance.SelectedValue + "',sysdate,'" + drpEvalbyDL.SelectedValue + "','" + txtRemarksDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblQuality.Text + "','" + rblQuality.SelectedValue + "',sysdate,'" + drpEvalbyDL.SelectedValue + "','" + txtRemarksDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblFlexibility.Text + "','" + rblFlexibility.SelectedValue + "',sysdate,'" + drpEvalbyDL.SelectedValue + "','" + txtRemarksDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblDiscipline.Text + "','" + rblDiscipline.SelectedValue + "',sysdate,'" + drpEvalbyDL.SelectedValue + "','" + txtRemarksDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+            strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + txtEmpID.Text + "','" + lblSense.Text + "','" + rblSense.SelectedValue + "',sysdate,'" + drpEvalbyDL.SelectedValue + "','" + txtRemarksDL.Text + "')";
+            dbcon.GetExecuteNonQuery(strSQL);
+
+            string myStringVariable = msg.GetMsgType("41");
+            ScriptManager.RegisterStartupScript(UpdatePanel1, UpdatePanel1.GetType(), "myalert", "alert('" + myStringVariable + "');", true);
+
+            rblAttendance.ClearSelection();
+            rblQuality.ClearSelection();
+            rblFlexibility.ClearSelection();
+            rblDiscipline.ClearSelection();
+            rblSense.ClearSelection();
+            txtDepName.Text = "";
+            txtEmpID.Text = "";
+            txtEmpName.Text = "";
+            txtJob.Text = "";
+
+            pnlEmpInfo.Visible = false;
+            pnlDL.Visible = false;
+            pnlSearch.Visible = true;
+
+        }
+        protected void GenerateEvaluation(string name, string emplid, string deptid, string jobdescr)
+        {
+            Panel2.Controls.Add(new LiteralControl("<table style='width: 80%; margin-top: 20px;' class='zebra'><thead><tr><th colspan='4' align='left' style='padding: 10px;'>"));
+            Label label0 = new Label();
+            label0.Text = "EMPLOYEE INFO";
+            Panel2.Controls.Add(label0);
+            Panel2.Controls.Add(new LiteralControl("</th></tr></thead><tfoot><tr><th colspan='4'></th></tr></tfoot><tbody>"));
+            Panel2.Controls.Add(new LiteralControl("<tr><td>"));
+            Label label1 = new Label();
+            label1.Text = "Employee Name:";
+            Panel2.Controls.Add(label1);
+            Panel2.Controls.Add(new LiteralControl("</td><td>"));
+            TextBox textbox1 = new TextBox();
+            textbox1.ID = "txtEmpName_" + emplid;
+            textbox1.Text = name;
+            Panel2.Controls.Add(textbox1);
+            Panel2.Controls.Add(new LiteralControl("</td><td>"));
+            Label label2 = new Label();
+            label2.Text = "ID Number:";
+            Panel2.Controls.Add(label2);
+            Panel2.Controls.Add(new LiteralControl("</td><td>"));
+            TextBox textbox2 = new TextBox();
+            textbox2.ID = "txtEmpID_" + emplid;
+            textbox2.Text = emplid;
+            Panel2.Controls.Add(textbox2);
+            Panel2.Controls.Add(new LiteralControl("</td><tr><td>"));
+            Label label3 = new Label();
+            label3.Text = "Dept Name:";
+            Panel2.Controls.Add(label3);
+            Panel2.Controls.Add(new LiteralControl("</td><td>"));
+            TextBox textbox3 = new TextBox();
+            textbox3.ID = "txtDeptID_" + emplid;
+            textbox3.Text = deptid;
+            Panel2.Controls.Add(textbox3);
+            Panel2.Controls.Add(new LiteralControl("</td><td>"));
+            Label label4 = new Label();
+            label4.Text = "Job Title:";
+            Panel2.Controls.Add(label4);
+            Panel2.Controls.Add(new LiteralControl("</td><td>"));
+            TextBox textbox4 = new TextBox();
+            textbox4.ID = "txtJobTitle_" + emplid;
+            textbox4.Text = jobdescr;
+            Panel2.Controls.Add(textbox4);
+            Panel2.Controls.Add(new LiteralControl("</td></tr></tbody></table>"));
+
+            Panel2.Controls.Add(new LiteralControl("<table style='width: 80%; margin-top: 50px;' class='no-zebra' cellpadding='5' cellspacing='5'>"));
+            Panel2.Controls.Add(new LiteralControl("<thead><tr><th colspan='6' align='left' style='padding: 10px;'>"));
+            Label label5 = new Label();
+            label5.Text = "EVALUATION FORM (DL)";
+            Panel2.Controls.Add(label5);
+            Panel2.Controls.Add(new LiteralControl("</th></tr></thead><tr><td style='width: 600px;'><span style='padding-left: 20px'><strong>&nbsp;</strong></span></td><td align='left' style='width: 100px'>"));
+            Label label6 = new Label();
+            label6.Text = "1";
+            Panel2.Controls.Add(label6);
+            Panel2.Controls.Add(new LiteralControl("</td><td align='left' style='width: 100px'>"));
+            Label label7 = new Label();
+            label7.Text = "2";
+            Panel2.Controls.Add(label7);
+            Panel2.Controls.Add(new LiteralControl("</td><td align='left' style='width: 100px'>"));
+            Label label8 = new Label();
+            label8.Text = "3";
+            Panel2.Controls.Add(label8);
+            Panel2.Controls.Add(new LiteralControl("</td><td align='left' style='width: 100px'>"));
+            Label label9 = new Label();
+            label9.Text = "4";
+            Panel2.Controls.Add(label9);
+            Panel2.Controls.Add(new LiteralControl("</td><td align='left' style='width: 100px'>"));
+            Label label10 = new Label();
+            label10.Text = "5";
+            Panel2.Controls.Add(label10);
+            Panel2.Controls.Add(new LiteralControl("</td></tr><tr><td><span style='padding-left: 140px;'>"));
+            Label label16 = new Label();
+            label16.ID = "lblAttendance_" + emplid;
+            label16.Text = "Attendance";
+            Panel2.Controls.Add(label16);
+            Panel2.Controls.Add(new LiteralControl("</span></td><td colspan='5' align='left'>"));
+            RadioButtonList rblist1 = new RadioButtonList();
+            for (int i = 1; i <= 5; i++)
+            {
+                rblist1.Items.Add(new ListItem("", i.ToString()));
+            }
+            rblist1.RepeatDirection = System.Web.UI.WebControls.RepeatDirection.Horizontal;
+            rblist1.Width = 500;
+            rblist1.ID = "rblistAttendance_" + emplid;
+            rblist1.AutoPostBack = true;
+            rblist1.SelectedIndexChanged += new EventHandler(rblist1_SelectedIndexChanged);
+            Panel2.Controls.Add(rblist1);
+            RequiredFieldValidator rfv1 = new RequiredFieldValidator();
+            rfv1.ID = "rfv1" + emplid;
+            rfv1.ErrorMessage = "Please select score";
+            rfv1.ControlToValidate = "rblistAttendance_" + emplid;
+            rfv1.Display = ValidatorDisplay.None;
+            rfv1.SetFocusOnError = true;
+            rfv1.ValidationGroup = "v_dyna_dl";
+            Panel2.Controls.Add(rfv1);
+            ValidatorCalloutExtender vce1 = new ValidatorCalloutExtender();
+            vce1.ID = "vce1" + emplid;
+            vce1.TargetControlID = "rfv1" + emplid;
+            Panel2.Controls.Add(vce1);
+
+            Panel2.Controls.Add(new LiteralControl("</td></tr><tr><td><span style='padding-left: 140px;'>"));
+            Label label17 = new Label();
+            label17.ID = "lblQuality_" + emplid;
+            label17.Text = "Quality";
+            Panel2.Controls.Add(label17);
+            Panel2.Controls.Add(new LiteralControl("</span></td><td colspan='5' align='left'>"));
+            RadioButtonList rblist2 = new RadioButtonList();
+            for (int i = 1; i <= 5; i++)
+            {
+                rblist2.Items.Add(new ListItem("", i.ToString()));
+            }
+            rblist2.RepeatDirection = System.Web.UI.WebControls.RepeatDirection.Horizontal;
+            rblist2.Width = 500;
+            rblist2.ID = "rblistQuality_" + emplid;
+            rblist2.AutoPostBack = true;
+            rblist2.SelectedIndexChanged += new EventHandler(rblist2_SelectedIndexChanged);
+            Panel2.Controls.Add(rblist2);
+            RequiredFieldValidator rfv2 = new RequiredFieldValidator();
+            rfv2.ID = "rfv2" + emplid;
+            rfv2.ErrorMessage = "Please select score";
+            rfv2.ControlToValidate = "rblistQuality_" + emplid;
+            rfv2.Display = ValidatorDisplay.None;
+            rfv2.SetFocusOnError = true;
+            rfv2.ValidationGroup = "v_dyna_dl";
+            Panel2.Controls.Add(rfv2);
+            ValidatorCalloutExtender vce2 = new ValidatorCalloutExtender();
+            vce2.ID = "vce2" + emplid;
+            vce2.TargetControlID = "rfv2" + emplid;
+            Panel2.Controls.Add(vce2);
+
+            Panel2.Controls.Add(new LiteralControl("</td></tr><tr><td><span style='padding-left: 140px;'>"));
+            Label label18 = new Label();
+            label18.ID = "lblFlexibility_" + emplid;
+            label18.Text = "Flexibility";
+            Panel2.Controls.Add(label18);
+            Panel2.Controls.Add(new LiteralControl("</span></td><td colspan='5' align='left'>"));
+            RadioButtonList rblist3 = new RadioButtonList();
+            for (int i = 1; i <= 5; i++)
+            {
+                rblist3.Items.Add(new ListItem("", i.ToString()));
+            }
+            rblist3.RepeatDirection = System.Web.UI.WebControls.RepeatDirection.Horizontal;
+            rblist3.Width = 500;
+            rblist3.ID = "rblistFlexibility_" + emplid;
+            rblist3.AutoPostBack = true;
+            rblist3.SelectedIndexChanged += new EventHandler(rblist3_SelectedIndexChanged);
+            Panel2.Controls.Add(rblist3);
+            RequiredFieldValidator rfv3 = new RequiredFieldValidator();
+            rfv3.ID = "rfv3" + emplid;
+            rfv3.ErrorMessage = "Please select score";
+            rfv3.ControlToValidate = "rblistFlexibility_" + emplid;
+            rfv3.Display = ValidatorDisplay.None;
+            rfv3.SetFocusOnError = true;
+            rfv3.ValidationGroup = "v_dyna_dl";
+            Panel2.Controls.Add(rfv3);
+            ValidatorCalloutExtender vce3 = new ValidatorCalloutExtender();
+            vce3.ID = "vce3" + emplid;
+            vce3.TargetControlID = "rfv3" + emplid;
+            Panel2.Controls.Add(vce3);
+
+            Panel2.Controls.Add(new LiteralControl("</td></tr><tr><td><span style='padding-left: 140px;'>"));
+            Label label19 = new Label();
+            label19.ID="lblDiscipline_" + emplid;
+            label19.Text = "Discipline";
+            Panel2.Controls.Add(label19);
+            Panel2.Controls.Add(new LiteralControl("</span></td><td colspan='5' align='left'>"));
+            RadioButtonList rblist4 = new RadioButtonList();
+            for (int i = 1; i <= 5; i++)
+            {
+                rblist4.Items.Add(new ListItem("", i.ToString()));
+            }
+            rblist4.RepeatDirection = System.Web.UI.WebControls.RepeatDirection.Horizontal;
+            rblist4.Width = 500;
+            rblist4.ID = "rblistDiscipline_" + emplid;
+            rblist4.AutoPostBack = true;
+            rblist4.SelectedIndexChanged += new EventHandler(rblist4_SelectedIndexChanged);
+            Panel2.Controls.Add(rblist4);
+            RequiredFieldValidator rfv4 = new RequiredFieldValidator();
+            rfv4.ID = "rfv4" + emplid;
+            rfv4.ErrorMessage = "Please select score";
+            rfv4.ControlToValidate = "rblistDiscipline_" + emplid;
+            rfv4.Display = ValidatorDisplay.None;
+            rfv4.SetFocusOnError = true;
+            rfv4.ValidationGroup = "v_dyna_dl";
+            Panel2.Controls.Add(rfv4);
+            ValidatorCalloutExtender vce4 = new ValidatorCalloutExtender();
+            vce4.ID = "vce4" + emplid;
+            vce4.TargetControlID = "rfv4" + emplid;
+            Panel2.Controls.Add(vce4);
+
+            Panel2.Controls.Add(new LiteralControl("</td></tr><tr><td><span style='padding-left: 140px;'>"));
+            Label label20 = new Label();
+            label20.ID="lblResponsibility_" + emplid;
+            label20.Text = "Sense of responsibility";
+            Panel2.Controls.Add(label20);
+            Panel2.Controls.Add(new LiteralControl("</span></td><td colspan='5' align='left'>"));
+            RadioButtonList rblist5 = new RadioButtonList();
+            for (int i = 1; i <= 5; i++)
+            {
+                rblist5.Items.Add(new ListItem("", i.ToString()));
+            }
+            rblist5.RepeatDirection = System.Web.UI.WebControls.RepeatDirection.Horizontal;
+            rblist5.Width = 500;
+            rblist5.ID = "rblistResponsibility_" + emplid;
+            rblist5.AutoPostBack = true;
+            rblist5.SelectedIndexChanged += new EventHandler(rblist5_SelectedIndexChanged);
+            Panel2.Controls.Add(rblist5);
+            RequiredFieldValidator rfv5 = new RequiredFieldValidator();
+            rfv5.ID = "rfv5" + emplid;
+            rfv5.ErrorMessage = "Please select score";
+            rfv5.ControlToValidate = "rblistResponsibility_" + emplid;
+            rfv5.Display = ValidatorDisplay.None;
+            rfv5.SetFocusOnError = true;
+            rfv5.ValidationGroup = "v_dyna_dl";
+            Panel2.Controls.Add(rfv5);
+            ValidatorCalloutExtender vce5 = new ValidatorCalloutExtender();
+            vce5.ID = "vce5" + emplid;
+            vce5.TargetControlID = "rfv5" + emplid;
+            Panel2.Controls.Add(vce5);
+
+            Panel2.Controls.Add(new LiteralControl("</td></tr><tr><td><span style='padding-left: 140px;'>"));
+            Panel2.Controls.Add(new LiteralControl("</span></td><td colspan='5' align='right'>"));
+            Label label21 = new Label();
+            label21.Text = "Total: ";
+            Panel2.Controls.Add(label21);
+            TextBox textbox5 = new TextBox();
+            textbox5.ID = "txtTotal_" + emplid;
+            textbox5.Width = 25;
+            Panel2.Controls.Add(textbox5);
+            Panel2.Controls.Add(new LiteralControl("<tr><td colspan='6'><span style='padding-left: 20px'><strong>Remarks/Comment</strong></span></td></tr><tr><td align='right' colspan='6' style='padding: 10px; padding-right: 50px;'>"));
+            TextBox textbox6 = new TextBox();
+            textbox6.ID="txtRemarks_" + emplid;
+            textbox6.TextMode = TextBoxMode.MultiLine;
+            textbox6.Rows = 10;
+            textbox6.Columns = 100;
+            Panel2.Controls.Add(textbox6);
+            Panel2.Controls.Add(new LiteralControl("</td></tr><table>"));
+        }   
+
+        void rblist1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            RadioButtonList rbl = (RadioButtonList)sender;
+            string rblID = rbl.ID.ToString();
+            string[] rblID_emplid = rblID.Split('_');
+            TextBox total = (TextBox)Panel2.FindControl("txtTotal_" + rblID_emplid[1]);
+            total.Text = getTotal(rblID_emplid[1]).ToString();
+        }
+
+        void rblist2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            RadioButtonList rbl = (RadioButtonList)sender;
+            string rblID = rbl.ID.ToString();
+            string[] rblID_emplid = rblID.Split('_');
+            TextBox total = (TextBox)Panel2.FindControl("txtTotal_" + rblID_emplid[1]);
+            total.Text = getTotal(rblID_emplid[1]).ToString();
+        }
+
+        void rblist3_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            RadioButtonList rbl = (RadioButtonList)sender;
+            string rblID = rbl.ID.ToString();
+            string[] rblID_emplid = rblID.Split('_');
+            TextBox total = (TextBox)Panel2.FindControl("txtTotal_" + rblID_emplid[1]);
+            total.Text = getTotal(rblID_emplid[1]).ToString();
+        }
+
+        void rblist4_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            RadioButtonList rbl = (RadioButtonList)sender;
+            string rblID = rbl.ID.ToString();
+            string[] rblID_emplid = rblID.Split('_');
+            TextBox total = (TextBox)Panel2.FindControl("txtTotal_" + rblID_emplid[1]);
+            total.Text = getTotal(rblID_emplid[1]).ToString();
+        }
+
+        void rblist5_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            RadioButtonList rbl = (RadioButtonList)sender;
+            string rblID = rbl.ID.ToString();
+            string[] rblID_emplid = rblID.Split('_');
+            TextBox total = (TextBox)Panel2.FindControl("txtTotal_" + rblID_emplid[1]);
+            total.Text = getTotal(rblID_emplid[1]).ToString(); ;
+        }
+
+        int getTotal(string empID)
+        {
+            RadioButtonList rbl1 = (RadioButtonList)Panel2.FindControl("rblistAttendance_" + empID);
+            RadioButtonList rbl2 = (RadioButtonList)Panel2.FindControl("rblistQuality_" + empID);
+            RadioButtonList rbl3 = (RadioButtonList)Panel2.FindControl("rblistFlexibility_" + empID);
+            RadioButtonList rbl4 = (RadioButtonList)Panel2.FindControl("rblistDiscipline_" + empID);
+            RadioButtonList rbl5 = (RadioButtonList)Panel2.FindControl("rblistResponsibility_" + empID);
+
+            int total;
+
+            return total = Convert.ToInt32((rbl1.SelectedValue == "") ? "0" : rbl1.SelectedValue) +
+                           Convert.ToInt32((rbl2.SelectedValue == "") ? "0" : rbl2.SelectedValue) +
+                           Convert.ToInt32((rbl3.SelectedValue == "") ? "0" : rbl3.SelectedValue) +
+                           Convert.ToInt32((rbl4.SelectedValue == "") ? "0" : rbl4.SelectedValue) +
+                           Convert.ToInt32((rbl5.SelectedValue == "") ? "0" : rbl5.SelectedValue);
+        }
+
+        void GenerateButtons(string mode)
+        {
+            if (mode == "semi-annual")
+            {
+                Panel2.Controls.Add(new LiteralControl("<table style='width: 80%; margin-top: 20px;' class='zebra'><tr><td colspan='6' align='right'>Evaluated by: &nbsp;"));
+                DropDownList dropdownlist1 = new DropDownList();
+                dropdownlist1.ID = "drpEvaluatedBy";
+                if (checkPosition(Session["UserID"].ToString()) == 7 || checkPosition(Session["UserID"].ToString()) == 8)
+                {
+                    dropdownlist1.Items.Insert(0, new ListItem(Session["UserID"].ToString() + " - " + psmodel.GetName(Session["UserID"].ToString()), Session["UserID"].ToString()));
+                    dropdownlist1.SelectedIndex = 0;
+                    dropdownlist1.Enabled = false;
+                }
+                else
+                {
+                    strSQL = "SELECT SUPERVISOR_ID,MANAGER_ID FROM PS.PS_SUB_WCZ_AT_VW_A WHERE EMPLID='" + Session["UserID"].ToString() + "'";
+                    dt = dbcon.GetTable(strSQL);
+                    dropdownlist1.Items.Insert(0, "");
+                    dropdownlist1.Items.Insert(1, new ListItem(dt.Rows[0][0].ToString() + " - " + psmodel.GetName(dt.Rows[0][0].ToString()), dt.Rows[0][0].ToString()));
+                    dropdownlist1.Items.Insert(2, new ListItem(dt.Rows[0][1].ToString() + " - " + psmodel.GetName(dt.Rows[0][1].ToString()), dt.Rows[0][1].ToString()));
+                }
+                Panel2.Controls.Add(dropdownlist1);
+                RequiredFieldValidator rfv6 = new RequiredFieldValidator();
+                rfv6.ID = "rfv6";
+                rfv6.ErrorMessage = "Please select Evaluated By";
+                rfv6.ControlToValidate = "drpEvaluatedBy";
+                rfv6.Display = ValidatorDisplay.None;
+                rfv6.SetFocusOnError = true;
+                rfv6.ValidationGroup = "v_dyna_dl";
+                Panel2.Controls.Add(rfv6);
+                ValidatorCalloutExtender vce6 = new ValidatorCalloutExtender();
+                vce6.ID = "vce6";
+                vce6.TargetControlID = "rfv6";
+                Panel2.Controls.Add(vce6);
+                Panel2.Controls.Add(new LiteralControl("</td></tr><td colspan='6' align='right' style='padding: 50px'>"));
+                Button button1 = new Button();
+                button1.ID = "btnSaveSubmitD";
+                button1.Text = "Save & Submit";
+                button1.CssClass = "ui-button ui-button-text-only ui-widget ui-state-default";
+                button1.ValidationGroup = "v_dyna_dl";
+                button1.Click += new EventHandler(button1_Click);
+                Panel2.Controls.Add(button1);
+                Panel2.Controls.Add(new LiteralControl("</td></tr><table>"));
+            }
+        }
+
+        void button1_Click(object sender, EventArgs e)
+        {
+            strSQL = "SELECT to_char(CONTRACT_EVALID_SEQ.NEXTVAL,'0000') FROM DUAL";
+            dt = dbcon.GetTable(strSQL);
+            DateTime d = DateTime.Today;
+            string seq = dt.Rows[0][0].ToString();
+            seq = seq.Trim();
+            string evalid = "EVAL" + d.ToString("yyyyMMdd") + seq;
+
+            for (int i = 0; i < lstEmpID.Items.Count; i++)
+            {
+                if (lstEmpID.Items[i].Selected)
+                {
+                    string emplid = lstEmpID.Items[i].Value;
+                    strSQL = "SELECT * FROM PS.PS_SUB_WCZ_AT_VW_A WHERE EMPLID = '" + emplid + "'";
+                    dt = dbcon.GetTable(strSQL);
+
+                    string name = dt.Rows[0]["NAME_A"].ToString();
+                    string deptid = dt.Rows[0]["DEPTID"].ToString();
+
+                    Label label1 = (Label)Panel2.FindControl("lblAttendance_" + emplid);
+                    Label label2 = (Label)Panel2.FindControl("lblQuality_" + emplid);
+                    Label label3 = (Label)Panel2.FindControl("lblFlexibility_" + emplid);
+                    Label label4 = (Label)Panel2.FindControl("lblDiscipline_" + emplid);
+                    Label label5 = (Label)Panel2.FindControl("lblResponsibility_" + emplid);
+
+                    RadioButtonList rbl1 = (RadioButtonList)Panel2.FindControl("rblistAttendance_" + emplid);
+                    RadioButtonList rbl2 = (RadioButtonList)Panel2.FindControl("rblistQuality_" + emplid);
+                    RadioButtonList rbl3 = (RadioButtonList)Panel2.FindControl("rblistFlexibility_" + emplid);
+                    RadioButtonList rbl4 = (RadioButtonList)Panel2.FindControl("rblistDiscipline_" + emplid);
+                    RadioButtonList rbl5 = (RadioButtonList)Panel2.FindControl("rblistResponsibility_" + emplid);
+
+                    TextBox txt1 = (TextBox)Panel2.FindControl("txtRemarks_" + emplid);
+
+                    DropDownList drp1 = (DropDownList)Panel2.FindControl("drpEvaluatedBy");
+
+                    strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + emplid + "','" + label1.Text + "','" + rbl1.SelectedValue + "',sysdate,'" + drp1.SelectedValue + "','" + txt1.Text + "')";
+                    dbcon.GetExecuteNonQuery(strSQL);
+                    strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + emplid + "','" + label2.Text + "','" + rbl2.SelectedValue + "',sysdate,'" + drp1.SelectedValue + "','" + txt1.Text + "')";
+                    dbcon.GetExecuteNonQuery(strSQL);
+                    strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + emplid + "','" + label3.Text + "','" + rbl3.SelectedValue + "',sysdate,'" + drp1.SelectedValue + "','" + txt1.Text + "')";
+                    dbcon.GetExecuteNonQuery(strSQL);
+                    strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + emplid + "','" + label4.Text + "','" + rbl4.SelectedValue + "',sysdate,'" + drp1.SelectedValue + "','" + txt1.Text + "')";
+                    dbcon.GetExecuteNonQuery(strSQL);
+                    strSQL = "INSERT INTO CONTRACT_EVALUATION VALUES('" + evalid + "','" + emplid + "','" + label5.Text + "','" + rbl5.SelectedValue + "',sysdate,'" + drp1.SelectedValue + "','" + txt1.Text + "')";
+                    dbcon.GetExecuteNonQuery(strSQL);
+                }
+            }
+
+            string myStringVariable = msg.GetMsgType("41");
+            ScriptManager.RegisterStartupScript(UpdatePanel1, UpdatePanel1.GetType(), "myalert", "alert('" + myStringVariable + "');", true);
+
+            Panel2.Visible = false;
+            pnlSearch.Visible = true;
+            drpEmpID.Visible = true;
+            lstEmpID.Visible = false;
+            lstEmpID.ClearSelection();
+        }
+
+    }
+}

@@ -1,0 +1,155 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data;
+using System.Data.OleDb;
+using EHR.Model;
+using System.Web.Security;
+
+namespace EHR.Views.Account
+{
+    public partial class Default : System.Web.UI.Page
+    {
+        AccountModel _account = new AccountModel();
+        MiscModel _misc = new MiscModel();
+        DBModel dbcon = new DBModel();
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            //txtEmployeeID.Attributes.Add("onfocus", "this.value=''");
+            pnlDialog.Visible = false;
+            if (!IsPostBack)
+            {
+                //Check if the browser support cookies
+                if (Request.Browser.Cookies)
+                {
+                    //Check if the cookies with name PBLOGIN exist on user's machine
+                    if (Request.Cookies["PBLOGIN2"] != null)
+                    { 
+                        txtEmployeeID.Text = Request.Cookies["PBLOGIN2"]["UNAME2"].ToString();
+                        txtPassword.Attributes.Add("value", Request.Cookies["PBLOGIN2"]["UPASS2"].ToString());
+                        this.VerifyLogin(Request.Cookies["PBLOGIN2"]["UNAME2"].ToString(), Request.Cookies["PBLOGIN2"]["UPASS2"].ToString());
+                    }
+                   else if (Request.Cookies["PBLOGIN"] != null)
+                    {
+                        //Pass the user name and password to the VerifyLogin method
+                        txtEmployeeID.Text = Request.Cookies["PBLOGIN"]["UNAME"].ToString();
+                        txtPassword.Attributes.Add ("value",Request.Cookies["PBLOGIN"]["UPASS"].ToString());
+                        //txtPassword.TextMode = TextBoxMode.Password;
+                        
+                    }
+                    
+                }
+            }
+        }
+
+        
+        protected void BtnSubmit_OnClick(object sender, EventArgs e)
+        {
+            //check if remember me checkbox is checked on login
+            if ((this.savePwd.Checked))
+            {
+                //Check if the browser support cookies
+                if ((Request.Browser.Cookies))
+                {
+                    //Check if the cookie with name PBLOGIN exist on user's machine
+                    if ((Request.Cookies["PBLOGIN"] == null))
+                    {
+                        //Create a cookie with expiry of 30 days
+                        Response.Cookies["PBLOGIN"].Expires = DateTime.Now.AddDays(30);
+                        //Write username to the cookie
+                        Response.Cookies["PBLOGIN"]["UNAME"] = this.txtEmployeeID.Text.ToUpper().Trim();
+                        //Write password to the cookie
+                        Response.Cookies["PBLOGIN"]["UPASS"] = this.txtPassword.Text;
+                        //If the cookie already exist then wirte the user name and password on the cookie
+                    }
+                    else
+                    {
+                        Response.Cookies["PBLOGIN"]["UNAME"] = this.txtEmployeeID.Text.ToUpper().Trim();
+                        Response.Cookies["PBLOGIN"]["UPASS"] = this.txtPassword.Text;
+                    }
+                }
+            }
+            if ((this.rememberMe.Checked))
+            {
+                if ((Request.Browser.Cookies))
+                {
+                    //Check if the cookie with name PBLOGIN exist on user's machine
+                    if ((Request.Cookies["PBLOGIN2"] == null))
+                    {
+                        //Create a cookie with expiry of 30 days
+                        Response.Cookies["PBLOGIN2"].Expires = DateTime.Now.AddDays(30);
+                        //Write username to the cookie
+                        Response.Cookies["PBLOGIN2"]["UNAME2"] = this.txtEmployeeID.Text.ToUpper().Trim();
+                        //Write password to the cookie
+                        Response.Cookies["PBLOGIN2"]["UPASS2"] = this.txtPassword.Text;
+                        //If the cookie already exist then wirte the user name and password on the cookie
+                    }
+                    else
+                    {
+                        Response.Cookies["PBLOGIN2"]["UNAME2"] = this.txtEmployeeID.Text.ToUpper().Trim();
+                        Response.Cookies["PBLOGIN2"]["UPASS2"] = this.txtPassword.Text;
+                    }
+                }
+            }
+            this.VerifyLogin(this.txtEmployeeID.Text.Trim().ToUpper(), this.txtPassword.Text);
+        }
+
+        protected void VerifyLogin(string UserName, string Password)
+        {
+            try
+            {
+                if (UserName != "" || Password != "")
+                {
+                    if (_account.IsSameDept(UserName) == true)
+                    {
+                        if (_account.IsActiveDirectoryLogin(UserName, Password) == true)
+                        {
+                            //redirect to dashboard
+                            RedirectToHome();
+                        }
+                        //login to database
+                        else if (_account.IsDatabaseLogin(UserName, Password) == true)
+                        {
+                            //check if user is expired here
+
+                            //redirect to dashboard
+                            RedirectToHome();
+                        }
+                    }
+                    else
+                    {
+                        if (_account.IsAPUser(UserName) == false)
+                        {
+                            _misc.GetMsgBox("4", pnlDialog, lblErrorMsg);
+                        }
+                        else
+                        {
+                            _misc.GetMsgBox("6", pnlDialog, lblErrorMsg);
+                        }
+                    }
+                }
+
+                else
+                {
+                    _misc.GetMsgBox("2", pnlDialog, lblErrorMsg);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Response.Write(ex.Message);
+            }
+        }
+
+        private void RedirectToHome()
+        {
+            Session["UserID"] = txtEmployeeID.Text.ToUpper().Trim();
+            FormsAuthentication.SetAuthCookie(txtEmployeeID.Text.Trim().ToUpper(), true);
+            Response.Redirect("~/Views/Home/");
+            
+        }
+        
+    }
+}

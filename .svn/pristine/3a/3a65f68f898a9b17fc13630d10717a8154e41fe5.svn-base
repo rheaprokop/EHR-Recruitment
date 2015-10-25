@@ -1,0 +1,100 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model;
+
+namespace EHR.Recruitment
+{
+    public partial class InterviewDetails1 : System.Web.UI.Page
+    {
+        ObjectsOleDB myObjs = new ObjectsOleDB();
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            string candidate = Request.QueryString["candidate"];
+            LoadInterviewDetails(candidate);
+            PopulateJobs(candidate); 
+
+        }
+
+        private void LoadInterviewDetails(string id)
+        {
+            string OracleQry = "Select CANDIDATEINTDETAILS.REQUESTID AS REQUESTID,  " +
+                     "TO_CHAR(CANDIDATEINTDETAILS.POSIONBOARDDATE, 'dd.mm.yyyy') AS POSIONBOARDDATE, " +
+                     "CANDIDATEINTDETAILS.SALARYEXP AS SALARYEXP,  " +
+                     "CANDIDATEINTDETAILS.SUITABLEFORDEPT,  PS.PS_SUB_WCZ_AT_VW_A.NAME_A AS INTERVIEWEDBY,  " +
+                     "TO_CHAR(CANDIDATEINTDETAILS.INTERVIEWDATE, 'dd.mm.yyyy') AS INTERVIEWDATE, " +
+                     "CANDIDATEINTDETAILS.REMARKS AS REMARKS, " +
+                     "INITCAP(CANDIDATES.LASTNAME)|| ', '|| INITCAP(CANDIDATES.FIRSTNAME) FULLNAME " +
+                     "From CANDIDATEINTDETAILS " +
+                     "JOIN CANDIDATES ON " +
+                     "CANDIDATES.CANDIDATEID = CANDIDATEINTDETAILS.CANDIDATEID " +
+                     "JOIN PS.PS_SUB_WCZ_AT_VW_A " +
+                     "ON PS.PS_SUB_WCZ_AT_VW_A.EMPLID = CANDIDATEINTDETAILS.INTERVIEWEDBY " +
+                     "Where CANDIDATEINTDETAILS.CANDIDATEID='" + id + "' ORDER BY CANDIDATEINTDETAILS.INTERVIEWDATE ASC ";
+
+            DataTable myDT = myObjs.GetTable(OracleQry);
+            rptIntDetails.DataSource = myDT;
+            rptIntDetails.DataBind();
+
+            if (myObjs.GetTable(OracleQry).Rows.Count == 0)
+            {
+                pnlNoRecord.Visible = true;
+            }
+            else
+            {
+                pnlNoRecord.Visible = false;
+            }
+
+           /* myObjs.GetConn();
+            OleDbCommand mycmd = new OleDbCommand(OracleQry, myObjs.MyConn);
+            OleDbDataReader myrd = mycmd.ExecuteReader();
+            if(myrd.Read())
+            {
+                lblRequestID.Text = Convert.ToString(myrd["REQUESTID"]);
+                lblSalary.Text = Convert.ToString(myrd["SALARYEXP"]);
+                lblRemarks.Text = Convert.ToString(myrd["REMARKS"]);
+                lblInterviewDate.Text   = Convert.ToString(myrd["INTERVIEWDATE"]);
+                lblInterviewedBy.Text = Convert.ToString(myrd["INTERVIEWEDBY"]);
+                lblOnBoardDate.Text = Convert.ToString(myrd["POSIONBOARDDATE"]);
+            }
+            myObjs.MyConn.Close();*/
+        }
+
+        private void PopulateJobs(string Candidate)
+        {
+            string OracleQry = "select  DISTINCT(CANDIDATEJOBS.POSITION) as POSITION,  " + 
+                "CANDIDATEJOBS.CANDIDATEJOBSID, " + 
+                "PS.PS_JOB.JOB_FAMILY_DESC AS FAMILY, PS.PS_JOB.JOB_FUNC_DESC AS FUNCTION, PS.PS_JOB.JOB_DESC_PS AS PS, " + 
+                "PS.PS_JOB.JOB_BUSI_TITLE AS TITLE from CANDIDATEJOBS  " +
+                "JOIN PS.PS_JOB ON CANDIDATEJOBS.POSITION = PS.PS_JOB.JOB_CODE " +
+                "where CANDIDATEID='" + Candidate + "'";
+
+            DataTable myDT = myObjs.GetTable(OracleQry);
+            gridAllJobs.DataSource = myDT;
+            gridAllJobs.DataBind();
+             
+        }
+
+        protected void OnPaging(object sender, GridViewPageEventArgs e)
+        {
+            string candidate = Request.QueryString["candidate"];
+            gridAllJobs.PageIndex = e.NewPageIndex;
+            gridAllJobs.DataBind();
+            PopulateJobs(candidate); 
+        }
+
+        protected void ViewCandidate_Click(object sender, EventArgs e)
+        {
+            string candidate = Request.QueryString["candidate"];
+            Session["candidateID"] = candidate;
+
+            Response.Redirect("~/Recruitment/ViewCandidate.aspx?action=view&candidate=" + candidate);
+        }
+
+    }
+}

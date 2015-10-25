@@ -1,0 +1,173 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model;
+using System.Data;
+using System.Data.OleDb;
+namespace EHR.Views.Status
+{
+    public partial class RQ14 : System.Web.UI.Page
+    {
+        DBModel _db = new DBModel();
+        MiscModel _misc = new MiscModel();
+        AccountModel _accnt = new AccountModel();
+ 
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            PopulateRequestReport(txtSearchEmplData.Text);
+            calFromDate.Visible = false;
+            calToDate.Visible = false;
+            txtSearchEmplData.Attributes.Add("onfocus", "this.value=''");
+        }
+
+        private void PopulateRequestReport(string _filter)
+        {
+            string sql;
+            if (_filter == "")
+            {
+                sql = "SELECT A.REQUESTID REQUESTID, A.EMPLID EMPLID, B.NAME NAME, A.REQUESTORID REQUESTORID, " +
+                            " A.REQUESTORDEPTID DEPTID, A.CURRDEPT CURRDEPT, A.NEWDEPT NEWDEPT, A.CURRPOSI CURRPOSI, " +
+                            "A.NEWPOSI NEWPOSI, A.CURREMPLCAT CURREMPLCAT, A.NEWEMPLCAT NEWEMPLCAT, A.STATUS APPSTATUS " +
+                            "FROM STATUS_CHANGE A, LIB_USERS B WHERE A.EMPLID = B.USERID AND " +
+                            "A.REQUESTORID = '" + _accnt.GetUserSessID() + "' ORDER BY REQUESTID"; 
+            }
+            else
+            {
+                sql = "SELECT A.REQUESTID REQUESTID, A.EMPLID EMPLID, B.NAME NAME, A.REQUESTORID REQUESTORID, " +
+                           " A.REQUESTORDEPTID DEPTID, A.CURRDEPT CURRDEPT, A.NEWDEPT NEWDEPT, A.CURRPOSI CURRPOSI, " +
+                           "A.NEWPOSI NEWPOSI, A.CURREMPLCAT CURREMPLCAT, A.NEWEMPLCAT NEWEMPLCAT, A.STATUS APPSTATUS " +
+                           "FROM STATUS_CHANGE A, LIB_USERS B " +
+                           "WHERE   A.REQUESTORID = B.USERID AND " + 
+                           "OR A.EMPLID LIKE '%" + _filter + "%' " + 
+                           "OR A.REQUESTORDEPTID LIKE '%" + _filter + "%' " +
+                           "OR A.CURRDEPT LIKE '%" + _filter + "%' " +
+                           "OR A.NEWDEPT LIKE '%" + _filter + "%' " +
+                           "OR A.CURRPOSI LIKE '%" + _filter + "%' " +
+                           "OR A.NEWPOSI LIKE '%" + _filter + "%' " +
+                           "OR A.CURREMPLCAT LIKE '%" + _filter + "%' " +
+                           "OR A.NEWEMPLCAT LIKE '%" + _filter + "%' " +
+                           "OR A.APPSTATUS LIKE '%" + _filter + "%' " +
+                           "AND A.REQUESTORID = '" + _accnt.GetUserSessID() + "' ORDER BY A.REQUESTID";
+
+               
+            }
+
+            
+            DataTable _dt = _db.GetTable(sql);
+            gridStatusChangeReport.DataSource = _dt;
+            gridStatusChangeReport.DataBind();
+  
+
+        }
+
+        protected void FindStatusRequest_Click(object sender, EventArgs e)
+        {
+            if (txtSearchEmplData.Text == "")
+            {
+                lblEmptySearchData.Text = "Require Keyword to continue.";
+            }
+            else
+            {
+                PopulateRequestReport(txtSearchEmplData.Text);
+            }
+
+        }
+
+        protected void OnPagingStatus(object sender, GridViewPageEventArgs e)
+        {
+            gridStatusChangeReport.PageIndex = e.NewPageIndex;
+            gridStatusChangeReport.DataBind();
+            //SetData();
+        }
+
+        protected void TxtFromCalendar_SelectionChanged(object sender, EventArgs e)
+        {
+            foreach (DateTime day in calFromDate.SelectedDates)
+            {
+
+                txtFrom.Text = "";
+                txtFrom.Text += day.ToString("dd/MM/yyyy");
+                calFromDate.Visible = false;
+
+            }
+        }
+
+        protected void TxtToCalendar_SelectionChanged(object sender, EventArgs e)
+        {
+            foreach (DateTime day in calToDate.SelectedDates)
+            {
+
+                txtTo.Text = "";
+                txtTo.Text += day.ToString("dd/MM/yyyy");
+                calToDate.Visible = false;
+
+            }
+        }
+
+        protected void CalendarFrom_OnClick(object sender, ImageClickEventArgs e)
+        {
+            if (calFromDate.Visible == false)
+            {
+                calFromDate.Visible = true;
+            }
+            else
+            {
+                calFromDate.Visible = false;
+
+            }
+        }
+
+        protected void CalendarTo_Click(object sender, ImageClickEventArgs e)
+        {
+            if (calToDate.Visible == false)
+            {
+                calToDate.Visible = true;
+            }
+            else
+            {
+                calToDate.Visible = false;
+
+            }
+        }
+
+
+
+        protected void BtnGetDateRange_Click(object sender, EventArgs e)
+        {
+            txtSearchEmplData.Attributes.Add("onfocus", "this.value=''");
+            string sql;
+            if (txtFrom.Text == "" && txtTo.Text == "")
+            {
+                lblEmptySearchData.Text = "Required Date From and To";
+                sql = "";
+            }
+            else
+            {
+                sql = "SELECT A.REQUESTID REQUESTID, A.EMPLID EMPLID, B.NAME NAME, A.REQUESTORID REQUESTORID, " +
+             " A.REQUESTORDEPTID DEPTID, A.CURRDEPT CURRDEPT, A.NEWDEPT NEWDEPT, A.CURRPOSI CURRPOSI, " +
+             "A.NEWPOSI NEWPOSI, A.CURREMPLCAT CURREMPLCAT, A.NEWEMPLCAT NEWEMPLCAT, A.APPSTATUS APPSTATUS " +
+             "FROM STATUS_CHANGE A, LIB_USERS B WHERE A.EMPLID = B.USERID " +
+             "AND  A.REQDATE BETWEEN TO_DATE('" + txtFrom.Text + "', 'dd/MM/yyyy') " +
+             " AND TO_DATE('" + txtTo.Text + "', 'dd/MM/yyyy') " +
+             "AND A.REQUESTORID = '" + _accnt.GetUserSessID() + "' ORDER BY REQUESTID";
+
+            }
+
+            DataTable _dt = _db.GetTable(sql);
+            gridStatusChangeReport.DataSource = _dt;
+            gridStatusChangeReport.DataBind();
+
+
+            string sqlCount = "SELECT count(requestid) " +
+                "FROM STATUS_CHANGE A, LIB_USERS B WHERE A.EMPLID = B.USERID " +
+             "AND  A.REQDATE BETWEEN TO_DATE('" + txtFrom.Text + "', 'dd/MM/yyyy') " +
+             " AND TO_DATE('" + txtTo.Text + "', 'dd/MM/yyyy') " +
+             "AND A.REQUESTORID = '" + _accnt.GetUserSessID() + "'ORDER BY REQUESTID";
+            int count = _db.GetExecuteScalar(sqlCount);
+            lblTotalRecords.Text = "Total No of Records: <strong>" + count + "</strong> records";
+        }
+    }
+}

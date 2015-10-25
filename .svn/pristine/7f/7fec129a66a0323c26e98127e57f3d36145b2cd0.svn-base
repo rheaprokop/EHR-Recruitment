@@ -1,0 +1,843 @@
+﻿using System;
+using System.Collections;
+using System.Configuration;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Web;
+using System.Web.Security;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Web.UI.WebControls.WebParts;
+using System.Web.UI.HtmlControls;
+using System.Xml.Linq;
+using EHR.Model;
+using System.Data.OleDb;
+
+
+namespace EHR.Views.Admin
+{
+    public partial class ManageUser : System.Web.UI.Page
+    {
+        public DBModel dbcon = new DBModel();
+        public MiscModel msg = new MiscModel();
+        ChangePassword _pwd = new ChangePassword();
+        public string strSql = "";
+        public string deptid2;
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (Page.IsPostBack == false)
+            {
+                if (IsITAdmin() == true)
+                {
+                    dbcon.GetPSConn();
+                    dbcon.GetConn();
+                    BindgrdUser();
+                }
+                else
+                {
+                    SearchPanel.Visible = false;
+                    msg.GetMsgBox("24", pnlDialog, lblMsg);
+                    //pnlDialog.Visible = false;
+                }
+            }
+        }
+
+        bool IsITAdmin()
+        {
+            try
+            {
+                string userid = Session["UserID"].ToString();
+                //string userid="P104006"; //for testing
+                string strSql = "select * from lib_group where userid='" + userid + "' and groupname='IT ADMIN'";
+                DataTable dt= dbcon.GetTable(strSql);
+                if (dt.Rows.Count != 0)
+                {
+                    return true;
+                }
+                else{
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public void BindgrdUser()
+        {
+            try
+            {
+
+                string sql = "select userid,name,deptid,expiredate,expireflag,lockflag from lib_users where (userid like'%" + txtSearch.Text.ToUpper() + "%' or name like '%" + txtSearch.Text.ToUpper() + "%' or deptid like '%" + txtSearch.Text.ToUpper() + "%') and comp_descr='Active'";
+
+                grdUser.DataSource = getUsers(sql);
+                grdUser.PageIndex = 0;
+                grdUser.DataBind();
+                
+            }
+            catch (Exception ex)
+            { 
+                throw ex; 
+            }
+
+        }
+
+        #region add user
+        protected void EmpIDTextbox_TextChanged(object sender, EventArgs e) // not in use
+        {
+            DataTable dt = new DataTable();
+            dt = getUserInfo(EmpIDTextbox.Text);
+            if (dt.Rows.Count != 0)
+            {
+                foreach (DataRow dr in dt.Rows)
+                {
+                    lblName.Text = dr["name"].ToString();
+                }
+            }
+            else
+            {
+                //error;
+            }
+        }
+
+        protected void AddButton_Click(object sender, EventArgs e)
+        {
+            if (EmpIDTextbox.Text != "" & lblName.Text != "")
+            {
+                //will add check duplicate-----------
+                //here...
+                //-------------
+                strSql = "insert into lib_users (userid,name,password) values ('" + EmpIDTextbox.Text + "','" + lblName.Text + "','d00f5d5217896fb7fd601412cb890830')";
+                dbcon.GetExecuteNonQuery(strSql);
+                msg.GetMsgBox("5", pnlDialog, lblMsg);
+            }
+        }
+#endregion 
+        public DataTable getUsers(string sql)
+        {
+            try
+            {
+
+                strSql = sql; //"select userid,name,expiredate,expireflag,lockflag from lib_users";
+                DataTable dt = new DataTable();
+                if (dbcon.GetTable(strSql).Rows.Count != 0)
+                {
+                    dt = dbcon.GetTable(strSql);
+                }
+
+                return dt;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+          
+        }
+
+        public DataTable getUserInfo(string userid)
+        {
+            try
+            {
+                strSql = "select * from lib_users where userid='" + userid + "'";
+                DataTable dt = new DataTable();
+                dt = dbcon.GetTable(strSql);
+                return dt;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        protected void grdUser_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            try
+            {
+                int rowindex;
+                if (e.CommandName == "EditClicked")
+                {
+                    rowindex = Convert.ToInt32(e.CommandArgument);
+                    string userid = grdUser.DataKeys[rowindex].Value.ToString();
+                    DataTable dt = getUserInfo(userid);
+                    SearchPanel.Visible = false;
+                    PanelGroupAp.Visible = false;
+                    PanelEdit.Visible = true;
+
+                    rbLock.SelectedValue = dt.Rows[0][8].ToString();
+                    //rbExpire.SelectedValue = dt.Rows[0][6].ToString();
+                    txtUserID.Text = userid;
+                    txtEmpName.Text = dt.Rows[0][1].ToString();
+                    //-----------disabled filldept---------------
+                    //DataTable dt2 = filldept();
+                    //DrpDepartment.DataSource = dt2;
+                    //DrpDepartment.DataTextField = dt2.Columns[0].ToString();
+                    //DrpDepartment.DataBind();
+                    //-------------------------------------------
+                    //DrpDepartment.Items.Insert(0, dt.Rows[0][2].ToString());
+                    txtDepartment.Text = dt.Rows[0][2].ToString();
+                    bool a = IsDeptidConflict();
+
+                    if (a == true)
+                    {
+                        rbLock.Enabled = false;
+                        ChkUpdateDept.Visible = true;
+                        ChkUpdateDept.Text = "Update Department (old dept:" + deptid2 + ")";
+                    }
+                }
+                else if (e.CommandName == "UserIdClicked")
+                {
+                    rowindex = Convert.ToInt32(e.CommandArgument);
+                    grdUser.SelectedIndex = rowindex;
+                    //grdUser.SelectedRow.BackColor = System.Drawing.Color.Blue;
+                    lblUserID.Text = grdUser.DataKeys[rowindex].Value.ToString();
+                    lblEmp_Name.Text = getUserInfo(lblUserID.Text).Rows[0][1].ToString();
+                    Hidden_lblDeptID.Text = getUserInfo(lblUserID.Text).Rows[0][2].ToString();
+                    //GridViewRow row = grdUser.SelectedRow;
+                    //string userid = row.Cells[1].Text;
+
+                    fillGroup();
+                    fillAp();
+
+                    enableButton();
+                    PanelGroupAp.Visible = true;
+                }
+                else if (e.CommandName == "btnNewClicked")
+                {
+                    SearchPanel.Visible = false;
+                    PanelGroupAp.Visible = false;
+                    PanelAddUser.Visible = true;
+                    DataTable dt = filldept();
+                    DrpDepartment.DataSource = dt;
+                    DrpDepartment.DataTextField = dt.Columns[0].ToString();
+                    DrpDepartment.DataBind();
+                    DrpDepartment.Items.Insert(0, "");
+                }
+                else if (e.CommandName == "Page")
+                {
+                    grdUser.SelectedIndex = -1;
+                    PanelGroupAp.Visible = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        DataTable filldept()
+        {
+            string strSql = "select distinct(deptid) from PS.PS_SUB_WCZORG_VW_A";
+            DataTable dt = dbcon.GetTable(strSql);
+            return dt;
+        }
+
+        string getUpperDept(string deptid)
+        {
+            string strSql = "select UPORG_CODE_A from PS.PS_SUB_WCZORG_VW_A where deptid='" + deptid + "'";
+            DataTable dt = dbcon.GetTable(strSql);
+            string upperDept = dt.Rows[0][0].ToString();
+            return upperDept;
+        }
+
+        public void fillGroup()
+        {
+            try
+            {
+                GroupListBox.Items.Clear();
+                DataTable dt = getGroup(lblUserID.Text);
+                int rowGroup = dt.Rows.Count;
+                if (rowGroup != 0)
+                {
+                    for (int i = 0; i <= rowGroup - 1; i++)
+                    {
+                        GroupListBox.Items.Add(dt.Rows[i][0].ToString());
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public void fillAp()
+        {
+            try
+            {
+                ApListBox.Items.Clear();
+                DataTable dt = getAp(lblUserID.Text);
+                int rowAp = dt.Rows.Count;
+                if (rowAp != 0)
+                {
+                    for (int i = 0; i <= rowAp - 1; i++)
+                    {
+                        ApListBox.Items.Add(dt.Rows[i][0].ToString());
+                    }
+                }
+            }
+            catch (Exception ex)
+            { 
+                throw ex; 
+            }
+        }
+
+        protected void grdUser_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            BindgrdUser();
+            grdUser.PageIndex = e.NewPageIndex;
+            grdUser.DataBind();
+        }
+
+
+        public DataTable getGroup(string userid)
+        {
+            try
+            {
+                strSql = "select groupname from lib_group where userid='" + userid + "'";
+                DataTable dt = new DataTable();
+                if (dbcon.GetTable(strSql).Rows.Count != 0)
+                {
+                    return dbcon.GetTable(strSql);
+                }
+                else
+                {
+                    return dt;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public DataTable getAp(string userid)
+        {
+            try
+            {
+                strSql = "select b.description from lib_apuser a, PS.APPLICATIONMASTER b where a.applicationid=b.applicationid and a.userid='" + userid + "'";
+                DataTable dt = new DataTable();
+                if (dbcon.GetTable(strSql).Rows.Count != 0)
+                {
+                    return dbcon.GetTable(strSql);
+                }
+                else
+                {
+                    return dt;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        protected void AddGroupButton_Click(object sender, EventArgs e)
+        {
+            AddGroupPanel.Visible = true;
+            UserGroupPanel.Visible = false;
+            BindGroupList();
+        }
+
+        protected void BindGroupList()
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                dt = getAllGroup(lblUserID.Text);
+                if (dt.Rows.Count > 0)
+                {
+                    drpGroup.DataSource = dt;
+                    drpGroup.DataTextField = dt.Columns[0].ToString();
+                    //drpGroup.DataValueField = dt.Columns[1].ToString();
+                    drpGroup.DataBind();
+                }
+                drpGroup.Items.Insert(0, "");
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+    
+        public DataTable getAllGroup(string userid)
+        {
+            try
+            {
+                //strSql = "select distinct(groupname) from lib_group where userid <>'" + userid + "'";
+                strSql = "select distinct(groupname) from lib_group where groupname not in (select groupname from lib_group where userid ='" + userid + "')";
+                DataTable dt = new DataTable();
+                if (dbcon.GetTable(strSql).Rows.Count != 0)
+                {
+                    return dbcon.GetTable(strSql);
+                }
+                else
+                {
+                    return dt;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+               
+        }
+
+        public DataTable getAllAp(string userid)
+        {
+            try
+            {
+                //strSql = "select description from PS.APPLICATIONMASTER where PARENTID='3' and applicationid not in(select applicationid from lib_apuser where userid='" + userid + "')";
+                strSql = "select description from PS.APPLICATIONMASTER where PARENTID='3' and applicationid not in(select applicationid from lib_apuser where userid='" + userid + "' union select applicationid from lib_apgroup where groupname in(select groupname from lib_group where userid='" + userid + "'))";
+                DataTable dt = new DataTable();
+                if (dbcon.GetTable(strSql).Rows.Count != 0)
+                {
+                    return dbcon.GetTable(strSql);
+                }
+                else
+                {
+                    return dt;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        protected void AddApButton_Click(object sender, EventArgs e)
+        {
+            AddApPanel.Visible = true;
+            ApPanel.Visible = false;
+            BindApList();
+        }
+        public void BindApList()
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                dt = getAllAp(lblUserID.Text);
+                if (dt.Rows.Count > 0)
+                {
+                    drpAp.DataSource = dt;
+                    drpAp.DataTextField = dt.Columns[0].ToString();
+                    //drpGroup.DataValueField = dt.Columns[1].ToString();
+                    drpAp.DataBind();
+                }
+                drpAp.Items.Insert(0, "");
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public void enableButton()
+        {
+            AddGroupButton.Enabled = true;
+            AddApButton.Enabled = true;
+        }
+
+        public void disableButton()
+        {
+            AddGroupButton.Enabled = false;
+            AddApButton.Enabled = false;
+        }
+
+        protected void txtSearch_TextChanged(object sender, EventArgs e)
+        {
+            BindgrdUser();
+            PanelGroupAp.Visible = false;
+            lblUserID.Text = "";
+            lblEmpName.Text = "";
+            grdUser.SelectedIndex = -1;
+        }
+
+        protected void SaveGroupButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string strSql1 = "select * from lib_group where groupname ='" + drpGroup.Text + "' and userid ='DUMMY'";
+                string strSql;
+                if (dbcon.GetTable(strSql1).Rows.Count == 0)
+                {
+                    strSql = "insert into lib_group values ('" + drpGroup.Text + "','" + lblUserID.Text + "','" + Hidden_lblDeptID.Text + "')";
+                    dbcon.GetExecuteNonQuery(strSql);
+                }
+                else
+                {
+                    strSql = "update lib_group set userid='" + lblUserID.Text + "', deptid='" + Hidden_lblDeptID.Text + "' where groupname='" + drpGroup.Text + "'";
+                    dbcon.GetTable(strSql);
+                }
+                //msg.GetMsgBox("21", pnlDialog, lblMsg);
+                msg.ShowMessage(msg.GetMsgType("21"), this.Page);
+                AddGroupPanel.Visible = false;
+                UserGroupPanel.Visible = true;
+                fillGroup();
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        protected void SaveApButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string strSql1 = "select applicationid from ps.APPLICATIONMASTER where description='" + drpAp.Text + "'";
+                DataTable dt = dbcon.GetTable(strSql1);
+                if (dt.Rows.Count > 0)
+                {
+                    string appid = dt.Rows[0][0].ToString();
+                    string strSql = "insert into lib_apuser values('" + appid + "','" + lblUserID.Text + "','1','" + Hidden_lblDeptID.Text + "')";
+                    dbcon.GetExecuteNonQuery(strSql);
+                    //msg.GetMsgBox("22", pnlDialog, lblMsg);
+                    msg.ShowMessage(msg.GetMsgType("22"), this.Page);
+                    AddApPanel.Visible = false;
+                    ApPanel.Visible = true;
+                    fillAp();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        protected void GroupListBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+                RemoveGroupButton.Enabled = true;
+        }
+
+        protected void ApListBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+                RemoveApButton.Enabled = true;
+        }
+
+        protected void RemoveGroupButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string strSql = "delete from lib_group where userid='" + lblUserID.Text + "' and groupname='" + GroupListBox.Text + "'";
+                dbcon.GetExecuteNonQuery(strSql);
+                fillGroup();
+                RemoveGroupButton.Enabled = false;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        protected void RemoveApButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string strsq1 = "select applicationid from ps.applicationmaster where description='" + ApListBox.Text + "'";
+                DataTable dt = dbcon.GetTable(strsq1);
+                string appid = dt.Rows[0][0].ToString();
+                string strSql = "delete from lib_apuser where userid='" + lblUserID.Text + "' and applicationid='" + appid + "'";
+                dbcon.GetExecuteNonQuery(strSql);
+                fillAp();
+                RemoveApButton.Enabled = false;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        protected void ChkUpdatePassword_CheckedChanged(object sender, EventArgs e)
+        {
+            if (ChkUpdatePassword.Checked == true)
+            {
+                txtPassword.Enabled = true;
+                txtConfirmPassword.Enabled = true;
+                RequiredFieldValidator3.Enabled = true;
+                RequiredFieldValidator4.Enabled = true;
+                txtPassword.BackColor = Color.White;
+                txtConfirmPassword.BackColor = Color.White;
+                txtPassword.Focus();
+            }
+            else
+            {
+                txtPassword.Enabled = false;
+                txtConfirmPassword.Enabled = false;
+                RequiredFieldValidator3.Enabled = false;
+                RequiredFieldValidator4.Enabled = false;
+                txtPassword.BackColor = Color.Gray;
+                txtConfirmPassword.BackColor = Color.Gray;
+            }
+
+        }
+
+        protected void btnCancel_Click(object sender, EventArgs e)
+        {
+            PanelEdit.Visible = false;
+            ChkUpdatePassword.Checked = false;
+            txtPassword.Enabled = false;
+            txtConfirmPassword.Enabled = false;
+            txtPassword.BackColor = Color.Gray;
+            txtConfirmPassword.BackColor = Color.Gray;
+            SearchPanel.Visible = true;
+            ChkUpdateDept.Visible = false;
+            grdUser.SelectedIndex = -1;
+        }
+
+        protected void btnSaveEdit_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string strSql;
+                if (ChkUpdatePassword.Checked == true)
+                {
+                    string pwd = getMD5Hash(txtPassword.Text);
+                    strSql = "update lib_users set lockflag=" + rbLock.SelectedValue + ", password='" + pwd + "' where userid='" + txtUserID.Text + "'";
+                    dbcon.GetExecuteNonQuery(strSql);
+                    //msg.GetMsgBox("23", pnlDialog, lblMsg);
+                    msg.ShowMessage(msg.GetMsgType("23"), this.Page);
+                    ChkUpdatePassword.Checked = false;
+                    txtPassword.Enabled = false;
+                    txtConfirmPassword.Enabled = false;
+                    txtPassword.BackColor = Color.Gray;
+                    txtConfirmPassword.BackColor = Color.Gray;
+                }
+                else
+                {
+                    strSql = "update lib_users set lockflag=" + rbLock.SelectedValue + " where userid='" + txtUserID.Text + "'";
+                    dbcon.GetExecuteNonQuery(strSql);
+                }
+
+                if (ChkUpdateDept.Checked == true)
+                {
+                    strSql = "update lib_group set deptid='" + txtDepartment.Text + "' where userid='" + txtUserID.Text + "'";
+                    dbcon.GetExecuteNonQuery(strSql);
+                    string strSql2 = "update lib_apuser set deptid='" + txtDepartment.Text + "' where userid='" + txtUserID.Text + "'";
+                    dbcon.GetExecuteNonQuery(strSql2);
+                    //msg.GetMsgBox("23", pnlDialog, lblMsg);
+                    msg.ShowMessage(msg.GetMsgType("23"), this.Page);
+                }
+                PanelEdit.Visible = false;
+                SearchPanel.Visible = true;
+                BindgrdUser();
+            }
+            catch(Exception ex)
+            {
+                throw ex;
+            }
+            
+        }
+
+        public bool IsDeptidConflict()
+        {
+            try
+            {
+                string deptid1 = txtDepartment.Text;
+                string strSql = "select deptid from lib_group where userid='" + txtUserID.Text + "'";
+                DataTable dt = dbcon.GetTable(strSql);
+                if (dt.Rows.Count > 0)
+                {
+                    deptid2 = dt.Rows[0][0].ToString();
+                }
+                else
+                {
+                    strSql = "select deptid from lib_apuser where userid='" + txtUserID.Text + "'";
+                    dt = dbcon.GetTable(strSql);
+                    if (dt.Rows.Count > 0)
+                    {
+                        deptid2 = dt.Rows[0][0].ToString();
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                if (deptid1 != deptid2)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public string getMD5Hash(string strToHash)
+        {
+            try
+            {
+                System.Security.Cryptography.MD5CryptoServiceProvider md5Obj = new System.Security.Cryptography.MD5CryptoServiceProvider();
+                byte[] bytesToHash = System.Text.Encoding.ASCII.GetBytes(strToHash);
+
+                bytesToHash = md5Obj.ComputeHash(bytesToHash);
+
+                string strResult = "";
+
+                foreach (byte b in bytesToHash)
+                {
+                    strResult += b.ToString("x2");
+                }
+
+                return strResult;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        protected void ChkUpdateDept_CheckedChanged(object sender, EventArgs e)
+        {
+            if (ChkUpdateDept.Checked == true)
+            {
+                rbLock.SelectedValue = "0";
+            }
+            else
+            {
+                rbLock.SelectedValue = "1";
+            }
+        }
+
+        protected void CancelGroupButton_Click(object sender, EventArgs e)
+        {
+            AddGroupPanel.Visible = false;
+            UserGroupPanel.Visible = true;
+        }
+
+        protected void CancelApButton_Click(object sender, EventArgs e)
+        {
+            AddApPanel.Visible = false;
+            ApPanel.Visible = true;
+        }
+
+        protected void btnSaveNew_Click(object sender, EventArgs e)
+        {
+            if (IsUserExisted(txtUser.Text) == false)
+            {
+                string strSql = "";
+                if (DrpDepartment.Text != "")
+                {
+                    string upperDept = getUpperDept(DrpDepartment.Text);
+                    strSql = "insert into lib_users (userid,name,deptid,upper_deptid,password) values ('" + txtUser.Text.ToUpper() + "','" + txtName.Text.ToUpper() + "','" + DrpDepartment.Text + "','" + upperDept + "','d00f5d5217896fb7fd601412cb890830')";
+                }
+                else
+                {
+                    strSql = "insert into lib_users (userid,name,password) values ('" + txtUser.Text.ToUpper() + "','" + txtName.Text.ToUpper() + "','d00f5d5217896fb7fd601412cb890830')";
+                }
+                try
+                {
+                    dbcon.GetExecuteNonQuery(strSql);
+                    //msg.GetMsgBox("5", pnlDialog, lblMsg);
+                    msg.ShowMessage(msg.GetMsgType("5"), this.Page);
+                    txtUser.Text = "";
+                    txtName.Text = "";
+                    DrpDepartment.Text = "";
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
+            }
+            else
+            {
+                //msg.GetMsgBox("25", pnlDialog, lblMsg);
+                msg.ShowMessage(msg.GetMsgType("25"), this.Page);
+            }
+        }
+
+        bool IsUserExisted(string userid)
+        {
+            try
+            {
+                string strSql = "select * from lib_users where userid='" + userid.ToUpper() + "'";
+                DataTable dt = dbcon.GetTable(strSql);
+                if (dt.Rows.Count != 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        protected void btnCancelNew_Click(object sender, EventArgs e)
+        {
+            PanelAddUser.Visible = false;
+            txtUser.Text = "";
+            txtName.Text = "";
+            SearchPanel.Visible = true;
+        }
+
+        protected void imgBtnAdd_Click(object sender, ImageClickEventArgs e)
+        {
+            AddGroupPanel.Visible = false;
+            AddNewGroupPanel.Visible = true;
+        }
+
+        protected void CancelNewGroupButton_Click(object sender, EventArgs e)
+        {
+            AddGroupPanel.Visible = true;
+            AddNewGroupPanel.Visible = false;
+            txtNewGroup.Text = "";
+        }
+
+        protected void SaveNewGroupButton_Click(object sender, EventArgs e)
+        {
+            if (IsDupGroup(txtNewGroup.Text) == false)
+            {
+                try
+                {
+                    strSql = "insert into lib_group values('" + txtNewGroup.Text + "','DUMMY','DUMMY')";
+                    dbcon.GetExecuteNonQuery(strSql);
+                    msg.ShowMessage(msg.GetMsgType("39"), this.Page);
+                    txtNewGroup.Text = "";
+                    AddGroupPanel.Visible = true;
+                    AddNewGroupPanel.Visible = false;
+                    BindGroupList();
+                }
+                catch (Exception ex)
+                {
+                    Response.Write(ex.Message);
+                }
+            }
+            else
+            {
+                msg.ShowMessage(msg.GetMsgType("40"), this.Page);
+                txtNewGroup.Text = "";
+            }
+        }
+        bool IsDupGroup(string group)
+        {
+            try
+            {
+                strSql = "select * from lib_group where groupname='" + group + "'";
+                if (dbcon.GetTable(strSql).Rows.Count > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch(Exception ex)
+            {
+                Response.Write(ex.Message);
+                return true;
+            }
+        }
+    }
+}

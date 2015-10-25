@@ -1,0 +1,165 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data;
+using EHR.Model;
+
+namespace EHR.Views.Termination
+{
+    public partial class Home : System.Web.UI.Page
+    {
+        public string strSQL;
+        public string userid;
+        DataTable dt = new DataTable();
+        DBModel dbcon = new DBModel();
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (Page.IsPostBack == false)
+            {
+                userid = Session["UserID"].ToString();
+                bindgrdIDL();
+                bindgrdFIProlong();
+                bindgrdFIProbation();
+                bindgrdFDProlong();
+                bindgrdFDProbation();
+            }
+        }
+
+        void bindgrdIDL()
+        {
+            try
+            {
+                strSQL = "select a.emplid,a.name_a,a.deptid,to_char(a.hire_dt,'YYYY/MM/DD')hire_dt,to_char(a.probation_dt,'YYYY/MM/DD')probation_dt,to_char(a.termination_dt,'YYYY/MM/DD')termination_dt,b.category, " +
+                        "case " +
+                        "when a.probation_status_a = 'C' and a.termination_dt <> ' ' then 'CONTRACT DUE' " +
+                        "when a.probation_status_a = ' ' and a.probation_dt > sysdate then 'PROBATION' " +
+                        "end as STATUS " +
+                        "from ps.PS_WCZ_CON_VW_A a, ps.PS_SUB_WCZ_AT_VW_A b " +
+                        "where (probation_dt between sysdate and sysdate+21 or a.termination_dt between sysdate and sysdate+21) " +
+                        "and a.emplid=b.emplid and (b.manager_id='" + userid + "' or b.supervisor_id='" + userid + "')and b.category='IDL'";
+                dt = dbcon.GetTable(strSQL);
+                if (dt.Rows.Count > 0)
+                {
+                    pnlGrdIDL.Visible = true;
+                    grdIDL.DataSource = dt;
+                    grdIDL.DataBind();
+                }
+            }
+            catch (Exception ex)
+            {
+                Response.Write(ex.Message);
+            }
+        }
+
+        void bindgrdFIProbation()
+        {
+            try
+            {
+                strSQL = "select a.emplid,a.name_a,a.deptid,to_char(a.hire_dt,'YYYY/MM/DD')hire_dt,to_char(a.probation_dt,'YYYY/MM/DD')probation_dt,to_char(a.termination_dt,'YYYY/MM/DD')termination_dt,b.category " +
+                        "from ps.PS_WCZ_CON_VW_A a, ps.PS_SUB_WCZ_AT_VW_A b " +
+                        "where probation_dt between sysdate and sysdate+21 " +
+                        "and a.emplid=b.emplid and (b.manager_id='" + userid + "' or b.supervisor_id='" + userid + "'" +
+                        "or a.deptid in(select deptid from CONTRACT_DEPT_ADMIN where emplid='" + userid + "')) and b.category='FI'";
+                dt = dbcon.GetTable(strSQL);
+                if (dt.Rows.Count > 0)
+                {
+                    pnlGrdDL.Visible = true;
+                    grdFIProbation.Visible = true;
+                    grdFIProbation.DataSource = dt;
+                    grdFIProbation.DataBind();
+
+                    drpCatStat.Items.Insert(1, "FI-Probation");
+                    drpCatStat.SelectedIndex = 1;
+                }
+            }
+            catch (Exception ex)
+            {
+                Response.Write(ex.Message);
+            }
+        }
+
+        void bindgrdFIProlong()
+        {
+            try
+            {
+                strSQL = "select a.emplid,a.name_a,a.deptid,to_char(a.hire_dt,'YYYY/MM/DD')hire_dt,to_char(a.probation_dt,'YYYY/MM/DD')probation_dt,to_char(a.termination_dt,'YYYY/MM/DD')termination_dt,b.category " +
+                        "from ps.PS_WCZ_CON_VW_A a, ps.PS_SUB_WCZ_AT_VW_A b " +
+                        "where a.termination_dt between sysdate and sysdate+21 " +
+                        "and a.emplid=b.emplid and (b.manager_id='" + userid + "' or b.supervisor_id='" + userid + "'" +
+                        "or a.deptid in(select deptid from CONTRACT_DEPT_ADMIN where emplid='" + userid + "')) and b.category='FI'";
+                dt = dbcon.GetTable(strSQL);
+                if (dt.Rows.Count > 0)
+                {
+                    pnlGrdDL.Visible = true;
+                    grdFIProlongation.Visible = true;
+                    grdFIProlongation.DataSource = dt;
+                    grdFIProlongation.DataBind();
+
+                    drpCatStat.Items.Insert(2, "FI-Prolongation");
+                    drpCatStat.SelectedIndex = 2;
+                }
+            }
+            catch(Exception ex)
+            {
+                Response.Write(ex.Message);
+            }
+        }
+
+        void bindgrdFDProbation()
+        {
+            try
+            {
+                strSQL = "select a.emplid,a.name_a,a.deptid,to_char(a.hire_dt,'YYYY/MM/DD')hire_dt,to_char(a.probation_dt,'YYYY/MM/DD')probation_dt,to_char(a.termination_dt,'YYYY/MM/DD')termination_dt,b.category " +
+                        "from ps.PS_WCZ_CON_VW_A a, ps.PS_SUB_WCZ_AT_VW_A b " +
+                        "where probation_dt between sysdate and sysdate+21 " +
+                        "and a.emplid=b.emplid and (b.manager_id='" + userid + "' or b.supervisor_id='" + userid + "'" +
+                        "or a.deptid in(select deptid from CONTRACT_DEPT_ADMIN where emplid='" + userid + "')) and b.category='FD'";
+                dt = dbcon.GetTable(strSQL);
+                if (dt.Rows.Count > 0)
+                {
+                    pnlGrdDL.Visible = true;
+                    grdFDProbation.Visible = true;
+                    grdFDProbation.DataSource = dt;
+                    grdFDProbation.DataBind();
+
+                    drpCatStat.Items.Insert(0, "FD-Probation");
+                    drpCatStat.SelectedIndex = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                Response.Write(ex.Message);
+            }
+        }
+
+        void bindgrdFDProlong()
+        {
+            try
+            {
+                strSQL = "select a.emplid,a.name_a,a.deptid,to_char(a.hire_dt,'YYYY/MM/DD')hire_dt,to_char(a.probation_dt,'YYYY/MM/DD')probation_dt,to_char(a.termination_dt,'YYYY/MM/DD')termination_dt,b.category " +
+                        "from ps.PS_WCZ_CON_VW_A a, ps.PS_SUB_WCZ_AT_VW_A b " +
+                        "where a.termination_dt between sysdate and sysdate+21 " +
+                        "and a.emplid=b.emplid and (b.manager_id='" + userid + "' or b.supervisor_id='" + userid + "'" +
+                        "or a.deptid in(select deptid from CONTRACT_DEPT_ADMIN where emplid='" + userid + "')) and b.category='FD'";
+                dt = dbcon.GetTable(strSQL);
+                if (dt.Rows.Count > 0)
+                {
+                    pnlGrdDL.Visible = true;
+                    grdFDProlongation.Visible = true;
+                    grdFDProlongation.DataSource = dt;
+                    grdFDProlongation.DataBind();
+
+                    drpCatStat.Items.Insert(2, "FD-Prolongation");
+                    drpCatStat.SelectedIndex = 2;
+                }
+            }
+            catch (Exception ex)
+            {
+                Response.Write(ex.Message);
+            }
+        }
+    }
+}

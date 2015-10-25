@@ -1,0 +1,22 @@
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Views/Shared/Site.Master" AutoEventWireup="true" CodeBehind="PrintFormHeader.aspx.cs" Inherits="EHR.Views.Status.WebForm1" %>
+<asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="TopContent" runat="server">
+</asp:Content>
+<asp:Content ID="Content3" ContentPlaceHolderID="LeftContent" runat="server">
+</asp:Content>
+<asp:Content ID="Content4" ContentPlaceHolderID="mainContent" runat="server">
+
+<table width = "50%" align = "center" cellpadding="0" cellspacing="0">
+    <tr><td colspan = "3"><img src="../../Content/images/Status Change Header.PNG"</td></tr>
+    
+    <tr><td rowspan = "2" width = "66%" style="font-size: 10px; vertical-align: top; border-left: solid 1px #111111; border-right: solid 1px #111111; border-top: solid 1px #111111; border-bottom: solid 1px #111111;" >&nbsp;Subject: Recruiting Process Attachment Forms</td>
+        <td width = "20%" style="font-size: 10px; border-top: solid 1px #111111; border-right: solid 1px #111111; border-bottom: solid 1px #111111; ">&nbsp;Doc. No.: E06-C22-12</td>
+        <td width = "14%" style="font-size: 10px; border-top: solid 1px #111111; border-right: solid 1px #111111; border-bottom: solid 1px #111111; ">&nbsp;Rev.: 4.0</td></tr>
+    
+    <tr><td style="font-size: 10px; border-bottom: solid 1px #111111; border-right: solid 1px #111111; ">&nbsp;Effective Date: 2012/08/31</td>
+        <td style="font-size: 10px; border-bottom: solid 1px #111111; border-right: solid 1px #111111; ">&nbsp;Page: 1 of 1</td></tr></table>
+        
+        <br /> 
+
+</asp:Content>

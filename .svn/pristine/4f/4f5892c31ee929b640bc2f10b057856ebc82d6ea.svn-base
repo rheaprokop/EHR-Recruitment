@@ -1,0 +1,68 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model;
+
+namespace EHR.Views.Recruitment
+{
+    public partial class ApprovalManager : System.Web.UI.UserControl
+    {
+        ObjectsOleDB myObjs = new ObjectsOleDB();
+        QueryOleDB myQrys = new QueryOleDB();
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            Run();
+        }
+
+        private void Run()
+        {
+            HideControls();
+            string show = Request.QueryString["show"];
+            ShowPanel(show);
+        }
+
+        private void HideControls()
+        {
+            pnlAssignPICManager.Visible = false;
+        }
+
+        private void ShowPanel(string show)
+        {
+            string RequestID = Request.QueryString["id"];
+            
+            switch (show)
+            {
+                case "pic":
+                    pnlAssignPICManager.Visible = true;
+
+                    PopulatePIC(RequestID);
+                    break;
+                case "status":
+                    break;
+            }
+        }
+
+        private void PopulatePIC(string RequestID)
+        { 
+            string OracleQry = "Select ApprovalID, RequestID as Request, FlowID as Flow, PIC as PIC, ApprovalStatus as Status, ApprovalDate   " +
+                " from reqapprovallogs Where RequestID = '" + RequestID + "' Order by FlowID ASC";
+            lblRequestID.Text = RequestID;
+            DataTable myDT = myObjs.GetTable(OracleQry);
+            gridAssignPIC.DataSource = myDT;
+            gridAssignPIC.DataBind();
+        }
+
+        protected void GridAssignPIC_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            e.Row.Cells[1].Visible = false;
+            e.Row.Cells[2].Visible = false;
+            string getFlow = e.Row.Cells[3].Text;
+            e.Row.Cells[3].Text = myQrys.GetFlow(getFlow);  
+        }
+    }
+}

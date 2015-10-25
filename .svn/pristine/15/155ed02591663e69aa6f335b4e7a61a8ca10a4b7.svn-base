@@ -1,0 +1,90 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model;
+using System.Data.OleDb;
+using System.Data;
+
+// Submit_Click(object sender, EventArgs e)
+// GoToMultiple_Click(object sender, EventArgs e)
+// HideProcessRequest(HyperLink btnProcess)
+// EnabledReports() 
+
+namespace EHR.Views.Status
+{
+	public partial class RQ01 : System.Web.UI.Page
+	{
+        PSModel _ps = new PSModel();
+        DBModel _db = new DBModel();
+        MiscModel _mis = new MiscModel();
+        AccountModel _accnt = new AccountModel(); 
+        
+
+        protected void Page_Load(object sender, EventArgs e)
+		{
+            pnlDialog.Visible = false;
+            string employee = Request.QueryString["employee"];
+            HideProcessRequest(btnCloseApplication);
+
+            if (EnabledReports() == true)
+            {
+                btnViewAll.Enabled = true;  
+            }
+
+            if (employee == "false")
+                _mis.GetMsgBox("10", pnlDialog, lblErrorMsg);
+		}
+
+        protected void Submit_Click(object sender, EventArgs e)
+        {
+            InputEmployeeID.Text = InputEmployeeID.Text.Trim();
+            InputEmployeeID.Text = InputEmployeeID.Text.ToUpper();
+
+            Response.Redirect("RQ02.aspx?employee=" + InputEmployeeID.Text);
+        }
+
+        protected void GoToMultiple_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("RQ05.aspx?populated=false");
+        }
+
+        public void HideProcessRequest(HyperLink btnProcess)
+        { 
+
+            string sql = "SELECT COUNT(REQUESTID) FROM STATUS_CHANGE " +
+                "WHERE HR_PIC = '" + _accnt.GetUserSessID() + "' OR PAYROLL_PIC = '" + _accnt.GetUserSessID() + "'";
+
+            int count = _db.GetExecuteScalar(sql);
+            if (count >= 1)
+            {
+                btnProcess.Visible = true;
+            }
+            else
+            {
+                btnProcess.Visible = false;
+            }
+
+        }
+
+        private bool EnabledReports()
+        {
+            string UserID = (string)(Session["UserID"]);
+
+            string sql = "SELECT EMPLID FROM PS.PS_SUB_WCZ_AT_VW_A WHERE EMPLID = '" + _accnt.GetUserSessID() + "' " +
+                    "AND DEPTID = 'MD0H00'";
+            OleDbDataReader _rd = _db.GetDataReader(sql);
+
+            if (_rd.HasRows)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+	}
+}

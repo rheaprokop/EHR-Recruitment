@@ -1,0 +1,425 @@
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Views/Shared/Site.Master" AutoEventWireup="true" CodeBehind="ViewCandidate.aspx.cs" Inherits="EHR.Recruitment.ViewCandidate"  %>
+<%@ Register Src="~/Views/Recruitment/InterviewInfo.ascx" TagName="Candidate" TagPrefix="frm" %> 
+<%@ Register Src="~/Views/Recruitment/HireCandidate.ascx" TagName="Hire" TagPrefix="frm"  %>
+ 
+
+<asp:Content ID="head" ContentPlaceHolderID="head" runat="server">
+             
+             <script type="text/javascript" language="javascript">
+                function ConfirmOnDelete()
+                {
+                  if (confirm("Are you sure?")==true)
+                    return true;
+                  else
+                    return false;
+                }
+     
+            </script>   
+</asp:Content>
+<asp:Content ID="Top" ContentPlaceHolderID="TopContent" runat="server">
+      
+</asp:Content>
+<asp:Content ID="Left" ContentPlaceHolderID="LeftContent" runat="server">
+<asp:Panel runat="server" ID="pnlRequestManager">
+<li><span style="padding-left: 30px;"><a href="AllRequests.aspx">Request Manager</span></a></li>
+</asp:Panel>
+<asp:Panel runat="server" ID="pnlCandidateManager">
+<li class="selected"><span style="padding-left: 30px;"><a href="Candidate.aspx?action=view">Candidate Manager</span></a></li> 
+</asp:Panel>
+
+</asp:Content>
+<asp:Content ID="Main" ContentPlaceHolderID="MainContent" runat="server">  
+  <div class="header">
+  <table><thead>
+  <tr>
+       <th colspan="4" align="left">
+   <asp:Label ID="lblCandidateTitle" Text="CANDIDATE PROFILE"  
+   runat="server" CssClass="logotext"></asp:Label>
+   
+   </th></tr>
+   </thead></table> 
+    <asp:Panel runat="server" ID="pnlCandidateButton">
+    <div style="float: right; margin-top: -60px;" class="ui-buttonset">
+     <asp:HyperLink runat="server" NavigateUrl="~/Views/Recruitment/Candidate.aspx?action=view"   ID="btnViewAll" Text="View All Candidates" CssClass="ui-button ui-button-text-only ui-widget ui-state-default ui-corner" style="font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left; padding-right: 20px; padding-left: 20px;" />
+     <asp:HyperLink  runat="server" NavigateUrl="~/Views/Recruitment/AddCandidate.aspx" ID="btnAssign" Text="Create Profile" CssClass="ui-button ui-button-text-only ui-widget ui-state-default ui-corner" style="font-family: BebasNeue; font-size: 22px; letter-spacing: 1px; float: left;  padding-right: 20px; padding-left: 20px;" />
+     </div>    </asp:Panel>
+</div>
+ <!--INSERT CANDIDATE PROFILE HERE -->
+ <asp:Panel runat="server" ID="pnlButtons" style="margin-top: 10px;">
+       <table style="width: 100%; " > 
+        <tr>
+        
+        <td align="right">
+        
+        <asp:HiddenField runat="server" ID="hiddenCandID" />
+        <div class="ui-buttonset">
+                
+ 
+                    <asp:Button ID="btnInvite" runat="server"  Text="INVITE FOR INTERVIEW" OnClick="InterviewCandidate_Click"   CausesValidation="false"
+                     CssClass="ui-button ui-button-text-only ui-widget ui-state-default" style="font-family: BebasNeue; font-size: 16px; letter-spacing: 1px;  padding-right: 20px; padding-left: 20px;" />
+            
+                    <asp:Button ID="btnAddDetails" runat="server"  Text="ADD INTERVIEW DETAILS" OnClick="InterviewDetails_Click"   CausesValidation="false"
+                     CssClass="ui-button ui-button-text-only ui-widget ui-state-default" style="font-family: BebasNeue; font-size: 16px; letter-spacing: 1px;  padding-right: 20px; padding-left: 20px;" />
+                                     
+                    <asp:Button ID="btnViewPastInterviews" runat="server"  Text="PAST INTERVIEWS" OnClick="ViewInterviews_Click"   CausesValidation="false"
+                     CssClass="ui-button ui-button-text-only ui-widget ui-state-default" style="font-family: BebasNeue; font-size: 16px; letter-spacing: 1px;  padding-right: 20px; padding-left: 20px;" />
+                     
+                     <asp:Button ID="btnSendOffer" runat="server"  Text="SEND OFFER LETTER"  OnClick="HireCandidate_Click"   CausesValidation="false"
+                     CssClass="ui-button ui-button-text-only ui-widget ui-state-default" style="font-family: BebasNeue; font-size: 16px; letter-spacing: 1px;  padding-right: 20px; padding-left: 20px;" />  
+                       <asp:Button ID="btnBackToProfile" runat="server"  Text="Back To Candidate Profile" OnClick="ViewCandidate_Click"   CausesValidation="false"
+                     CssClass="ui-button ui-button-text-only ui-widget ui-state-default" style="font-family: BebasNeue; font-size: 16px; letter-spacing: 1px;  padding-right: 20px; padding-left: 20px;" />
+
+    </div>
+    </td></tr> 
+    </table>
+    </asp:Panel>
+ <asp:Panel ID="pnlCreateCandDesign" runat="server" style="margin-left: 20px; margin-right: 10px;"> 
+ <table style="width: 85%; " >  
+    <tr><td>
+<asp:Panel runat="server" ID="pnlCandidateAcceptance">    
+	
+	 
+     <table style="width: 100%; margin-top: 0px;" class="zebra" align="left"> 
+                <tbody> 
+                <thead> 
+                    <tr>
+                        <th colspan="4" align="left">CANDIDATE ACCEPTANCE INFORMATION</th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <th colspan="4"></th>
+                    </tr>
+                </tfoot>
+                     <tr> 
+                         <td align="left" style="width: 30%"><span style="font-size: 16px; color: #c70000; font-weight: bold;">Candidate Has Accepted Offer: </span></td>
+                         <td style="width: 70%" colspan="3"> 
+                         <asp:DropDownList runat="server" ID="ddlOfferSent" style="padding: 5px;" 
+                           > 
+                         <asp:ListItem Value="Yes">Yes</asp:ListItem>
+                         <asp:ListItem Value="No">No</asp:ListItem> 
+                         </asp:DropDownList>
+                          <asp:RequiredFieldValidator  runat="server" ID="reqddlOfferSent" ControlToValidate="ddlOfferSent"
+                          ErrorMessage="Required!"  cssClass="reqErrorMsg" style="display: inline;"></asp:RequiredFieldValidator>
+
+                          <asp:Button ID="btnAccepted" runat="server"  Text="Save"  OnClientClick="return ConfirmOnDelete();" 
+                          OnClick="BtnAcceptedOffer_Click"  
+                     CssClass="ui-button ui-button-text-only ui-widget ui-state-default" style="font-family: BebasNeue; font-size: 16px; letter-spacing: 1px;  padding-right: 5px; padding-left: 5px;" />
+                
+                         </td>   
+                          
+                       </tr> 
+                      <tr>
+                         <td ><span style="padding-left: 30px; color: #111111; font-weight: bold;">Employee ID:</span> </td>
+                         <td><asp:Label runat="server" ID="lblEmplID" CssClass="candidate-label"></asp:Label></td>
+                         <td><span style="padding-left: 30px; color: #111111; font-weight: bold;">On Board Date:</span> </td>
+                         <td>
+                         <asp:Label runat="server" ID="lblOnBoardDate" CssClass="candidate-label"></asp:Label>
+                          </td>               
+                    </tr>  
+                      <tr>
+                         <td><span style="padding-left: 30px; color: #111111; font-weight: bold;">Department:</span> </td>
+                         <td><asp:Label runat="server" ID="lblOfferDepartment" CssClass="candidate-label"></asp:Label></td>
+                         <td><span style="padding-left: 30px; color: #111111; font-weight: bold;">Position:</span></td>
+                         <td>
+                         <asp:Label runat="server" ID="lblPosition" CssClass="candidate-label"></asp:Label>
+                          </td>               
+                    </tr>                                                                          
+                    </tr>  
+                    
+             </tbody>
+             </table>
+</asp:Panel>
+</td></tr>
+</table>
+ 
+ 
+  <table style="width: 85%; " >   
+    <tr><td>
+            <table style="width: 100%; margin-top: 0px;" class="zebra-view" align="left"> 
+                
+                <thead> 
+                    <tr>
+                        <th colspan="4" align="left">CANDIDATE INFORMATION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                        <tr>
+                         <td>Candidate ID: </td>
+                         <td><asp:Label runat="server" ID="lblCandidateID" CssClass="candidate-label"></asp:Label></td>
+                         <td>Academic Title: </td>
+                         <td>
+                         <asp:Label runat="server" ID="lblAcademitTitle" CssClass="candidate-label"></asp:Label>
+                          </td>               
+                    </tr>                
+                    <tr>
+                         <td>First Name: </td>
+                         <td><asp:Label runat="server" ID="lblFirstName" CssClass="candidate-label"></asp:Label></td>
+                         <td>Last Name: </td>
+                         <td><asp:Label runat="server" ID="lblLastName" CssClass="candidate-label"></asp:Label></td>                         
+                    </tr>                  
+                   
+                     
+                    </tbody>
+           </table>
+</td></tr> 
+
+ <tr><td>   
+         <!--Start of Candidate Address-->
+         <table style="width: 100%; margin-top: 20px;" class="zebra-view" align="left">
+                <thead>
+                    <tr>
+                        <th colspan="4" align="left" style="padding: 10px;">CANDIDATE ADDRESS</th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <th colspan="4"></th>
+                    </tr>
+                </tfoot>
+                
+                <tbody>
+  
+                     <tr>
+                         <td >Street: </td>
+                         <td><asp:Label runat="server" ID="lblStreet" CssClass="candidate-label"></asp:Label></td>
+                         <td >City </td>
+                         <td><asp:Label runat="server" ID="lblCity" CssClass="candidate-label"></asp:Label></td>                         
+                    </tr> 
+ 
+                     <tr>
+                         <td >Country of Citizenship: </td>
+                         <td>
+                        <asp:Label runat="server" ID="lblCountry" CssClass="candidate-label"></asp:Label>
+                         </td>
+                         <td >Postcode/zip code: </td>
+                         <td><asp:Label runat="server" ID="lblPostCode" CssClass="candidate-label"></asp:Label></td>                         
+                    </tr>  
+                   <tr>
+                         <td >Contact Number: </td>
+                         <td> <asp:Label runat="server" ID="lblContactNumber" CssClass="candidate-label" style="display:inline;"></asp:Label></td>
+                         <td >Email Address: </td>
+                         <td><asp:Label runat="server" ID="lblEmailAddress" CssClass="candidate-label"></asp:Label></td>                         
+                    </tr>                                       
+              </tbody>
+            </table>
+         <!-- End of Candidate Address-->   
+</td></tr>
+<tr><td>  
+        <table style="width: 100%; margin-top: 20px;" class="zebra-view" align="left">
+                <thead>
+                    <tr>
+                        <th colspan="4" align="left" style="padding: 10px;">PERSONAL INFORMATION</th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <th colspan="4"></th>
+                    </tr>
+                </tfoot>
+                
+                <tbody>
+  
+                     <tr>
+                         <td >Birthdate: </td>
+                          <td >
+                         <asp:Label runat="server" ID="lblBirthdate" CssClass="candidate-label"></asp:Label> 
+                             
+                         </td>
+                         <td >Sex </td>
+                         <td>
+                         <asp:Label runat="server" ID="lblSex" CssClass="candidate-label"></asp:Label>
+                         </td>                         
+                    </tr> 
+                      <tr>
+                         <td >Status: </td>
+                         <td>
+                         <asp:Label runat="server" ID="lblStatus" CssClass="candidate-label"></asp:Label>
+                         </td>
+                         <td >Birth Number: </td>
+                         <td>
+                         <asp:Label runat="server" ID="lblBirthNumber" CssClass="candidate-label"></asp:Label>
+                         </td>
+                    </tr>                    
+           
+           </table> 
+</td></tr>
+<tr><td>
+
+        <table style="width: 100%; margin-top: 20px;" class="zebra-view" align="left">
+                <thead>
+                    <tr>
+                        <th colspan="4" align="left" style="padding: 10px;">EDUCATION INFORMATION</th>
+                    </tr>
+                </thead> 
+                <tbody>
+  
+                     <tr>
+                         <td >Graduate: </td>
+                         <td>
+                         <asp:Label runat="server" ID="lblGraduate" CssClass="candidate-label"></asp:Label>
+                       
+                         </td>
+                         <td >Field: </td>
+                         <td>
+                        <asp:Label runat="server" ID="lblField" CssClass="candidate-label"></asp:Label>
+                         </td>                         
+                    </tr> 
+ <tr>
+                                 <td >Language Skill 1: </td>
+                                 <td>
+                                <asp:Label runat="server" ID="lblLanguage1" CssClass="candidate-label"></asp:Label>
+                                 </td>
+                                 <td >Level: </td>
+                                 <td>
+                                 <asp:Label runat="server" ID="lblSkill1" CssClass="candidate-label"></asp:Label>
+                                 </td>                         
+                            </tr>                   
+ <tr>
+                                 <td >Language Skill 2: </td>
+                                 <td>
+                                 <asp:Label runat="server" ID="lblLanguage2" CssClass="candidate-label"></asp:Label>
+                                 </td>
+                                 <td >Level: </td>
+                                 <td>
+                                 <asp:Label runat="server" ID="lblSkill2" CssClass="candidate-label"></asp:Label>
+                                 </td>                         
+                            </tr>
+                    
+                    
+                    
+                    </table>
+</td></tr>
+<tr><td>
+
+<table style="width: 100%; margin-top: 20px;" class="zebra-view" align="left">
+                <thead>
+                    <tr>
+                        <th colspan="4" align="left" style="padding: 10px;">PROFESSIONAL EXPERIENCE</th>
+                    </tr>
+                </thead> 
+                <tbody>
+                   <tr>
+                         <td >Professional Experience: </td>
+                         <td>
+                            <asp:Label runat="server" ID="lblExperience" CssClass="candidate-label"></asp:Label>
+                       
+                         </td>
+                         <td >Field of expertise: </td>
+                         <td>
+                         <asp:Label runat="server" ID="lblExpertise" CssClass="candidate-label"></asp:Label>
+                         </td>                         
+                    </tr> 
+                     <tr>
+                         <td >Current Employer: </td>
+                         <td>
+                        <asp:Label runat="server" ID="lblCurrentEmpl" CssClass="candidate-label"></asp:Label>
+                       
+                         </td>
+                         <td >Current Position: </td>
+                         <td>
+                         <asp:Label runat="server" ID="lblCurrentPosi" CssClass="candidate-label"></asp:Label>
+                         </td>                         
+                    </tr> 
+ </table>
+</td></tr>
+<tr><td>
+<table style="width: 100%; margin-top: 20px;" class="zebra-view" align="left">
+                <thead>
+                    <tr>
+                        <th colspan="4" align="left" style="padding: 10px;">OTHER INFORMATION</th>
+                    </tr>
+                </thead>  
+                    <tr>
+                          
+                           <td >Driving License: </td>
+                           <td  class="form-check"> 
+                                 <asp:Label runat="server" ID="lblDrivingLicense" CssClass="candidate-label"></asp:Label>
+                                 
+                           </td> 
+                           <td ><asp:Label runat="server" ID="lblVehicleChk" Text="Which Vehicle:" ></asp:Label> </td>
+                           <td>
+                            <asp:Label runat="server" ID="lblIsCar" style="display: inline;"></asp:Label>&nbsp;&nbsp;
+                            <asp:Label runat="server" ID="lblIsForkLift" style="display: inline;"></asp:Label>&nbsp;&nbsp;
+                            <asp:Label runat="server" ID="lblIsOthers" style="display: inline;"></asp:Label>
+                          </tr>       
+                    </table>
+</td></tr>
+<tr><td>
+<table style="width: 100%; margin-top: 20px;" class="zebra-view" align="left">
+                <thead>
+                    <tr>
+                        <th colspan="4" align="left" style="padding: 10px;">REMARKS</th>
+                    </tr>
+                </thead>  
+                    <tr>
+                          
+                           <td >Remarks: </td>
+                           <td  class="form-check"> 
+                                 <asp:Label runat="server" ID="lblRemarks" CssClass="candidate-label" Text="Remarks"></asp:Label>
+                                 
+                           </td>  
+                    </table>
+</td></tr>
+<tr><td>
+<!--Start of Candidate CV-->
+         <table style="width: 100%; margin-top: 20px;" class="zebra-view" align="left">
+                <thead>
+                    <tr>
+                        <th colspan="4" align="left" style="padding: 10px;">Upload Documents</th>
+                    </tr>
+                </thead> 
+                
+                <tbody> 
+                     <tr>
+                       <td> Czech CV: </td>
+                         <td>
+                         <asp:HyperLink runat="server" ID="linkIsCVCZ" CssClass="candidate-label" Target="_blank"></asp:HyperLink>
+                        </td>
+                         <td > English CV: </td>
+                         <td >
+                         <asp:HyperLink runat="server" ID="linkIsCVEN" CssClass="candidate-label" Target="_blank"></asp:HyperLink>
+                         </td>
+                                              
+                    </tr>  
+        </table>                                  
+
+</td></tr> 
+ <tr><td>
+ 
+  </td></tr>
+</table>
+</asp:Panel>
+ <asp:Label runat="server" ID="lblInterviewMsg"></asp:Label>
+ 
+  
+  <!--SHOW INTERVIEW LIST-->
+  <asp:Panel runat="server" ID="pnlInterviewDetailList">
+   <asp:GridView ID="gridCandidatesInterviewDetails" runat="server"    
+     EnableViewState="False" CellPadding="0" CellSpacing="0" GridLines="None"   
+     CssClass="grid-zebra" style="width: 1100px;"  
+     PagerSettings-FirstPageText="First" PagerSettings-LastPageText="Last" PagerSettings-FirstPageImageUrl="first.png">
+   <Columns>
+   <asp:hyperlinkfield DataNavigateUrlFields="CandidateID"    
+   DataNavigateUrlFormatString="~/Recruitment/InterviewDetails.aspx?candidate={0}"  
+   DataTextField="CandidateID" HeaderText="View"  DataTextFormatString= "<img src='../App_Themes/front/view.png'  border=0 alt='View Record' style='boder:0' />" ></asp:hyperlinkfield>
+   </Columns>
+   </asp:GridView> 
+  </asp:Panel>
+  <!--SHOW INTERVIEW DETAILS-->
+  <asp:Panel runat="server" ID="pnlCandidateInterview">
+    <asp:Panel runat="server" ID="pnlError" style="border: solid 1px #c0221f; background: #ffbde5; width: 800px; padding: 50px; margin: 0 auto; margin-top: 30px;" >
+                    <asp:Label runat="server" ID="lblError" style="font-size: 14px;"></asp:Label><br />
+    </asp:Panel>
+
+    <frm:Candidate runat="server" ID="frmCandidate" /> 
+  </asp:Panel>
+ 
+ 
+ <!--SHOW HIRE CANDIDATE -->
+ <asp:Panel  runat="server" ID="pnlHire">
+ <frm:Hire runat="server" ID="Hire" />
+ </asp:Panel>
+ 
+ 
+</asp:Content>

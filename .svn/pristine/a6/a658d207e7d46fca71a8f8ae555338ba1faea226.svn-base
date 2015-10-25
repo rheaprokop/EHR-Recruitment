@@ -1,0 +1,31 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using EHR.Model;
+using System.Data.OleDb;
+using System.Data;
+using System.Collections;
+
+namespace EHR.Views.Status
+{
+    public partial class PR01 : System.Web.UI.Page
+    {
+        DBModel _db = new DBModel();
+        PSModel _ps = new PSModel();
+        PrintModel _pr = new PrintModel();
+        
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            //Control ctrl = (Control)Session["ctrl"];
+            //ctrl.Visible = true;
+            //_pr.PrintWebControl(ctrl);
+            //Response.Write("<script language='javascript'> { window.close();}</script>");
+
+            string javascript = "<script language=JavaScript>printPartOfPage('otep');</script>";
+            this.ClientScript.RegisterStartupScript(this.GetType(), "PrintWindowScript", javascript);
+        }
+    }
+}
